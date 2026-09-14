@@ -4,9 +4,8 @@ import type { ReactNode } from "react";
 export const RESPONSABLE = {
   nombreLegal: "Medardo Rafael Hernández Franco",
   nombreComercial: "Rafael Hernández Franco · Asesor Inmobiliario",
-  // TODO(Rafael): reemplazar por la dirección comercial de atención.
-  // El Art. 2.2.2.25.3.1 del Decreto 1074 de 2015 exige dirección física.
-  direccion: "Cartagena de Indias, Bolívar, Colombia",
+  direccion:
+    "Carrera 14 # 45-27, Km 4, La Boquilla, Cartagena de Indias, Bolívar, Colombia",
   correo: "rafaelhf.realestate@gmail.com",
   telefono: "+57 300 841 2677",
   sitio: "rhfliving.com",
