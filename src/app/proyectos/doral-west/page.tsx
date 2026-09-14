@@ -53,6 +53,7 @@ export const metadata: Metadata = {
 };
 
 const doralWest: ProyectoData = {
+  slug: "doral-west",
   nombre: "Doral West",
   zona: "Zona Norte",
   heroTitulo: "Casas en la Zona Norte, donde Cartagena está creciendo",

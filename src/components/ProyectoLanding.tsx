@@ -1,5 +1,7 @@
 import Link from "next/link";
 import MeInteresaButton from "@/components/MeInteresaButton";
+import BloqueLegal from "@/components/BloqueLegal";
+import { getProyecto, puedePublicarPrecio, rangoPrecio } from "@/data/proyectos";
 
 /**
  * Landing de un proyecto de la cartera.
@@ -8,10 +10,11 @@ import MeInteresaButton from "@/components/MeInteresaButton";
  * nota del proyecto en el vault (`projects/<proyecto>/`) → este componente.
  * Nada de lo que se muestra acá se escribe sin pasar por la nota.
  *
- * ⛔ No se publica precio en estas páginas: la Circular 004 de 2024 de la SIC
- * exige diez datos cuando hay precio, y hoy ningún proyecto de la cartera los
- * tiene completos (faltan estrato, cuota de administración y valor de
- * desistimiento en los cinco). Ver `decisions/bloque-legal-circular-004-*`.
+ * El precio se publica cuando el proyecto tiene los TRES datos del numeral
+ * 2.16.1 de la Circular 004 (área, precio de referencia y ubicación exacta) y
+ * SIEMPRE acompañado del bloque legal, que declara la fecha de corte y el
+ * estado real del área. El candado es `puedePublicarPrecio`; la cifra sale de
+ * `src/data/proyectos.ts`, nunca escrita a mano acá.
  *
  * ⛔ El copy de Zona Norte sale de `projects/inmobiliaria/copy-de-la-seccion-
  * zona-norte-que-publicamos-y-que-no`, ya contrastado contra la research. Sin
@@ -35,6 +38,8 @@ export type ProyectoData = {
   ubicacion: string;
   ubicacionNota: string;
   galeria: Imagen[];
+  /** Slug en `src/data/proyectos.ts`. De ahí salen el precio y el bloque legal. */
+  slug?: string;
 };
 
 const ZONA_NORTE = [
@@ -59,6 +64,8 @@ const ZONA_NORTE = [
 ];
 
 export default function ProyectoLanding({ p }: { p: ProyectoData }) {
+  const datos = p.slug ? getProyecto(p.slug) : undefined;
+
   return (
     <>
       <header className="nav">
@@ -110,6 +117,15 @@ export default function ProyectoLanding({ p }: { p: ProyectoData }) {
             </div>
 
             <p className="aviso-fuente">{p.fuente}</p>
+            {datos && datos.precio && puedePublicarPrecio(datos) && (
+              <p className="proyecto-precio">
+                <strong>{rangoPrecio(datos.precio.desde, datos.precio.hasta)}</strong>{" "}
+                <span>
+                  precio de referencia · {datos.precio.unidadesDisponibles} unidades
+                  disponibles · corte {datos.precio.corte}
+                </span>
+              </p>
+            )}
           </div>
         </section>
 
@@ -204,6 +220,7 @@ export default function ProyectoLanding({ p }: { p: ProyectoData }) {
             <MeInteresaButton label="Hablar con el asesor" className="btn-primary" />
           </div>
         </section>
+        {datos && <BloqueLegal p={datos} />}
       </main>
 
       <footer className="site-footer">

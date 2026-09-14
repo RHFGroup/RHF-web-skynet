@@ -956,3 +956,74 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
 .brochure-grid { margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
 .brochure-pag { margin: 0; }
 .brochure-pag img { width: 100%; height: auto; display: block; border: 1px solid rgb(31 42 61 / 0.08); }
+
+/* ── Bloque legal de la Circular 004 ──────────────────────────────────────
+   Va debajo de toda pieza con precio. Legible, no letra chica: el punto es
+   que el comprador pueda leerlo, no que esté técnicamente presente. */
+.bloque-legal {
+  margin: 3rem 0 2rem;
+  padding: 1.75rem;
+  border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, currentColor 3%, transparent);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.bloque-legal h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.0625rem;
+  letter-spacing: 0.01em;
+}
+.bloque-legal-norma {
+  margin: 0 0 1.5rem;
+  font-size: 0.8125rem;
+  opacity: 0.65;
+}
+.bloque-legal-datos { margin: 0 0 1.5rem; display: grid; gap: 1.25rem; }
+.bloque-legal-datos dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  opacity: 0.6;
+  margin-bottom: 0.3rem;
+}
+.bloque-legal-datos dd { margin: 0; }
+.bloque-legal-datos dd strong { font-size: 1.0625rem; }
+.bloque-legal-fuente {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  opacity: 0.6;
+  line-height: 1.45;
+}
+.bloque-legal-fuente-inline { font-size: 0.8125rem; opacity: 0.6; }
+.bloque-legal-areas { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.75rem; }
+.bloque-legal-aviso {
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border-left: 3px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+.bloque-legal-precio,
+.bloque-legal-precontractual { margin: 0 0 1rem; opacity: 0.85; }
+.bloque-legal-reservas,
+.bloque-legal-conflictos { margin: 0 0 1rem; font-size: 0.875rem; opacity: 0.85; }
+.bloque-legal-reservas p,
+.bloque-legal-conflictos p { margin: 0 0 0.4rem; }
+.bloque-legal-reservas ul,
+.bloque-legal-conflictos ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.4rem; }
+
+/* El precio en la ficha del proyecto */
+.proyecto-precio {
+  margin: 1.5rem 0 0;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+.proyecto-precio strong { font-size: 1.375rem; display: block; }
+.proyecto-precio span { font-size: 0.8125rem; opacity: 0.7; }
+
+@media (max-width: 600px) {
+  .bloque-legal { padding: 1.25rem; border-radius: 10px; }
+}
