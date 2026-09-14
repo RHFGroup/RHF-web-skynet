@@ -35,15 +35,29 @@ bloques.forEach((b, i) => {
   const slug = slugs[i];
   const nombre = nombres[i];
   const tienePrecio = /precio:\s*\{/.test(b);
-  // Se consideran completos solo si los diez flags están en true.
-  const trues = (b.match(/:\s*true/g) || []).length;
-  const completo = tienePrecio && trues >= 10;
 
-  if (!completo) {
-    const faltan = 10 - trues;
-    bloqueados.push(
-      `${nombre} (${slug}): ${tienePrecio ? "" : "sin precio cargado; "}faltan ${faltan} de los diez datos de la Circular 004`,
-    );
+  // Numeral 2.16.1: la pieza publicitaria con precio exige TRES datos —
+  // área privada construida, precio de referencia y ubicación exacta.
+  // Lo precontractual (numeral 2.16.2) no bloquea el catálogo: se entrega
+  // al comprador antes de contratar.
+  const pieza = (b.match(/pieza:\s*\{([\s\S]*?)\n      \}/) || [])[1] || "";
+  const ETIQUETAS = {
+    areaPrivadaConstruida: "área privada construida",
+    precioReferencia: "precio de referencia",
+    ubicacionExacta: "ubicación exacta",
+  };
+  const faltan = Object.entries(ETIQUETAS)
+    .filter(([k]) => !new RegExp(`${k}:\\s*true`).test(pieza))
+    .map(([, etiqueta]) => etiqueta);
+
+  if (!tienePrecio || faltan.length > 0) {
+    const motivo = [
+      tienePrecio ? null : "sin precio cargado",
+      faltan.length ? `falta ${faltan.join(", ")} (numeral 2.16.1)` : null,
+    ]
+      .filter(Boolean)
+      .join("; ");
+    bloqueados.push(`${nombre} (${slug}): ${motivo}`);
     return;
   }
 
