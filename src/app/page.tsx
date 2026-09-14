@@ -237,6 +237,11 @@ export default function Home() {
               fecha de entrega y reglamento de propiedad horizontal—
               está disponible para consulta directa con el asesor.
             </p>
+            <p className="footer-legal-links">
+              <Link href="/privacidad">Política de tratamiento de datos</Link>
+              {" · "}
+              <Link href="/terminos">Términos de uso</Link>
+            </p>
             <p className="footer-copy">© {new Date().getFullYear()} RHF. Todos los derechos reservados.</p>
           </div>
         </div>
