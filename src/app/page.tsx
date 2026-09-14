@@ -1,60 +1,65 @@
-const proyectos = [
-  {
-    nombre: "Doral Country",
+import { PROYECTOS, puedePublicarPrecio, rangoPrecio, getProyecto } from "@/data/proyectos";
+
+/**
+ * Las tarjetas leen de `src/data/proyectos.ts`. El precio aparece solo cuando
+ * el proyecto tiene los tres datos del numeral 2.16.1 de la Circular 004; si
+ * no, dice «Consultar». Nunca se escribe un precio a mano en esta página: fue
+ * así como la home terminó anunciando Doral West $145 millones por debajo.
+ */
+const PRESENTACION: Record<string, { href: string | null; tipologia: string; descripcion: string; destacado?: boolean; imagen: string }> = {
+  "doral-country": {
     href: "/proyectos/doral-country",
-    zona: "Zona Norte",
-    precio: "Consultar",
-    area: "40 – 62 m²",
-    tipologia: "Apartamentos en torres · 4 torres · 111 unidades",
-    descripcion: "Torre 4 recién abierta: 50 unidades con plazo de 39 meses.",
+    tipologia: "Apartamentos en torres · 6 torres · ascensor",
+    descripcion: "El lanzamiento más reciente del desarrollo Doral, sobre la Vía al Mar.",
     destacado: true,
     imagen: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop",
   },
-  {
-    nombre: "Doral Suite",
+  "doral-suite": {
     href: null,
-    zona: "Zona Norte",
-    precio: "Consultar",
-    area: "45 – 68 m²",
-    tipologia: "Apartamentos tipo suite · Acabados premium",
-    descripcion: "Vida urbana con acabados de lujo en la Zona Norte.",
-    destacado: false,
+    tipologia: "Apartaestudios · aprobados para renta corta",
+    descripcion: "Inventario final: quedan siete de sesenta y seis unidades.",
     imagen: "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=600&h=400&fit=crop",
   },
-  {
-    nombre: "Doral West",
+  "doral-west": {
     href: "/proyectos/doral-west",
-    zona: "Zona Norte",
-    precio: "Consultar",
-    area: "70 – 95 m²",
-    tipologia: "Casas · Lote propio · 2 niveles",
-    descripcion: "Casas con lote propio y espacio para crecer en familia.",
-    destacado: false,
+    tipologia: "Casas de 1 y 2 pisos · lote propio · parqueadero privado",
+    descripcion: "Estructura preparada para crecer hasta un tercer nivel. Entregas documentadas por manzana.",
     imagen: "https://images.unsplash.com/photo-1605146769289-440113cc3d00?w=600&h=400&fit=crop",
   },
-  {
-    nombre: "Acacias Campestre",
+  "acacias-campestre": {
     href: null,
-    zona: "Cartagena",
-    precio: "Consultar",
-    area: "33 – 70 m²",
     tipologia: "22 torres · 904 apartamentos · 5 etapas",
     descripcion: "Entrada económica con valorización a mediano plazo. Perfil inversionista.",
-    destacado: false,
     imagen: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&h=400&fit=crop",
   },
-  {
-    nombre: "Blue Garden",
+  "blue-garden": {
     href: "/proyectos/blue-garden",
-    zona: "Turbaco",
-    precio: "Consultar",
-    area: "Lote 250 m² · 75 m² construidos",
-    tipologia: "Casas ampliables · 3 habitaciones · Jardín",
+    tipologia: "Casas ampliables · 3 habitaciones · jardín",
     descripcion: "Casa familiar con lote generoso y posibilidad de ampliación.",
-    destacado: false,
     imagen: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&h=400&fit=crop",
   },
-];
+};
+
+const ORDEN = ["doral-country", "doral-suite", "doral-west", "acacias-campestre", "blue-garden"];
+
+const proyectos = ORDEN.map((slug) => {
+  const d = getProyecto(slug)!;
+  const pres = PRESENTACION[slug];
+  const areas = [...new Set(d.tipologias.map((t) => t.area.valor))].join(" · ");
+  return {
+    nombre: d.nombre,
+    href: pres.href,
+    zona: d.zona,
+    precio: puedePublicarPrecio(d) && d.precio ? rangoPrecio(d.precio.desde, d.precio.hasta) : "Consultar",
+    muestraPrecio: puedePublicarPrecio(d) && d.precio !== null,
+    corte: d.precio?.corte ?? null,
+    area: areas,
+    tipologia: pres.tipologia,
+    descripcion: pres.descripcion,
+    destacado: pres.destacado ?? false,
+    imagen: pres.imagen,
+  };
+});
 
 const iconosZonaNorte = [
   { titulo: "Megaproyectos", texto: "Nuevo aeropuerto internacional, centros logísticos y desarrollos de gran escala están transformando la región." },
@@ -127,7 +132,10 @@ export default function Home() {
                     <p className="proyecto-tipo">{p.tipologia}</p>
                     <p className="proyecto-desc">{p.descripcion}</p>
                     <div className="proyecto-datos">
-                      <span className="dato"><strong>{p.precio}</strong> <em>desde</em></span>
+                      <span className="dato">
+                        <strong>{p.precio}</strong>{" "}
+                        <em>{p.muestraPrecio ? `corte ${p.corte}` : "desde"}</em>
+                      </span>
                       <span className="dato-sep" />
                       <span className="dato">{p.area}</span>
                     </div>
@@ -231,11 +239,16 @@ export default function Home() {
               Para información actualizada, contáctanos directamente.
             </p>
             <p className="footer-circular">
-              De conformidad con la Circular 004 de la Superintendencia
-              de Industria y Comercio (SIC), la información completa de
-              cada proyecto —incluyendo dirección exacta, estrato,
-              fecha de entrega y reglamento de propiedad horizontal—
-              está disponible para consulta directa con el asesor.
+              Los precios aquí publicados son de referencia, en pesos
+              colombianos, a la fecha de corte que acompaña a cada cifra, y
+              están sujetos a disponibilidad. Cada proyecto publica su área
+              con la etiqueta textual de la fuente del promotor y declara si
+              su equivalencia con el área privada construida del artículo 3 de
+              la Ley 675 de 2001 está pendiente de certificación. La
+              información precontractual del numeral 2.16.2 de la Circular 004
+              de la SIC —estrato, cuota de administración, fecha de entrega,
+              valor de desistimiento y plan de etapas— se entrega por escrito
+              antes de cualquier separación.
             </p>
             <p className="footer-legal-links">
               <Link href="/privacidad">Política de tratamiento de datos</Link>

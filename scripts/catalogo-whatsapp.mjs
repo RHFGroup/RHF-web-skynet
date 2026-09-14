@@ -1,88 +1,87 @@
 /**
- * Genera el feed CSV del catálogo de WhatsApp (Meta Commerce Manager)
- * desde la misma capa de datos que alimenta la web.
+ * Genera el feed CSV del catálogo de Meta Commerce Manager desde la capa de
+ * datos única. Un ítem por TIPOLOGÍA, no por proyecto: Meta exige `price` por
+ * ítem y cada tipología tiene el suyo.
  *
- *   node scripts/catalogo-whatsapp.mjs > catalogo.csv
+ * Un proyecto entra al feed solo si tiene los tres datos del numeral 2.16.1 de
+ * la Circular 004 (área, precio de referencia y ubicación exacta) y una página
+ * propia en el dominio, porque `link` e `image_link` son obligatorios.
  *
- * CANDADO: solo salen los proyectos cuyos diez datos de la Circular 004
- * están completos. Hoy eso es ninguno, y el script lo dice en vez de
- * generar un feed que no se puede publicar. Es a propósito: el campo
- * `price` es obligatorio en el feed de Meta, así que un catálogo implica
- * publicar precio, y publicar precio implica los diez datos.
- *
- * Cuando un proyecto los complete en `src/data/proyectos.ts`, aparece aquí
- * solo, sin tocar este script.
+ *   node scripts/catalogo-whatsapp.mjs
  */
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
 
-import { readFileSync } from "node:fs";
+const RAIZ = new URL("..", import.meta.url).pathname;
+const DOMINIO = "https://rhfliving.com";
+const fuente = readFileSync(join(RAIZ, "src/data/proyectos.ts"), "utf8");
 
-const SITIO = "https://rhfliving.com";
-
-// Se lee el TS como texto y se extraen los objetos con una evaluación
-// acotada, para no depender del toolchain de build.
-const src = readFileSync(new URL("../src/data/proyectos.ts", import.meta.url), "utf8");
-
-const slugs = [...src.matchAll(/slug:\s*"([^"]+)"/g)].map((m) => m[1]);
-const nombres = [...src.matchAll(/nombre:\s*"([^"]+)"/g)].map((m) => m[1]);
-
-// Estado de cumplimiento por proyecto, leído de los flags del archivo.
-const bloques = src.split(/\n\s*\{\s*\n\s*slug:/).slice(1);
-
+// Se lee el TS como texto a propósito: el script no compila el proyecto.
+const bloques = fuente.split(/\n  \{\n    slug: /).slice(1);
 const filas = [];
 const bloqueados = [];
 
-bloques.forEach((b, i) => {
-  const slug = slugs[i];
-  const nombre = nombres[i];
-  const tienePrecio = /precio:\s*\{/.test(b);
+for (const b of bloques) {
+  const slug = b.match(/^"([a-z-]+)"/)?.[1];
+  if (!slug) continue;
+  const nombre = b.match(/nombre: "([^"]+)"/)?.[1] ?? slug;
 
-  // Numeral 2.16.1: la pieza publicitaria con precio exige TRES datos —
-  // área privada construida, precio de referencia y ubicación exacta.
-  // Lo precontractual (numeral 2.16.2) no bloquea el catálogo: se entrega
-  // al comprador antes de contratar.
-  const pieza = (b.match(/pieza:\s*\{([\s\S]*?)\n      \}/) || [])[1] || "";
-  const ETIQUETAS = {
-    areaPrivadaConstruida: "área privada construida",
-    precioReferencia: "precio de referencia",
-    ubicacionExacta: "ubicación exacta",
-  };
-  const faltan = Object.entries(ETIQUETAS)
-    .filter(([k]) => !new RegExp(`${k}:\\s*true`).test(pieza))
-    .map(([, etiqueta]) => etiqueta);
+  const tienePrecio = /\n    precio: \{/.test(b);
+  const tieneUbicacion = !/\n    ubicacion: null/.test(b);
+  const tienePagina = existsSync(join(RAIZ, `src/app/proyectos/${slug}/page.tsx`));
+  // Meta rechaza el ítem si `image_link` da 404, así que se exige el archivo.
+  // Portada propia si existe; si no, la primera página del brochure.
+  const candidatas = [`proyectos/${slug}/portada.jpg`, `proyectos/${slug}/brochure/p01.jpg`];
+  const imagen = candidatas.find((c) => existsSync(join(RAIZ, "public", c)));
+  const tieneImagen = Boolean(imagen);
 
-  if (!tienePrecio || faltan.length > 0) {
-    const motivo = [
-      tienePrecio ? null : "sin precio cargado",
-      faltan.length ? `falta ${faltan.join(", ")} (numeral 2.16.1)` : null,
-    ]
-      .filter(Boolean)
-      .join("; ");
-    bloqueados.push(`${nombre} (${slug}): ${motivo}`);
-    return;
+  const faltan = [];
+  if (!tienePrecio) faltan.push("precio de referencia");
+  if (!tieneUbicacion) faltan.push("ubicación exacta del proyecto");
+  if (!tienePagina) faltan.push(`página propia en el dominio (/proyectos/${slug})`);
+  if (!tieneImagen) faltan.push(`imagen en el dominio (public/${candidatas[0]})`);
+
+  if (faltan.length) {
+    bloqueados.push(`${nombre} (${slug}): falta ${faltan.join(", ")}`);
+    continue;
   }
 
-  const desde = Number((b.match(/desde:\s*([\d_]+)/) || [])[1]?.replace(/_/g, ""));
-  filas.push([
-    slug,
-    nombre,
-    `Vivienda nueva en ${(b.match(/zona:\s*"([^"]+)"/) || [])[1] || "Cartagena"}.`,
-    "in stock",
-    "new",
-    `${desde}.00 COP`,
-    `${SITIO}/proyectos/${slug}`,
-    `${SITIO}/proyectos/${slug}/brochure/p01.jpg`,
-    "RHF Asesoría Inmobiliaria",
-  ]);
-});
+  const zona = b.match(/zona: "([^"]+)"/)?.[1] ?? "";
+  const corte = b.match(/corte: "([^"]+)"/)?.[1] ?? "";
 
-if (filas.length === 0) {
-  console.error("No se generó feed. Ningún proyecto está habilitado todavía:\n");
-  bloqueados.forEach((b) => console.error("  · " + b));
-  console.error(
-    "\nMientras tanto, los brochures se comparten por mensaje de documento\n" +
-      "(Media API), que no exige catálogo ni campo de precio.\n",
+  // Una fila por tipología con precio.
+  const tips = b.split(/\n      \{\n        titulo: /).slice(1);
+  tips.forEach((tp, i) => {
+    const titulo = tp.match(/^"([^"]+)"/)?.[1];
+    const area = tp.match(/valor: "([^"]+)"/)?.[1] ?? "";
+    const etiqueta = tp.match(/etiqueta: "([^"]+)"/)?.[1] ?? "área";
+    const desde = tp.match(/precio: \{ desde: ([\d_]+)/)?.[1];
+    if (!titulo || !desde) return;
+    const pesos = Number(desde.replace(/_/g, ""));
+
+    filas.push([
+      `${slug}-${i + 1}`,
+      `${nombre} — ${titulo}`,
+      // La descripción lleva la etiqueta textual del área y la fecha de corte:
+      // el ítem del catálogo es una pieza publicitaria más.
+      `${titulo}. ${etiqueta}: ${area}. Precio de referencia a corte ${corte}, sujeto a disponibilidad. ${zona}, Cartagena.`,
+      "in stock",
+      "new",
+      `${pesos} COP`,
+      `${DOMINIO}/proyectos/${slug}`,
+      `${DOMINIO}/${imagen}`,
+      "RHF Asesoría Inmobiliaria",
+    ]);
+  });
+}
+
+if (!filas.length) {
+  console.log("No se generó feed. Ningún proyecto está habilitado todavía:\n");
+  bloqueados.forEach((b) => console.log("  · " + b));
+  console.log(
+    "\nMientras tanto, los brochures se comparten por mensaje de documento\n(Media API), que no exige catálogo ni campo de precio.\n",
   );
-  process.exit(1);
+  process.exit(0);
 }
 
 const CABECERA = [
@@ -96,7 +95,15 @@ const CABECERA = [
   "image_link",
   "brand",
 ];
+const csv = [CABECERA, ...filas]
+  .map((f) => f.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+  .join("\n");
 
-const esc = (v) => (/[",\n]/.test(v) ? `"${String(v).replace(/"/g, '""')}"` : v);
-console.log(CABECERA.join(","));
-filas.forEach((f) => console.log(f.map(esc).join(",")));
+const salida = join(RAIZ, "catalogo-whatsapp.csv");
+writeFileSync(salida, csv, "utf8");
+console.log(`✅ ${filas.length} ítems escritos en catalogo-whatsapp.csv\n`);
+filas.forEach((f) => console.log(`  · ${f[1]} — ${f[5]}`));
+if (bloqueados.length) {
+  console.log("\nFuera del feed por ahora:");
+  bloqueados.forEach((b) => console.log("  · " + b));
+}

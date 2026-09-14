@@ -58,6 +58,7 @@ export const metadata: Metadata = {
 };
 
 const doralCountry: ProyectoData = {
+  slug: "doral-country",
   nombre: "Doral Country",
   zona: "Zona Norte",
   heroTitulo: "Apartamentos en un condominio cerrado con piscina y zonas comunes",

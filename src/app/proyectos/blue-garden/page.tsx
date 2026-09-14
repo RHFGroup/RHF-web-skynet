@@ -2,16 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import BrochureGaleria from "@/components/BrochureGaleria";
 import MeInteresaButton from "@/components/MeInteresaButton";
-import { getProyecto, puedePublicarPrecio } from "@/data/proyectos";
+import BloqueLegal from "@/components/BloqueLegal";
+import { getProyecto, puedePublicarPrecio, rangoPrecio } from "@/data/proyectos";
 
 /**
  * Blue Garden. Todo el contenido sale de `src/data/proyectos.ts`.
  *
- * ⛔ No se publica precio todavía. `puedePublicarPrecio` es el candado y hoy
- * falta UN dato del numeral 2.16.1: el área privada construida. El brochure
- * dice «área contruida», que es otra cosa (art. 3, Ley 675 de 2001). En cuanto
- * Invercolombia lo certifique, se pone `areaPrivadaConstruida: true` en
- * `proyectos.ts` y el precio aparece solo, acá y en el catálogo.
+ * El precio se publica con el bloque legal del numeral 2.16.1 debajo. El área
+ * va con la etiqueta literal del brochure («Área construida») y el bloque
+ * declara que su equivalencia con el área privada construida del art. 3 de la
+ * Ley 675 de 2001 está pendiente de certificación de Invercolombia.
  *
  * ⛔ Blue Garden NO está en la Zona Norte: está sobre la vía a Turbaco. No
  * reusar el bloque de copy de Zona Norte de `ProyectoLanding`.
@@ -70,6 +70,12 @@ export default function BlueGarden() {
           ))}
 
           <dl className="proyecto-datos">
+            {p.tipologias.map((tp) => (
+              <div key={tp.area.etiqueta}>
+                <dt>{tp.area.etiqueta}</dt>
+                <dd>{tp.area.valor}</dd>
+              </div>
+            ))}
             {p.datos.map((d) => (
               <div key={d.label}>
                 <dt>{d.label}</dt>
@@ -80,8 +86,11 @@ export default function BlueGarden() {
 
           {muestraPrecio && p.precio && (
             <p className="proyecto-precio">
-              Precio de referencia: desde ${p.precio.desde.toLocaleString("es-CO")}{" "}
-              COP · corte {p.precio.corte}
+              <strong>{rangoPrecio(p.precio.desde, p.precio.hasta)}</strong>{" "}
+              <span>
+                precio de referencia · {p.precio.unidadesDisponibles} casas
+                disponibles · corte {p.precio.corte}
+              </span>
             </p>
           )}
         </section>
@@ -108,6 +117,8 @@ export default function BlueGarden() {
           nombre={p.nombre}
         />
 
+        <BloqueLegal p={p} />
+
         <section className="proyecto-legal">
           <p>
             Material ilustrativo del proyecto. Las áreas se citan con la
@@ -119,10 +130,10 @@ export default function BlueGarden() {
           </p>
           <p>
             Esta página <strong>no constituye oferta comercial</strong> en los
-            términos del artículo 845 del Código de Comercio. Para precio
-            vigente, disponibilidad, estrato, cuota de administración, fecha de
-            entrega y condiciones de desistimiento, consulta directamente con el
-            asesor. {p.promotor}.
+            términos del artículo 845 del Código de Comercio. Para
+            disponibilidad al día de hoy, estrato, cuota de administración,
+            fecha de entrega y condiciones de desistimiento, consulta
+            directamente con el asesor. {p.promotor}.
           </p>
         </section>
 
