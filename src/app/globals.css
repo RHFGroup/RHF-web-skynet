@@ -920,3 +920,39 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
 .legal-body a {
   color: var(--color-cuero);
 }
+
+/* ── Páginas de proyecto desde la capa de datos ───────────── */
+.proyecto { background: var(--color-marfil); color: var(--color-marino); min-height: 100vh; }
+.proyecto-wrap { max-width: 900px; margin: 0 auto; padding: 56px 20px 96px; }
+.proyecto-volver { font-size: 13px; color: var(--color-cuero); text-decoration: none; }
+.proyecto-volver:hover { text-decoration: underline; }
+.proyecto-hero { margin-top: 28px; }
+.proyecto-zona { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-cuero); }
+.proyecto-hero h1 { font-family: var(--font-serif), serif; font-size: clamp(34px, 6vw, 54px); line-height: 1.08; margin: 10px 0 0; }
+.proyecto-intro { font-size: 17px; line-height: 1.65; margin-top: 16px; opacity: 0.85; }
+.proyecto-bloque { margin-top: 52px; }
+.proyecto-bloque h2 { font-family: var(--font-serif), serif; font-size: 28px; margin: 0 0 18px; }
+.proyecto-tipologia { border-left: 2px solid var(--color-camel); padding-left: 18px; margin-bottom: 22px; }
+.proyecto-tipologia h3 { font-size: 17px; margin: 0 0 6px; }
+.proyecto-tipologia p { line-height: 1.6; margin: 0; }
+.proyecto-fuente { font-size: 12px; opacity: 0.55; margin-top: 6px !important; }
+.proyecto-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px; margin: 26px 0 0; }
+.proyecto-datos dt { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.55; }
+.proyecto-datos dd { margin: 4px 0 0; font-size: 19px; font-weight: 600; }
+.proyecto-precio { margin-top: 24px; font-size: 18px; font-weight: 600; color: var(--color-cuero); }
+.proyecto-amenidades { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.proyecto-amenidades li { font-size: 14px; padding-left: 16px; position: relative; opacity: 0.85; }
+.proyecto-amenidades li::before { content: "·"; position: absolute; left: 3px; color: var(--color-camel); font-weight: 700; }
+.proyecto-legal { margin-top: 56px; padding-top: 24px; border-top: 1px solid rgb(31 42 61 / 0.15); }
+.proyecto-legal p { font-size: 12.5px; line-height: 1.65; opacity: 0.6; margin: 0 0 12px; }
+.proyecto-cta { margin-top: 36px; }
+
+/* ── Galería del brochure ─────────────────────────────────── */
+.brochure { margin-top: 56px; }
+.brochure-head h2 { font-family: var(--font-serif), serif; font-size: 28px; margin: 0 0 8px; }
+.brochure-head p { font-size: 14px; opacity: 0.7; margin: 0 0 14px; line-height: 1.6; }
+.brochure-pdf { display: inline-block; font-size: 13px; color: var(--color-cuero); border: 1px solid var(--color-camel); padding: 8px 16px; text-decoration: none; transition: background 0.2s ease; }
+.brochure-pdf:hover { background: var(--color-camel); color: var(--color-marfil); }
+.brochure-grid { margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.brochure-pag { margin: 0; }
+.brochure-pag img { width: 100%; height: auto; display: block; border: 1px solid rgb(31 42 61 / 0.08); }
