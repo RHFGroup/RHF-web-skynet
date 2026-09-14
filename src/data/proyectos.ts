@@ -13,12 +13,24 @@
  *    nunca traducida a "área privada construida", que es un concepto legal
  *    distinto (art. 3, Ley 675 de 2001).
  *
- * 2. `precio` existe pero NO se renderiza mientras `circular004.completo`
+ * 2. `precio` existe pero NO se renderiza mientras `circular004.pieza.completo`
  *    sea false. Decisión del vault `bloque-legal-circular-004-obligatorio-en-
- *    piezas-publicas` (aplicada, 1-sep-2026): toda pieza pública CON precio
- *    exige los diez datos de la Circular 004 de 2024 de la SIC. Hoy ningún
- *    proyecto los tiene. El día que estén, se pone `completo: true` y el
- *    precio aparece solo — en la web y en el catálogo a la vez.
+ *    piezas-publicas` (aplicada, 1-sep-2026).
+ *
+ *    CORRECCIÓN DEL 14-SEP-2026. Veníamos exigiendo los diez datos en la
+ *    pieza. Es más de lo que pide la norma y nos tenía bloqueados sin
+ *    necesidad. La Circular 004 separa dos momentos:
+ *
+ *      · numeral 2.16.1 — LA PIEZA PUBLICITARIA lleva tres datos:
+ *        área privada construida, precio de referencia en pesos y
+ *        ubicación exacta del proyecto.
+ *      · numeral 2.16.2 — la INFORMACIÓN PRECONTRACTUAL (estrato, parqueadero,
+ *        entrega, administración, acabados, etapas, desistimiento) se entrega
+ *        al comprador ANTES de contratar. No va en la pieza.
+ *
+ *    Por eso el candado evalúa solo los tres de `pieza`. Los precontractuales
+ *    se siguen registrando: son los que el asesor debe tener a la mano, y su
+ *    ausencia se muestra como advertencia interna, no como bloqueo.
  *
  * 3. Si dos fuentes se contradicen, NO se elige una en silencio: el dato
  *    queda en `conflictos` y no se publica hasta que la constructora aclare.
@@ -36,18 +48,27 @@ export type Conflicto = {
   versiones: { valor: string; fuente: string }[];
 };
 
-/** Los diez datos que exige el numeral 2.16 de la Circular 004 de 2024 (SIC). */
-export type Circular004 = {
-  direccionExacta: boolean;
+/** Numeral 2.16.1 — lo que TODA pieza publicitaria con precio debe llevar. */
+export type DatosDePieza = {
+  areaPrivadaConstruida: boolean;
+  precioReferencia: boolean;
+  ubicacionExacta: boolean;
+};
+
+/** Numeral 2.16.2 — se entrega al comprador antes de contratar, no se publica. */
+export type DatosPrecontractuales = {
   estrato: boolean;
   parqueadero: boolean;
   fechaEntrega: boolean;
-  areaPrivadaConstruida: boolean;
-  precioReferencia: boolean;
   administracion: boolean;
   acabados: boolean;
   planEtapas: boolean;
   desistimiento: boolean;
+};
+
+export type Circular004 = {
+  pieza: DatosDePieza;
+  precontractual: DatosPrecontractuales;
 };
 
 export type Proyecto = {
@@ -75,39 +96,46 @@ export type Proyecto = {
     corte: string;
     fuente: string;
   } | null;
-  circular004: Circular004 & { completo: boolean; faltan: string[] };
+  circular004: EstadoCircular004;
 };
 
-const SIN_CUMPLIR: Circular004 = {
-  direccionExacta: false,
-  estrato: false,
-  parqueadero: false,
-  fechaEntrega: false,
-  areaPrivadaConstruida: false,
-  precioReferencia: false,
-  administracion: false,
-  acabados: false,
-  planEtapas: false,
-  desistimiento: false,
+const ETIQUETAS_PIEZA: Record<keyof DatosDePieza, string> = {
+  areaPrivadaConstruida: "área privada construida",
+  precioReferencia: "precio de referencia",
+  ubicacionExacta: "ubicación exacta",
 };
 
-function evaluar(c: Circular004): Circular004 & { completo: boolean; faltan: string[] } {
-  const etiquetas: Record<keyof Circular004, string> = {
-    direccionExacta: "dirección exacta",
-    estrato: "estrato",
-    parqueadero: "naturaleza del parqueadero",
-    fechaEntrega: "fecha estimada de entrega",
-    areaPrivadaConstruida: "área privada construida",
-    precioReferencia: "precio de referencia",
-    administracion: "cuota de administración estimada",
-    acabados: "muebles, equipos y acabados",
-    planEtapas: "plan de etapas y zonas comunes",
-    desistimiento: "valor de desistimiento",
-  };
-  const faltan = (Object.keys(etiquetas) as (keyof Circular004)[])
-    .filter((k) => !c[k])
+const ETIQUETAS_PRECONTRACTUAL: Record<keyof DatosPrecontractuales, string> = {
+  estrato: "estrato",
+  parqueadero: "naturaleza del parqueadero",
+  fechaEntrega: "fecha estimada de entrega",
+  administracion: "cuota de administración estimada",
+  acabados: "muebles, equipos y acabados",
+  planEtapas: "plan de etapas y zonas comunes",
+  desistimiento: "valor de desistimiento",
+};
+
+export type EstadoCircular004 = {
+  pieza: DatosDePieza & { completo: boolean; faltan: string[] };
+  precontractual: DatosPrecontractuales & { completo: boolean; faltan: string[] };
+};
+
+function faltantes<T extends Record<string, boolean>>(
+  valores: T,
+  etiquetas: Record<keyof T, string>,
+): string[] {
+  return (Object.keys(etiquetas) as (keyof T)[])
+    .filter((k) => !valores[k])
     .map((k) => etiquetas[k]);
-  return { ...c, completo: faltan.length === 0, faltan };
+}
+
+function evaluar(c: Circular004): EstadoCircular004 {
+  const fp = faltantes(c.pieza, ETIQUETAS_PIEZA);
+  const fx = faltantes(c.precontractual, ETIQUETAS_PRECONTRACTUAL);
+  return {
+    pieza: { ...c.pieza, completo: fp.length === 0, faltan: fp },
+    precontractual: { ...c.precontractual, completo: fx.length === 0, faltan: fx },
+  };
 }
 
 export const PROYECTOS: Proyecto[] = [
@@ -159,10 +187,23 @@ export const PROYECTOS: Proyecto[] = [
       fuente: "LISTADO DE PRECIO Y DISPONIBILIDAD, hoja «Blue Garden Disponibilidades»",
     },
     circular004: evaluar({
-      ...SIN_CUMPLIR,
-      precioReferencia: true,
-      acabados: true,
-      parqueadero: true,
+      pieza: {
+        // El brochure dice «Área contruida 75 m²» — sin la palabra «privada».
+        // Es otra cosa (art. 3, Ley 675 de 2001) y es el único dato que hoy
+        // impide publicar el precio. Pedido a Invercolombia el 14-sep-2026.
+        areaPrivadaConstruida: false,
+        precioReferencia: true,
+        ubicacionExacta: true,
+      },
+      precontractual: {
+        estrato: false,
+        parqueadero: true,
+        fechaEntrega: false,
+        administracion: false,
+        acabados: true,
+        planEtapas: false,
+        desistimiento: false,
+      },
     }),
   },
   {
@@ -217,9 +258,20 @@ export const PROYECTOS: Proyecto[] = [
     brochurePdf: "/proyectos/doral-country/brochure.pdf",
     precio: null,
     circular004: evaluar({
-      ...SIN_CUMPLIR,
-      direccionExacta: true,
-      parqueadero: true,
+      pieza: {
+        areaPrivadaConstruida: false,
+        precioReferencia: false,
+        ubicacionExacta: true,
+      },
+      precontractual: {
+        estrato: false,
+        parqueadero: true,
+        fechaEntrega: false,
+        administracion: false,
+        acabados: false,
+        planEtapas: false,
+        desistimiento: false,
+      },
     }),
   },
 ];
@@ -228,7 +280,15 @@ export function getProyecto(slug: string): Proyecto | undefined {
   return PROYECTOS.find((p) => p.slug === slug);
 }
 
-/** Un proyecto solo muestra precio cuando los diez datos están completos. */
+/**
+ * El precio sale cuando hay precio cargado y los TRES datos del numeral 2.16.1
+ * están. Los precontractuales no bloquean la pieza: se entregan aparte.
+ */
 export function puedePublicarPrecio(p: Proyecto): boolean {
-  return p.precio !== null && p.circular004.completo;
+  return p.precio !== null && p.circular004.pieza.completo;
+}
+
+/** Lo que el asesor debe tener a la mano antes de contratar. Nunca bloquea. */
+export function faltaPrecontractual(p: Proyecto): string[] {
+  return p.circular004.precontractual.faltan;
 }

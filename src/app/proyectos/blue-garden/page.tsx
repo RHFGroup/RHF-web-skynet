@@ -7,9 +7,11 @@ import { getProyecto, puedePublicarPrecio } from "@/data/proyectos";
 /**
  * Blue Garden. Todo el contenido sale de `src/data/proyectos.ts`.
  *
- * ⛔ No se publica precio: la decisión del vault `bloque-legal-circular-004-
- * obligatorio-en-piezas-publicas` exige los diez datos de la Circular 004
- * cuando la pieza lleva precio. `puedePublicarPrecio` es el candado.
+ * ⛔ No se publica precio todavía. `puedePublicarPrecio` es el candado y hoy
+ * falta UN dato del numeral 2.16.1: el área privada construida. El brochure
+ * dice «área contruida», que es otra cosa (art. 3, Ley 675 de 2001). En cuanto
+ * Invercolombia lo certifique, se pone `areaPrivadaConstruida: true` en
+ * `proyectos.ts` y el precio aparece solo, acá y en el catálogo.
  *
  * ⛔ Blue Garden NO está en la Zona Norte: está sobre la vía a Turbaco. No
  * reusar el bloque de copy de Zona Norte de `ProyectoLanding`.
