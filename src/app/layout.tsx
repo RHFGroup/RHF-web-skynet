@@ -17,7 +17,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://rhf-web-skynet.vercel.app"),
+  metadataBase: new URL("https://rhfliving.com"),
   title: "RHF — Asesoría Inmobiliaria Premium en Cartagena",
   description:
     "Rafael Hernández Franco. Asesoría inmobiliaria premium en Cartagena y la Zona Norte. Conoce nuestra cartera: Doral Country, Doral Suite, Doral West, Acacias Campestre y Blue Garden.",
@@ -34,13 +34,13 @@ export const metadata: Metadata = {
     title: "RHF — Asesoría Inmobiliaria Premium en Cartagena",
     description:
       "Nuestra cartera de proyectos en la Zona Norte y alrededores. Te acompañamos en cada paso.",
-    url: "https://rhf-web-skynet.vercel.app",
+    url: "https://rhfliving.com",
     siteName: "RHF Asesoría Inmobiliaria",
     locale: "es_CO",
     type: "website",
     images: [
       {
-        url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&h=630&fit=crop",
+        url: "https://rhfliving.com/og.jpg",
         width: 1200,
         height: 630,
         alt: "RHF — Asesoría Inmobiliaria Cartagena",
@@ -53,11 +53,19 @@ export const metadata: Metadata = {
     description:
       "Nuestra cartera de proyectos en la Zona Norte y alrededores.",
     images: [
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&h=630&fit=crop",
+      "https://rhfliving.com/og.jpg",
     ],
   },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   robots: { index: true, follow: true },
-  alternates: { canonical: "https://rhf-web-skynet.vercel.app" },
+  alternates: { canonical: "https://rhfliving.com" },
 };
 
 const jsonLd = {
@@ -66,7 +74,7 @@ const jsonLd = {
   name: "RHF — Rafael Hernández Franco",
   description:
     "Asesoría inmobiliaria premium en Cartagena y la Zona Norte. Cartera de proyectos: Doral Country, Doral Suite, Doral West, Acacias Campestre, Blue Garden.",
-  url: "https://rhf-web-skynet.vercel.app",
+  url: "https://rhfliving.com",
   address: {
     "@type": "PostalAddress",
     addressLocality: "Cartagena",
