@@ -71,6 +71,7 @@ import Link from "next/link";
 import MeInteresaButton from "@/components/MeInteresaButton";
 import ContactForm from "@/components/ContactForm";
 import HeroParticles from "@/components/HeroParticles";
+import { enlaceWhatsApp, SALUDO_WHATSAPP } from "@/data/contacto";
 
 export default function Home() {
   return (
@@ -84,7 +85,7 @@ export default function Home() {
             <a href="#zonanorte">Zona Norte</a>
             <a href="#contacto">Contacto</a>
           </nav>
-          <a className="nav-cta" href="https://wa.me/573000000000?text=Hola%20Rafael,%20vi%20tu%20página%20y%20me%20interesa%20:" target="_blank" rel="noopener noreferrer">
+          <a className="nav-cta" href={enlaceWhatsApp(SALUDO_WHATSAPP)} target="_blank" rel="noopener noreferrer">
             Escríbenos
           </a>
         </div>
@@ -106,7 +107,7 @@ export default function Home() {
               <a className="btn-primary" href="#cartera">
                 Ver nuestra cartera
               </a>
-              <a className="btn-ghost" href="https://wa.me/573000000000?text=Hola%20Rafael,%20vi%20tu%20página%20y%20me%20interesa%20:" target="_blank" rel="noopener noreferrer">
+              <a className="btn-ghost" href={enlaceWhatsApp(SALUDO_WHATSAPP)} target="_blank" rel="noopener noreferrer">
                 <WhatsAppIcon /> Contactar
               </a>
             </div>
@@ -200,7 +201,7 @@ export default function Home() {
               <div className="contacto-canales">
                 <a
                   className="btn-whatsapp"
-                  href="https://wa.me/573000000000?text=Hola%20Rafael,%20vi%20tu%20página%20y%20me%20interesa%20:"
+                  href={enlaceWhatsApp(SALUDO_WHATSAPP)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -263,7 +264,7 @@ export default function Home() {
       {/* ── WhatsApp flotante ───────────────── */}
       <a
         className="whatsapp-float"
-        href="https://wa.me/573000000000?text=Hola%20Rafael,%20vi%20tu%20página%20y%20me%20interesa%20:"
+        href={enlaceWhatsApp(SALUDO_WHATSAPP)}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat por WhatsApp"

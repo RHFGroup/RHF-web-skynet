@@ -1027,3 +1027,31 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
 @media (max-width: 600px) {
   .bloque-legal { padding: 1.25rem; border-radius: 10px; }
 }
+
+/* ── Formulario: consentimiento de habeas data ───────────────────────────── */
+.form-consentimiento {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem;
+  align-items: start;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+.form-consentimiento input[type="checkbox"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: 0.15rem;
+  flex: none;
+  accent-color: currentColor;
+  cursor: pointer;
+}
+.form-consentimiento a { text-decoration: underline; }
+.form-error {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  background: color-mix(in srgb, #c0392b 14%, transparent);
+  border-left: 3px solid #c0392b;
+}
