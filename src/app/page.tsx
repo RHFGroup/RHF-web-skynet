@@ -79,7 +79,9 @@ export default function Home() {
       {/* ── Nav ─────────────────────────────── */}
       <header className="nav">
         <div className="nav-inner">
-          <a className="brand" href="#inicio">RHF</a>
+          <a className="brand" href="#inicio" aria-label="RHF Living — inicio">
+            <img src="/marca/rhf-living-oscuro.svg" alt="RHF Living" width="215" height="48" />
+          </a>
           <nav className="nav-links">
             <a href="#cartera">Nuestra cartera</a>
             <a href="#zonanorte">Zona Norte</a>
@@ -223,7 +225,7 @@ export default function Home() {
       <footer className="site-footer">
         <div className="footer-inner">
           <div className="footer-top">
-            <span className="footer-brand">RHF</span>
+            <img className="footer-brand" src="/marca/rhf-living.svg" alt="RHF Living" width="196" height="44" />
             <div className="footer-links">
               <a href="#inicio">Inicio</a>
               <a href="#cartera">Nuestra cartera</a>
@@ -256,7 +258,7 @@ export default function Home() {
               {" · "}
               <Link href="/terminos">Términos de uso</Link>
             </p>
-            <p className="footer-copy">© {new Date().getFullYear()} RHF. Todos los derechos reservados.</p>
+            <p className="footer-copy">© {new Date().getFullYear()} RHF Living. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>
