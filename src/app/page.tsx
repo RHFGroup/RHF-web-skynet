@@ -1,42 +1,85 @@
-import { PROYECTOS, puedePublicarPrecio, rangoPrecio, getProyecto } from "@/data/proyectos";
-
 /**
+ * La home de rhfliving.com — una sola, desde el 18 de septiembre de 2026.
+ *
+ * Reemplaza a las tres portadas que convivían (`/`, `/home-b` y `/home-c`).
+ * Se armó así, por pedido de Rafael:
+ *
+ *  · El cuerpo es el de home-c: Zona Norte antes de la cartera, el mapa del
+ *    territorio y la cartera que se recorre ficha por ficha. Es el copy ya
+ *    corregido contra la research del vault — sin el aeropuerto como hecho
+ *    consumado y sin «la mayor valorización predial».
+ *  · La barra de navegación es la de la home vieja, con el logo RHF Living.
+ *  · El over the fold es el de home-b: imagen de fondo fija, sin partículas.
+ *  · El pie de página es el de la home vieja, que trae el bloque legal bueno
+ *    (precio de referencia con fecha de corte, etiqueta textual del área,
+ *    Ley 675 y numeral 2.16.2) y los enlaces a privacidad y términos.
+ *
  * Las tarjetas leen de `src/data/proyectos.ts`. El precio aparece solo cuando
  * el proyecto tiene los tres datos del numeral 2.16.1 de la Circular 004; si
  * no, dice «Consultar». Nunca se escribe un precio a mano en esta página: fue
  * así como la home terminó anunciando Doral West $145 millones por debajo.
  */
-const PRESENTACION: Record<string, { href: string | null; tipologia: string; descripcion: string; destacado?: boolean; imagen: string }> = {
+import Link from "next/link";
+import ContactForm from "@/components/ContactForm";
+import ZonaNorte from "@/components/ZonaNorte";
+import MapaZona from "@/components/MapaZona";
+import Cartera from "@/components/Cartera";
+import Reveal from "@/components/Reveal";
+import { enlaceWhatsApp, SALUDO_WHATSAPP } from "@/data/contacto";
+import { puedePublicarPrecio, rangoPrecio, getProyecto } from "@/data/proyectos";
+
+/**
+ * Lo único que se escribe a mano por proyecto: cómo se presenta y a dónde
+ * lleva. `href: null` es un proyecto sin landing propia todavía — la ficha
+ * queda con «Me interesa» y sin enlace, nunca con un enlace roto.
+ * `variante` es la animación de entrada de la ficha en el recorrido.
+ */
+const PRESENTACION: Record<
+  string,
+  {
+    href: string | null;
+    tipologia: string;
+    descripcion: string;
+    destacado?: boolean;
+    imagen: string;
+    variante: "zoom" | "up" | "left" | "blur";
+  }
+> = {
   "doral-country": {
     href: "/proyectos/doral-country",
     tipologia: "Apartamentos en torres · 6 torres · ascensor",
     descripcion: "El lanzamiento más reciente del desarrollo Doral, sobre la Vía al Mar.",
     destacado: true,
     imagen: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop",
+    variante: "zoom",
   },
   "doral-suite": {
     href: null,
     tipologia: "Apartaestudios · aprobados para renta corta",
     descripcion: "Inventario final: quedan siete de sesenta y seis unidades.",
     imagen: "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=600&h=400&fit=crop",
+    variante: "up",
   },
   "doral-west": {
     href: "/proyectos/doral-west",
     tipologia: "Casas de 1 y 2 pisos · lote propio · parqueadero privado",
     descripcion: "Estructura preparada para crecer hasta un tercer nivel. Entregas documentadas por manzana.",
     imagen: "https://images.unsplash.com/photo-1605146769289-440113cc3d00?w=600&h=400&fit=crop",
+    variante: "up",
   },
   "acacias-campestre": {
     href: null,
     tipologia: "22 torres · 904 apartamentos · 5 etapas",
     descripcion: "Entrada económica con valorización a mediano plazo. Perfil inversionista.",
     imagen: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&h=400&fit=crop",
+    variante: "left",
   },
   "blue-garden": {
     href: "/proyectos/blue-garden",
     tipologia: "Casas ampliables · 3 habitaciones · jardín",
     descripcion: "Casa familiar con lote generoso y posibilidad de ampliación.",
     imagen: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&h=400&fit=crop",
+    variante: "blur",
   },
 };
 
@@ -58,20 +101,11 @@ const proyectos = ORDEN.map((slug) => {
     descripcion: pres.descripcion,
     destacado: pres.destacado ?? false,
     imagen: pres.imagen,
+    variante: pres.variante,
   };
 });
 
-const iconosZonaNorte = [
-  { titulo: "Megaproyectos", texto: "Nuevo aeropuerto internacional, centros logísticos y desarrollos de gran escala están transformando la región." },
-  { titulo: "Valorización", texto: "La Zona Norte registra la mayor valorización predial de Cartagena. Invertir hoy es anticiparse al crecimiento." },
-  { titulo: "Conexión", texto: "Vías en ampliación, cercanía al centro histórico y acceso directo a la Vía al Mar." },
-];
-
-import Link from "next/link";
-import MeInteresaButton from "@/components/MeInteresaButton";
-import ContactForm from "@/components/ContactForm";
-import HeroParticles from "@/components/HeroParticles";
-import { enlaceWhatsApp, SALUDO_WHATSAPP } from "@/data/contacto";
+const WA_LINK = enlaceWhatsApp(SALUDO_WHATSAPP);
 
 export default function Home() {
   return (
@@ -87,16 +121,16 @@ export default function Home() {
             <a href="#zonanorte">Zona Norte</a>
             <a href="#contacto">Contacto</a>
           </nav>
-          <a className="nav-cta" href={enlaceWhatsApp(SALUDO_WHATSAPP)} target="_blank" rel="noopener noreferrer">
+          <a className="nav-cta" href={WA_LINK} target="_blank" rel="noopener noreferrer">
             Escríbenos
           </a>
         </div>
       </header>
 
       <main>
-        {/* ── Hero ─────────────────────────────── */}
+        {/* ── Over the fold ────────────────────── */}
         <section className="hero-wrap" id="inicio">
-          <HeroParticles />
+          <div className="hero-bg" />
           <div className="hero-content">
             <p className="eyebrow">Asesoría inmobiliaria · Cartagena</p>
             <h1>Tu próximo proyecto,<br />en la mejor ubicación.</h1>
@@ -109,91 +143,26 @@ export default function Home() {
               <a className="btn-primary" href="#cartera">
                 Ver nuestra cartera
               </a>
-              <a className="btn-ghost" href={enlaceWhatsApp(SALUDO_WHATSAPP)} target="_blank" rel="noopener noreferrer">
+              <a className="btn-ghost" href={WA_LINK} target="_blank" rel="noopener noreferrer">
                 <WhatsAppIcon /> Contactar
               </a>
             </div>
           </div>
         </section>
 
-        {/* ── Cartera ─────────────────────── */}
-        <section className="section" id="cartera">
-          <div className="section-shell">
-            <p className="section-kicker">Nuestra cartera</p>
-            <h2>Proyectos que asesoramos</h2>
-            <p className="section-lede">Cinco proyectos en Cartagena, la Zona Norte y alrededores. Cada uno con su perfil: desde entrada económica hasta vivienda premium.</p>
-            <div className="proyectos-grid">
-              {proyectos.map((p) => (
-                <article className={"proyecto-card" + (p.destacado ? " destacado" : "")} key={p.nombre}>
-                  <div className="proyecto-img">
-                    <img src={p.imagen} alt={p.nombre} loading="lazy" />
-                    <span className="proyecto-tag">{p.zona}</span>
-                    {p.destacado && <span className="proyecto-tag proyecto-tag-nuevo">Nuevo</span>}
-                  </div>
-                  <div className="proyecto-body">
-                    <h3>{p.nombre}</h3>
-                    <p className="proyecto-tipo">{p.tipologia}</p>
-                    <p className="proyecto-desc">{p.descripcion}</p>
-                    <div className="proyecto-datos">
-                      <span className="dato">
-                        <strong>{p.precio}</strong>{" "}
-                        <em>{p.muestraPrecio ? `corte ${p.corte}` : "desde"}</em>
-                      </span>
-                      <span className="dato-sep" />
-                      <span className="dato">{p.area}</span>
-                    </div>
-                    <div className="proyecto-acciones">
-                      <MeInteresaButton />
-                      {p.href && (
-                        <Link className="proyecto-link" href={p.href}>
-                          Ver el proyecto
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* ── Zona Norte (antes que la cartera) ── */}
+        <ZonaNorte />
 
-        {/* ── Zona Norte ──────────────────── */}
-        <section className="section section-zone" id="zonanorte">
-          <div className="section-shell">
-            <div className="zone-grid">
-              <div className="zone-text">
-                <p className="section-kicker">Zona Norte</p>
-                <h2>Por qué invertir en la Zona Norte de Cartagena</h2>
-                <p className="section-lede">
-                  La Zona Norte es el eje de expansión de Cartagena.
-                  Megaproyectos, nu evo aeropuerto y la mayor valorización
-                  de la ciudad la convierten en la mejor oportunidad
-                  de inversión inmobiliaria hoy.
-                </p>
-                <div className="zone-iconos">
-                  {iconosZonaNorte.map((i) => (
-                    <div className="zone-icono" key={i.titulo}>
-                      <h4>{i.titulo}</h4>
-                      <p>{i.texto}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="zone-img">
-                <img
-                  src="https://images.unsplash.com/photo-1600047509358-9dc75507daeb?w=700&h=900&fit=crop"
-                  alt="Zona Norte Cartagena"
-                  loading="lazy"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* ── El territorio · mapa interactivo ─── */}
+        <MapaZona />
 
-        {/* ── Contacto ─────────────────────── */}
+        {/* ── La cartera ───────────────────────── */}
+        <Cartera proyectos={proyectos} />
+
+        {/* ── Contacto ─────────────────────────── */}
         <section className="section section-contacto" id="contacto">
           <div className="section-shell contacto-shell">
-            <div className="contacto-texto">
+            <Reveal className="contacto-texto" variant="up">
               <p className="section-kicker">Contacto</p>
               <h2>Hablemos de tu próximo proyecto</h2>
               <p className="section-lede">
@@ -203,7 +172,7 @@ export default function Home() {
               <div className="contacto-canales">
                 <a
                   className="btn-whatsapp"
-                  href={enlaceWhatsApp(SALUDO_WHATSAPP)}
+                  href={WA_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -212,11 +181,13 @@ export default function Home() {
                 <p className="contacto-chat-hint">
                   ¿Prefieres chatear directo en la página? Usa el ícono
                   de chat abajo a la derecha — nuestro agente te responde
-                  al instante sobre precios, disponibilidad y más.
+                  al instante sobre disponibilidad, plazos y condiciones.
                 </p>
               </div>
-            </div>
-            <ContactForm />
+            </Reveal>
+            <Reveal variant="up" delay={140}>
+              <ContactForm />
+            </Reveal>
           </div>
         </section>
       </main>
@@ -266,7 +237,7 @@ export default function Home() {
       {/* ── WhatsApp flotante ───────────────── */}
       <a
         className="whatsapp-float"
-        href={enlaceWhatsApp(SALUDO_WHATSAPP)}
+        href={WA_LINK}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat por WhatsApp"
@@ -279,7 +250,7 @@ export default function Home() {
 
 function WhatsAppIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.742.324 1.322.52 1.774.645.745.237 1.422.203 1.957.123.595-.089 1.832-.748 2.09-1.471.258-.723.258-1.342.183-1.472-.074-.131-.272-.213-.57-.362m-5.436 6.868h-.004a9.68 9.68 0 01-4.93-1.88l-.354-.21-3.665.96.978-3.57-.232-.37a9.68 9.68 0 01-1.483-5.128c0-5.35 4.352-9.703 9.703-9.703a9.63 9.63 0 016.86 2.843 9.63 9.63 0 012.843 6.86c0 5.35-4.352 9.703-9.703 9.703h-.005zm5.577-14.998a12.28 12.28 0 00-8.74-3.623C6.439 2.63 3.63 5.437 3.63 8.874c0 1.213.345 2.394.997 3.406l-1.06 3.87 3.96-1.038a6.24 6.24 0 003.314.902c3.467 0 6.285-2.818 6.285-6.285 0-1.68-.654-3.26-1.84-4.448l-.005-.004z"/>
     </svg>
   );
