@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import MeInteresaButton from "@/components/MeInteresaButton";
 import {
   capituloActivo,
@@ -26,8 +27,15 @@ import {
 
 type Proyecto = {
   nombre: string;
+  /** Landing propia del proyecto, o null si todavia no tiene: la ficha queda
+   *  con «Me interesa» y sin enlace, nunca con un enlace roto. */
+  href: string | null;
   zona: string;
   precio: string;
+  /** El candado del numeral 2.16.1: si es false, `precio` dice «Consultar». */
+  muestraPrecio: boolean;
+  /** Fecha de corte del precio. Va junto a la cifra, no en letra chica. */
+  corte: string | null;
   area: string;
   tipologia: string;
   descripcion: string;
@@ -78,6 +86,9 @@ export default function Cartera({ proyectos }: { proyectos: Proyecto[] }) {
                   key={p.nombre}
                   className={"scrolly-cap" + (reduced || i === indice ? " activo" : "")}
                   aria-hidden={reduced ? undefined : i !== indice}
+                  // `aria-hidden` sin `inert` deja el boton y el enlace
+                  // alcanzables con Tab dentro de un bloque oculto al lector.
+                  inert={!reduced && i !== indice}
                 >
                   <p className="proyecto-tipo">
                     {p.zona} · {p.tipologia}
@@ -89,12 +100,20 @@ export default function Cartera({ proyectos }: { proyectos: Proyecto[] }) {
                   <p className="scrolly-cap-texto">{p.descripcion}</p>
                   <div className="proyecto-datos">
                     <span className="dato">
-                      <strong>{p.precio}</strong> <em>desde</em>
+                      <strong>{p.precio}</strong>{" "}
+                      <em>{p.muestraPrecio ? `corte ${p.corte}` : "desde"}</em>
                     </span>
                     <span className="dato-sep" />
                     <span className="dato">{p.area}</span>
                   </div>
-                  <MeInteresaButton />
+                  <div className="proyecto-acciones">
+                    <MeInteresaButton />
+                    {p.href && (
+                      <Link className="proyecto-link" href={p.href}>
+                        Ver el proyecto
+                      </Link>
+                    )}
+                  </div>
                 </article>
               ))}
             </div>
