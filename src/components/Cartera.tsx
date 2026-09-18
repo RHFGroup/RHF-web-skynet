@@ -40,7 +40,9 @@ type Proyecto = {
   tipologia: string;
   descripcion: string;
   destacado: boolean;
-  imagen: string;
+  /** Render del promotor, o null si todavía no hay material propio del
+   *  proyecto: en ese caso va un panel de marca, nunca una foto ajena. */
+  imagen: string | null;
   variante: "zoom" | "up" | "left" | "blur";
 };
 
@@ -60,11 +62,10 @@ export default function Cartera({ proyectos }: { proyectos: Proyecto[] }) {
         <div className="section-shell scrolly-grid scrolly-grid-invertida">
           <div className="scrolly-visual cartera-visual">
             {proyectos.map((p, i) => (
-              <img
+              <Visual
                 key={p.nombre}
-                src={p.imagen}
-                alt={p.nombre}
-                loading={i === 0 ? undefined : "lazy"}
+                proyecto={p}
+                prioritaria={i === 0}
                 className={reduced || i === indice ? "activo" : ""}
               />
             ))}
@@ -90,6 +91,12 @@ export default function Cartera({ proyectos }: { proyectos: Proyecto[] }) {
                   // alcanzables con Tab dentro de un bloque oculto al lector.
                   inert={!reduced && i !== indice}
                 >
+                  {/* Solo se ve en móvil (≤860px), donde el escenario deja de
+                      ser sticky y las fichas van apiladas: cada una con su
+                      imagen, en vez de una sola imagen arriba para las cinco. */}
+                  <div className="scrolly-cap-visual" aria-hidden="true">
+                    <Visual proyecto={p} />
+                  </div>
                   <p className="proyecto-tipo">
                     {p.zona} · {p.tipologia}
                   </p>
@@ -127,5 +134,39 @@ export default function Cartera({ proyectos }: { proyectos: Proyecto[] }) {
         </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * La imagen de un proyecto, o el panel de marca cuando todavía no hay
+ * material propio. El panel dice el nombre en serif sobre marino: es una
+ * decisión de diseño, no un hueco — una foto de archivo de otra ciudad
+ * contradice «publicamos lo que podemos sostener».
+ */
+function Visual({
+  proyecto,
+  prioritaria = false,
+  className = "",
+}: {
+  proyecto: Pick<Proyecto, "nombre" | "zona" | "imagen">;
+  prioritaria?: boolean;
+  className?: string;
+}) {
+  if (proyecto.imagen) {
+    return (
+      <img
+        src={proyecto.imagen}
+        alt={`${proyecto.nombre} — render del promotor`}
+        loading={prioritaria ? undefined : "lazy"}
+        className={className}
+      />
+    );
+  }
+  return (
+    <div className={"cartera-panel " + className}>
+      <span className="cartera-panel-zona">{proyecto.zona}</span>
+      <span className="cartera-panel-nombre">{proyecto.nombre}</span>
+      <span className="cartera-panel-nota">Material del promotor en camino</span>
+    </div>
   );
 }

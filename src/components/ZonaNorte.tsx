@@ -121,8 +121,8 @@ export default function ZonaNorte() {
 
             <div className="scrolly-visual">
               <img
-                src="https://images.unsplash.com/photo-1600047509358-9dc75507daeb?w=900&h=1200&fit=crop"
-                alt="Vista de la Zona Norte de Cartagena"
+                src="/proyectos/doral-west/home.jpg"
+                alt="Doral West, en la Zona Norte de Cartagena — render del promotor"
                 style={
                   reduced
                     ? undefined
