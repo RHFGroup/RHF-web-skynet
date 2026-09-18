@@ -46,8 +46,20 @@ export default function Privacidad() {
           recogemos además los datos de identificación que exige el proceso de
           vinculación del constructor.
         </p>
-        <p>Los canales por los que entran esos datos son cuatro:</p>
+        <p>Los canales por los que entran esos datos son cinco:</p>
         <ul className="ml-5 list-disc space-y-2">
+          <li>
+            <strong>El formulario de esta página.</strong> Guardamos lo que
+            escribes —nombre, el teléfono o correo por el que quieres que te
+            contactemos, el proyecto que te interesa y tu mensaje— junto con la
+            constancia de tu autorización: la fecha y hora del envío, la
+            versión del texto que aceptaste, tu dirección IP y el navegador
+            desde el que enviaste. Esa constancia existe por una razón: la ley
+            nos exige poder demostrar que tu autorización fue previa, expresa e
+            informada, y sin ella guardar tus datos sería peor que no
+            guardarlos. Al enviar también se abre WhatsApp con tu mensaje ya
+            escrito, para que la conversación empiece por donde te respondemos.
+          </li>
           <li>
             <strong>WhatsApp Business.</strong> Cuando nos escribes, recibimos
             tu número, tu nombre de perfil y los mensajes que envías.
@@ -215,6 +227,21 @@ export default function Privacidad() {
           Conservamos tus datos mientras dure la relación comercial y, después,
           por el tiempo necesario para atender obligaciones legales o
           reclamaciones. Cumplido ese plazo, se eliminan.
+        </p>
+        <p>
+          Para las consultas que llegan por el formulario de esta página el
+          plazo es concreto: <strong>dos años contados desde nuestro último
+          contacto contigo</strong>. Ese es el tiempo en que una decisión
+          inmobiliaria sigue viva y en que tu consulta todavía nos sirve para
+          responderte bien. Cumplidos los dos años se eliminan, y si nos lo
+          pides antes las eliminamos antes —basta con escribirnos, como explica
+          el punto 7—.
+        </p>
+        <p>
+          Esas consultas se guardan en una base de datos alojada en la
+          infraestructura de Cloudflare, cifrada en reposo. El formulario solo
+          puede escribir en ella; la lectura la hace el responsable desde sus
+          propias credenciales, y no está expuesta en la página.
         </p>
       </Seccion>
 

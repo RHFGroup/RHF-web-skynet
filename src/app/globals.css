@@ -1143,3 +1143,16 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
      principal del hero; el hero deja sitio abajo para que no compitan. */
   .hero-content { padding-bottom: 150px; }
 }
+
+/* Confirmación de que la consulta quedó guardada. Aparece solo cuando el
+   endpoint respondió bien; si falla, no se dice nada — WhatsApp ya abrió y
+   no hay nada que el visitante tenga que hacer al respecto. */
+.form-ok {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--marino);
+  background: rgb(194 165 120 / 0.16);
+  border-left: 2px solid var(--camel);
+  padding: 8px 12px;
+  border-radius: 6px;
+}

@@ -11,7 +11,7 @@ export const RESPONSABLE = {
   sitio: "rhfliving.com",
 };
 
-export const VIGENCIA = "14 de septiembre de 2026";
+export const VIGENCIA = "18 de septiembre de 2026";
 
 export default function LegalPage({
   titulo,
