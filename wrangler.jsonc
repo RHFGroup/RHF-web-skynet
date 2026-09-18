@@ -4,10 +4,27 @@
   // o el build de Workers Builds falla.
   "name": "rhf-web-skynet",
   "compatibility_date": "2026-09-10",
-  // Worker de solo assets: sirve el export estático de Next.js (`out/`).
+
+  // Desde el 18-sep-2026 el Worker tiene código propio, además de servir los
+  // assets. `run_worker_first` lo limita a /api/*: todo lo demás se sirve como
+  // asset igual que antes, sin pasar por el Worker.
+  "main": "./worker/index.ts",
+
   "assets": {
     "directory": "./out/",
+    "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "html_handling": "auto-trailing-slash"
-  }
+    "html_handling": "auto-trailing-slash",
+    "run_worker_first": ["/api/*"]
+  },
+
+  // Las consultas del formulario. La lectura se hace con
+  // `wrangler d1 execute rhf-leads --remote --command "SELECT ..."`.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rhf-leads",
+      "database_id": "961a8a5d-0a87-48f7-986c-5e22e5394ea3"
+    }
+  ]
 }

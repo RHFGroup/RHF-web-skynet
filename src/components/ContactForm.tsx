@@ -7,16 +7,31 @@ import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
 /**
  * Formulario de contacto.
  *
- * ANTES: `onSubmit` hacía `preventDefault()` y nada más — había un
- * `/* TODO: endpoint de contacto *​/` donde debía ir el envío. Quien llenaba el
- * formulario y le daba a «Enviar consulta» perdía su dato sin que ni él ni
- * Rafael se enteraran. Tampoco pedía autorización de tratamiento de datos,
- * que la Ley 1581 de 2012 exige previa, expresa e informada.
+ * Historia corta, porque explica el diseño:
  *
- * AHORA: arma el mensaje y abre WhatsApp con él escrito. No hay servidor, no
- * se almacena nada acá, y el dato llega a donde Rafael atiende. La casilla de
- * autorización es obligatoria y enlaza a la política publicada.
+ *  1. Al principio `onSubmit` hacía `preventDefault()` y nada más. Quien
+ *     llenaba el formulario perdía su dato sin que nadie se enterara.
+ *  2. Después abrió WhatsApp con el mensaje escrito. El dato llegaba a donde
+ *     Rafael atiende, sin servidor de por medio.
+ *  3. Desde el 18-sep-2026 además lo guarda (POST /api/consulta → D1).
+ *
+ * REGLA DE ORO DEL PASO 3: **guardar es la red debajo de WhatsApp, nunca su
+ * reemplazo.** El `fetch` sale sin `await` y con `keepalive`, y WhatsApp se
+ * abre en el mismo gesto del clic. Dos razones, las dos importan:
+ *
+ *  · Si el endpoint falla, WhatsApp abre igual y el lead no se pierde.
+ *  · Si se esperara la respuesta antes de `window.open`, el navegador ya no
+ *    estaría en el gesto del usuario y el bloqueador de pop-ups mataría la
+ *    ventana. Ese es el bug clásico de este patrón.
+ *
+ * La casilla de autorización es obligatoria: sin ella no se envía ni se
+ * guarda, que es lo que la Ley 1581 de 2012 exige (previa, expresa e
+ * informada). `AVISO_VERSION` viaja con cada envío para poder demostrar
+ * después CUÁL texto aceptó cada persona.
  */
+
+/** Versión del texto de autorización de abajo. Cambiarla al cambiar el texto. */
+const AVISO_VERSION = "2026-09-18";
 export default function ContactForm() {
   const [nombre, setNombre] = useState("");
   const [contacto, setContacto] = useState("");
@@ -24,6 +39,9 @@ export default function ContactForm() {
   const [mensaje, setMensaje] = useState("");
   const [autoriza, setAutoriza] = useState(false);
   const [error, setError] = useState("");
+  const [guardado, setGuardado] = useState(false);
+  /** Trampa para bots. Una persona nunca la ve, así que nunca la llena. */
+  const [sitio, setSitio] = useState("");
 
   function enviar(e: React.FormEvent) {
     e.preventDefault();
@@ -32,6 +50,28 @@ export default function ContactForm() {
       return;
     }
     setError("");
+
+    // Sale sin await: WhatsApp tiene que abrirse dentro del gesto del clic.
+    fetch("/api/consulta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        nombre: nombre.trim(),
+        contacto: contacto.trim(),
+        proyecto,
+        mensaje: mensaje.trim(),
+        autoriza: true,
+        version_aviso: AVISO_VERSION,
+        origen: typeof window !== "undefined" ? window.location.pathname : "",
+        sitio,
+      }),
+    })
+      .then((r) => setGuardado(r.ok))
+      .catch(() => {
+        /* La red se cayó; WhatsApp ya abrió. No hay nada que decirle a nadie. */
+      });
+
     const texto = [
       `Hola Rafael, soy ${nombre.trim()}.`,
       proyecto ? `Me interesa ${proyecto}.` : "Me interesa tu asesoría inmobiliaria.",
@@ -103,6 +143,28 @@ export default function ContactForm() {
         />
       </label>
 
+      {/* Trampa para bots: fuera de la vista y fuera del tabulador. */}
+      <input
+        type="text"
+        name="sitio"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        value={sitio}
+        onChange={(e) => setSitio(e.target.value)}
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: "hidden",
+          clip: "rect(0 0 0 0)",
+          whiteSpace: "nowrap",
+          border: 0,
+        }}
+      />
+
       <label className="form-consentimiento">
         <input
           type="checkbox"
@@ -131,9 +193,16 @@ export default function ContactForm() {
         Enviar por WhatsApp
       </button>
 
+      {guardado && (
+        <p className="form-ok" role="status">
+          Tu consulta quedó registrada. Te respondemos por WhatsApp.
+        </p>
+      )}
+
       <p className="form-disclaimer">
-        Al enviar se abre WhatsApp con tu mensaje ya escrito. Esta página no
-        guarda tus datos: viajan directo a la conversación.
+        Al enviar se abre WhatsApp con tu mensaje ya escrito y guardamos tu
+        consulta para responderte. La conservamos hasta dos años desde nuestro
+        último contacto, y la borramos antes si nos lo pides.
       </p>
     </form>
   );
