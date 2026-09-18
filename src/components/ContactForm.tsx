@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import Script from "next/script";
 import { PROYECTOS } from "@/data/proyectos";
 import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
 
@@ -32,6 +33,28 @@ import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
 
 /** Versión del texto de autorización de abajo. Cambiarla al cambiar el texto. */
 const AVISO_VERSION = "2026-09-18";
+
+/**
+ * Turnstile — la verificación antibot de Cloudflare.
+ *
+ * La site key es pública a propósito: viaja en el HTML de la página. La que
+ * no puede salir del servidor es la secreta, que vive como secret del Worker
+ * (`TURNSTILE_SECRET`) y valida el token contra `siteverify`.
+ *
+ * `appearance="interaction-only"`: el widget aparece SOLO si Cloudflare
+ * necesita que la persona haga algo. Para la gran mayoría es invisible, que
+ * es lo que corresponde a una página que se ve así.
+ *
+ * Si el script no carga —bloqueador, red mala— no hay token y el Worker
+ * rechaza el guardado. WhatsApp abre igual: la regla de oro no cambia.
+ */
+const TURNSTILE_SITE_KEY = "0x4AAAAAAE8W_1D4uDCgIB5S";
+
+declare global {
+  interface Window {
+    turnstile?: { reset: (contenedor?: HTMLElement) => void };
+  }
+}
 export default function ContactForm() {
   const [nombre, setNombre] = useState("");
   const [contacto, setContacto] = useState("");
@@ -42,6 +65,8 @@ export default function ContactForm() {
   const [guardado, setGuardado] = useState(false);
   /** Trampa para bots. Una persona nunca la ve, así que nunca la llena. */
   const [sitio, setSitio] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
 
   function enviar(e: React.FormEvent) {
     e.preventDefault();
@@ -50,6 +75,12 @@ export default function ContactForm() {
       return;
     }
     setError("");
+
+    // El widget deja su token en un input oculto dentro del formulario.
+    const campoToken = formRef.current?.querySelector<HTMLInputElement>(
+      'input[name="cf-turnstile-response"]',
+    );
+    const turnstileToken = campoToken?.value ?? "";
 
     // Sale sin await: WhatsApp tiene que abrirse dentro del gesto del clic.
     fetch("/api/consulta", {
@@ -65,12 +96,17 @@ export default function ContactForm() {
         version_aviso: AVISO_VERSION,
         origen: typeof window !== "undefined" ? window.location.pathname : "",
         sitio,
+        turnstile: turnstileToken,
       }),
     })
       .then((r) => setGuardado(r.ok))
       .catch(() => {
         /* La red se cayó; WhatsApp ya abrió. No hay nada que decirle a nadie. */
       });
+
+    // Cada token sirve una sola vez: sin este reset, un segundo envío sin
+    // recargar la página llegaría con un token ya gastado.
+    if (turnstileRef.current) window.turnstile?.reset(turnstileRef.current);
 
     const texto = [
       `Hola Rafael, soy ${nombre.trim()}.`,
@@ -86,7 +122,11 @@ export default function ContactForm() {
   }
 
   return (
-    <form className="contacto-form" onSubmit={enviar}>
+    <form className="contacto-form" onSubmit={enviar} ref={formRef}>
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+        strategy="lazyOnload"
+      />
       <h3>Déjanos tus datos</h3>
 
       <label>
@@ -182,6 +222,15 @@ export default function ContactForm() {
           a {CORREO}.
         </span>
       </label>
+
+      <div
+        ref={turnstileRef}
+        className="cf-turnstile"
+        data-sitekey={TURNSTILE_SITE_KEY}
+        data-appearance="interaction-only"
+        data-language="es"
+        data-theme="light"
+      />
 
       {error && (
         <p className="form-error" role="alert">
