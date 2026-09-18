@@ -1156,3 +1156,7 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
   padding: 8px 12px;
   border-radius: 6px;
 }
+
+/* El widget de Turnstile. Con `interaction-only` casi siempre mide 0 y no
+   ocupa lugar; el margen solo importa las pocas veces que sí aparece. */
+.cf-turnstile:not(:empty) { margin-top: 12px; }

@@ -243,6 +243,15 @@ export default function Privacidad() {
           puede escribir en ella; la lectura la hace el responsable desde sus
           propias credenciales, y no está expuesta en la página.
         </p>
+        <p>
+          El formulario usa además Cloudflare Turnstile, una verificación
+          automática que distingue a una persona de un programa antes de
+          guardar la consulta. Para la mayoría es invisible: no hay que
+          resolver ninguna imagen. Turnstile no instala cookies de seguimiento
+          ni usa tus datos para publicidad, y corre en la misma
+          infraestructura que ya aloja esta página, así que tu consulta no pasa
+          por un tercero adicional.
+        </p>
       </Seccion>
 
       <Seccion titulo="10. Vigencia y cambios">
