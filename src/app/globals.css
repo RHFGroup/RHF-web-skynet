@@ -93,12 +93,42 @@ h1, h2, h3, h4 {
   min-height: 92vh; padding: 0;
   overflow: hidden;
 }
+/* El over the fold lleva fotografía propia: una toma de dron de Rafael sobre
+   el corredor de la Zona Norte, 24 de marzo de 2026 (DJI Air 3s, 4K). Es la
+   única imagen de la página que respalda literalmente lo que dice el copy
+   —«compra sobre lo construido»— porque muestra lo que ya está construido.
+   La versión de 1200px se sirve en pantallas angostas: 108 KB contra 338. */
 .hero-bg {
   position: absolute; inset: 0; z-index: 0;
   background:
     linear-gradient(135deg, rgb(31 42 61 / 0.85) 0%, rgb(31 42 61 / 0.55) 50%, rgb(107 74 47 / 0.35) 100%),
-    url("/proyectos/doral-country/home.jpg")
+    url("/zona-norte/corredor-2400.jpg")
     center / cover no-repeat;
+}
+@media (max-width: 860px) {
+  .hero-bg {
+    background-image:
+      linear-gradient(135deg, rgb(31 42 61 / 0.85) 0%, rgb(31 42 61 / 0.55) 50%, rgb(107 74 47 / 0.35) 100%),
+      url("/zona-norte/corredor-1200.jpg");
+    /* En una pantalla angosta y alta el encuadre centrado deja solo asfalto.
+       Corrido a la izquierda entran el mar y los edificios de la línea de
+       costa, que es lo que dice «Zona Norte». */
+    background-position: 36% center;
+  }
+}
+
+/* Crédito de la foto. Va chico y abajo a la izquierda, alineado con el
+   contenido: convierte la imagen en evidencia —dice qué es y de cuándo—
+   en vez de dejarla como decoración. */
+.hero-credito {
+  position: absolute; z-index: 2;
+  left: 50%; transform: translateX(-50%);
+  bottom: 22px; width: min(1180px, calc(100% - 40px));
+  font-size: 12px; letter-spacing: 0.06em;
+  color: rgb(243 239 230 / 0.62);
+}
+@media (max-width: 720px) {
+  .hero-credito { bottom: 14px; font-size: 11px; }
 }
 .hero-content {
   position: relative; z-index: 2;

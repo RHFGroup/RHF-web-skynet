@@ -154,6 +154,9 @@ export default function Home() {
               </a>
             </div>
           </div>
+          <p className="hero-credito">
+            Corredor de la Zona Norte, Cartagena · marzo de 2026 · foto propia
+          </p>
         </section>
 
         {/* ── Zona Norte (antes que la cartera) ── */}
@@ -213,7 +216,8 @@ export default function Home() {
           <div className="footer-legal">
             <p>
               <strong>Rafael Hernández Franco</strong> — Asesor inmobiliario independiente.
-              Las imágenes de los proyectos son renders y material del promotor. Los precios,
+              La fotografía de portada es propia. Las imágenes de los proyectos son renders
+              y material del promotor. Los precios,
               áreas y condiciones aquí publicados corresponden a la fecha
               indicada en cada proyecto y pueden variar sin previo aviso.
               Para información actualizada, contáctanos directamente.
