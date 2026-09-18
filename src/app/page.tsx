@@ -33,6 +33,12 @@ import { puedePublicarPrecio, rangoPrecio, getProyecto } from "@/data/proyectos"
  * lleva. `href: null` es un proyecto sin landing propia todavía — la ficha
  * queda con «Me interesa» y sin enlace, nunca con un enlace roto.
  * `variante` es la animación de entrada de la ficha en el recorrido.
+ *
+ * `imagen` es el render del promotor que ya vive en `public/proyectos/<slug>/`,
+ * el mismo que abre su landing. `imagen: null` es un proyecto del que todavía
+ * tenemos material propio por recibir: la ficha muestra un panel de marca en
+ * vez de una foto ajena. Publicamos lo que podemos sostener, también en las
+ * imágenes.
  */
 const PRESENTACION: Record<
   string,
@@ -41,7 +47,7 @@ const PRESENTACION: Record<
     tipologia: string;
     descripcion: string;
     destacado?: boolean;
-    imagen: string;
+    imagen: string | null;
     variante: "zoom" | "up" | "left" | "blur";
   }
 > = {
@@ -50,35 +56,35 @@ const PRESENTACION: Record<
     tipologia: "Apartamentos en torres · 6 torres · ascensor",
     descripcion: "El lanzamiento más reciente del desarrollo Doral, sobre la Vía al Mar.",
     destacado: true,
-    imagen: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop",
+    imagen: "/proyectos/doral-country/home.jpg",
     variante: "zoom",
   },
   "doral-suite": {
     href: null,
     tipologia: "Apartaestudios · aprobados para renta corta",
     descripcion: "Inventario final: quedan siete de sesenta y seis unidades.",
-    imagen: "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=600&h=400&fit=crop",
+    imagen: null,
     variante: "up",
   },
   "doral-west": {
     href: "/proyectos/doral-west",
     tipologia: "Casas de 1 y 2 pisos · lote propio · parqueadero privado",
     descripcion: "Estructura preparada para crecer hasta un tercer nivel. Entregas documentadas por manzana.",
-    imagen: "https://images.unsplash.com/photo-1605146769289-440113cc3d00?w=600&h=400&fit=crop",
+    imagen: "/proyectos/doral-west/home.jpg",
     variante: "up",
   },
   "acacias-campestre": {
     href: null,
     tipologia: "22 torres · 904 apartamentos · 5 etapas",
     descripcion: "Entrada económica con valorización a mediano plazo. Perfil inversionista.",
-    imagen: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&h=400&fit=crop",
+    imagen: null,
     variante: "left",
   },
   "blue-garden": {
     href: "/proyectos/blue-garden",
     tipologia: "Casas ampliables · 3 habitaciones · jardín",
     descripcion: "Casa familiar con lote generoso y posibilidad de ampliación.",
-    imagen: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&h=400&fit=crop",
+    imagen: "/proyectos/blue-garden/home.jpg",
     variante: "blur",
   },
 };
@@ -207,7 +213,7 @@ export default function Home() {
           <div className="footer-legal">
             <p>
               <strong>Rafael Hernández Franco</strong> — Asesor inmobiliario independiente.
-              Las imágenes de esta página son ilustrativas. Los precios,
+              Las imágenes de los proyectos son renders y material del promotor. Los precios,
               áreas y condiciones aquí publicados corresponden a la fecha
               indicada en cada proyecto y pueden variar sin previo aviso.
               Para información actualizada, contáctanos directamente.
