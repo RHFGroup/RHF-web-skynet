@@ -24,6 +24,7 @@ import ContactForm from "@/components/ContactForm";
 import ZonaNorte from "@/components/ZonaNorte";
 import MapaZona from "@/components/MapaZona";
 import Cartera from "@/components/Cartera";
+import QuienTeAsesora from "@/components/QuienTeAsesora";
 import Reveal from "@/components/Reveal";
 import { enlaceWhatsApp, SALUDO_WHATSAPP } from "@/data/contacto";
 import { puedePublicarPrecio, rangoPrecio, getProyecto } from "@/data/proyectos";
@@ -125,6 +126,7 @@ export default function Home() {
           <nav className="nav-links">
             <a href="#cartera">Nuestra cartera</a>
             <a href="#zonanorte">Zona Norte</a>
+            <a href="#asesor">Quién te asesora</a>
             <a href="#contacto">Contacto</a>
           </nav>
           <a className="nav-cta" href={WA_LINK} target="_blank" rel="noopener noreferrer">
@@ -164,6 +166,12 @@ export default function Home() {
 
         {/* ── El territorio · mapa interactivo ─── */}
         <MapaZona />
+
+        {/* ── Quién te asesora ──────────────────
+            Va antes de la cartera a propósito: el visitante sabe por qué
+            escucharnos antes de que le mostremos qué tenemos. Es el orden
+            del plan de la home. */}
+        <QuienTeAsesora />
 
         {/* ── La cartera ───────────────────────── */}
         <Cartera proyectos={proyectos} />
@@ -210,6 +218,7 @@ export default function Home() {
               <a href="#inicio">Inicio</a>
               <a href="#cartera">Nuestra cartera</a>
               <a href="#zonanorte">Zona Norte</a>
+              <a href="#asesor">Quién te asesora</a>
               <a href="#contacto">Contacto</a>
             </div>
           </div>
