@@ -23,6 +23,7 @@ import Link from "next/link";
 import ContactForm from "@/components/ContactForm";
 import ZonaNorte from "@/components/ZonaNorte";
 import MapaZona from "@/components/MapaZona";
+import CierreDelCriterio from "@/components/CierreDelCriterio";
 import Cartera from "@/components/Cartera";
 import QuienTeAsesora from "@/components/QuienTeAsesora";
 import Reveal from "@/components/Reveal";
@@ -166,6 +167,12 @@ export default function Home() {
 
         {/* ── El territorio · mapa interactivo ─── */}
         <MapaZona />
+
+        {/* ── El cierre del criterio ────────────
+            Remata los tres tramos de territorio —capítulos, mapa, este— y
+            entrega al bloque de Rafael. Estaba antes del mapa y el remate
+            llegaba con el tema todavía abierto. */}
+        <CierreDelCriterio />
 
         {/* ── Quién te asesora ──────────────────
             Va antes de la cartera a propósito: el visitante sabe por qué
