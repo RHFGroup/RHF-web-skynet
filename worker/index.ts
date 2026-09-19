@@ -190,7 +190,7 @@ async function guardarConsulta(
     // la persona ya está viendo un spinner y Telegram responde en ~300 ms.
     // Si tarda más de 5 s se corta — vale más una respuesta rápida con el
     // dato guardado que una espera larga por una notificación.
-    const notificado = await notificarTelegram(env, {
+    const aviso = await notificarTelegram(env, {
       id,
       nombre,
       contacto,
@@ -202,7 +202,7 @@ async function guardarConsulta(
 
     // La marca de que se avisó no bloquea la respuesta: si esta escritura
     // falla, el lead ya está guardado y Rafael ya recibió el mensaje.
-    if (notificado && id) {
+    if (aviso.ok && id) {
       ctx.waitUntil(
         env.DB.prepare(`UPDATE consultas SET notificado_en = ? WHERE id = ?`)
           .bind(new Date().toISOString(), id)
@@ -214,7 +214,17 @@ async function guardarConsulta(
       );
     }
 
-    return json({ ok: true, guardado: true, id, notificado }, 201, request);
+    return json(
+      {
+        ok: true,
+        guardado: true,
+        id,
+        notificado: aviso.ok,
+        ...(aviso.motivo ? { motivo_aviso: aviso.motivo } : {}),
+      },
+      201,
+      request,
+    );
   } catch (e) {
     // Ahora el navegador SÍ está esperando: devolver 500 hace que el
     // formulario muestre el error y le ofrezca WhatsApp a la persona, en vez
@@ -233,10 +243,18 @@ async function guardarConsulta(
  * necesita su token y el id del grupo, los dos como secretos.
  *
  * **Falla en silencio a propósito.** Si el bot no está configurado, o
- * Telegram no responde, la consulta YA está guardada en D1: devolver `false`
- * deja constancia (`notificado_en` queda vacío y la respuesta lo dice) sin
- * romperle el envío a quien escribió. Lo que no se hace nunca es reventar
- * acá y perder el dato.
+ * Telegram no responde, la consulta YA está guardada en D1: devolver el
+ * motivo deja constancia (`notificado_en` queda vacío y la respuesta lo
+ * dice) sin romperle el envío a quien escribió. Lo que no se hace nunca es
+ * reventar acá y perder el dato.
+ *
+ * **Devuelve el motivo, no solo un `false`.** Lo aprendimos el 2026-09-19:
+ * con los secretos ya cargados el aviso falló, y `notificado: false` no
+ * decía si el problema era el token, el id del grupo o el bot fuera del
+ * grupo. `wrangler tail` no sirve para diagnosticarlo porque sigue a la
+ * versión de producción, no a los previews. El motivo viaja en la respuesta
+ * —que solo puede leer quien puede postear desde un origen permitido— y
+ * nunca incluye el token.
  */
 async function notificarTelegram(
   env: Env,
@@ -249,7 +267,7 @@ async function notificarTelegram(
     origen: string;
     creado: Date;
   },
-): Promise<boolean> {
+): Promise<{ ok: boolean; motivo?: string }> {
   if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
     // A gritos en el log, porque este es EL fallo silencioso del diseño
     // nuevo: la persona ve «mensaje enviado», el dato queda guardado, y a
@@ -258,7 +276,7 @@ async function notificarTelegram(
       "[telegram] SIN CONFIGURAR — la consulta se guardó y NADIE fue avisado." +
         " Faltan los secretos TELEGRAM_BOT_TOKEN y/o TELEGRAM_CHAT_ID.",
     );
-    return false;
+    return { ok: false, motivo: "sin_configurar" };
   }
 
   const fecha = c.creado.toLocaleString("es-CO", {
@@ -304,14 +322,22 @@ async function notificarTelegram(
     );
     if (!r.ok) {
       // El cuerpo de Telegram dice exactamente qué pasó («chat not found»,
-      // «bot was kicked»…). Sin esto, diagnosticar cuesta el triple.
-      console.error("[telegram] respondió", r.status, await r.text());
-      return false;
+      // «Unauthorized», «bot was kicked»…). Sin esto, diagnosticar cuesta el
+      // triple. Nunca trae el token: es la descripción del error, nada más.
+      const cuerpo = await r.text();
+      console.error("[telegram] respondió", r.status, cuerpo);
+      let desc = cuerpo.slice(0, 200);
+      try {
+        desc = (JSON.parse(cuerpo) as { description?: string }).description ?? desc;
+      } catch {
+        /* respuesta que no es JSON: queda el texto crudo recortado */
+      }
+      return { ok: false, motivo: `telegram_${r.status}: ${desc}` };
     }
-    return true;
+    return { ok: true };
   } catch (e) {
     console.error("[telegram] no se pudo avisar:", e);
-    return false;
+    return { ok: false, motivo: `red: ${e instanceof Error ? e.message : "desconocido"}` };
   }
 }
 
