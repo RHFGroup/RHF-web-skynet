@@ -1185,19 +1185,35 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
   align-items: center;
 }
 
-/* El retrato y su panel */
-.asesor-retrato { position: relative; }
+/* El retrato y su panel.
+
+   El desplazamiento del panel vive en variables porque el pie de foto
+   depende de él: el panel sobresale por debajo del retrato, y sin esa
+   cuenta el pie cae encima —gris sobre marino, ilegible y con pinta de
+   desbordado. Con `--panel-y` el pie siempre libra el panel por 18 px,
+   en cualquier breakpoint. */
+.asesor-retrato {
+  position: relative;
+  --panel-top: 32px;
+  --panel-x: 28px;
+  --panel-y: 28px;
+}
 .asesor-retrato figure { margin: 0; position: relative; }
-/* El panel marino desplazado: sale detrás del retrato por abajo/izquierda. */
-.asesor-retrato figure::before {
+.asesor-retrato picture { position: relative; z-index: 1; display: block; }
+/* El panel marino desplazado: sale detrás del retrato por abajo/derecha.
+
+   Cuelga de `picture`, NO de `figure`. Colgado del figure se medía contra
+   una caja que incluye el pie de foto, así que al bajar el pie el panel
+   crecía con él y volvía a taparlo — un lazo que no cierra. Contra
+   `picture` el panel mide solo la fotografía y queda quieto. */
+.asesor-retrato picture::before {
   content: "";
   position: absolute;
-  inset: 32px -28px -28px 32px;
+  inset: var(--panel-top) calc(var(--panel-x) * -1) calc(var(--panel-y) * -1) var(--panel-top);
   border-radius: 28px;
   background: linear-gradient(160deg, var(--marino-light) 0%, var(--marino) 60%, var(--marino-dark) 100%);
-  z-index: 0;
+  z-index: -1;
 }
-.asesor-retrato picture { position: relative; z-index: 1; display: block; }
 .asesor-retrato img {
   display: block;
   width: 100%;
@@ -1211,7 +1227,8 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
 .asesor-retrato figcaption {
   position: relative;
   z-index: 1;
-  margin-top: 16px;
+  /* Debajo del borde inferior del panel, nunca encima de él. */
+  margin-top: calc(var(--panel-y) + 18px);
   font-size: 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1294,12 +1311,10 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
 }
 @media (max-width: 860px) {
   .asesor-grid { grid-template-columns: 1fr; gap: 44px; }
-  .asesor-retrato { max-width: 400px; }
-  .asesor-retrato figure::before { inset: 24px -20px -20px 24px; }
+  .asesor-retrato { max-width: 400px; --panel-top: 24px; --panel-x: 20px; --panel-y: 20px; }
 }
 @media (max-width: 560px) {
-  .asesor-retrato { max-width: 100%; }
-  .asesor-retrato figure::before { inset: 16px -9px -12px 16px; }
+  .asesor-retrato { max-width: 100%; --panel-top: 16px; --panel-x: 9px; --panel-y: 14px; }
   .asesor-contacto { align-items: stretch; flex-direction: column; gap: 18px; }
   .asesor-directo { text-align: center; }
   .asesor-sep { display: block; height: 0; margin: 4px 0; overflow: hidden; }
