@@ -1160,3 +1160,147 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
 /* El widget de Turnstile. Con `interaction-only` casi siempre mide 0 y no
    ocupa lugar; el margen solo importa las pocas veces que sí aparece. */
 .cf-turnstile:not(:empty) { margin-top: 12px; }
+
+/* ──────────────────────────────────────────────────────────────
+   «Quién te asesora» — el bloque de Rafael.
+
+   Par editorial: retrato a la izquierda, texto a la derecha. El retrato
+   viene de estudio con fondo gris claro, que junto al marfil del sitio
+   quedaría apagado; por eso se apoya sobre un panel marino desplazado,
+   que lo recorta y le devuelve el contraste sin tocar la fotografía.
+   Escala tipográfica de DESIGN.md: 56 / 36 / 22 / 16 / 13.
+   ────────────────────────────────────────────────────────────── */
+.section-asesor {
+  background: var(--white);
+  border-top: 1px solid var(--marfil-dark);
+  border-bottom: 1px solid var(--marfil-dark);
+  /* El enlace «Quién te asesora» de la barra salta a este ancla; sin este
+     margen el nombre queda debajo de la barra fija. */
+  scroll-margin-top: var(--nav-h);
+}
+.asesor-grid {
+  display: grid;
+  grid-template-columns: 440px 1fr;
+  gap: 72px;
+  align-items: center;
+}
+
+/* El retrato y su panel */
+.asesor-retrato { position: relative; }
+.asesor-retrato figure { margin: 0; position: relative; }
+/* El panel marino desplazado: sale detrás del retrato por abajo/izquierda. */
+.asesor-retrato figure::before {
+  content: "";
+  position: absolute;
+  inset: 32px -28px -28px 32px;
+  border-radius: 28px;
+  background: linear-gradient(160deg, var(--marino-light) 0%, var(--marino) 60%, var(--marino-dark) 100%);
+  z-index: 0;
+}
+.asesor-retrato picture { position: relative; z-index: 1; display: block; }
+.asesor-retrato img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 28px;
+  /* El fondo de estudio es gris frío; el filtro lo acerca al marfil de la
+     página. Es un ajuste de ambiente sobre la imagen entera, muy leve, que
+     deja la piel y los rasgos como salieron de cámara. */
+  filter: saturate(0.96) contrast(1.02) sepia(0.06);
+}
+.asesor-retrato figcaption {
+  position: relative;
+  z-index: 1;
+  margin-top: 16px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* El texto */
+.asesor-rol {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cuero);
+}
+.asesor-cuerpo { margin-top: 26px; max-width: 560px; }
+.asesor-cuerpo p {
+  margin-top: 16px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--near-black);
+}
+.asesor-cuerpo p:first-child { margin-top: 0; }
+
+/* Credenciales: una por línea, el pie dice dónde y cuándo. */
+.asesor-credenciales {
+  list-style: none;
+  margin: 34px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+  max-width: 560px;
+}
+.asesor-credenciales li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 0 14px 18px;
+  border-left: 2px solid var(--camel);
+  background: linear-gradient(90deg, rgb(194 165 120 / 0.09), transparent 70%);
+}
+.asesor-credenciales strong {
+  font-family: var(--font-sans), "Montserrat", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--marino);
+  line-height: 1.35;
+}
+.asesor-credenciales span {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+/* El contacto: botón + el número escrito al lado, siempre legible. */
+.asesor-contacto {
+  margin-top: 36px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px 28px;
+}
+.asesor-directo {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.asesor-directo a {
+  color: var(--marino);
+  font-weight: 600;
+  border-bottom: 1px solid var(--camel);
+  padding-bottom: 1px;
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+.asesor-directo a:hover { color: var(--cuero); border-color: var(--cuero); }
+.asesor-sep { margin: 0 10px; color: var(--marfil-dark); }
+
+@media (max-width: 960px) {
+  .asesor-grid { grid-template-columns: 380px 1fr; gap: 48px; }
+}
+@media (max-width: 860px) {
+  .asesor-grid { grid-template-columns: 1fr; gap: 44px; }
+  .asesor-retrato { max-width: 400px; }
+  .asesor-retrato figure::before { inset: 24px -20px -20px 24px; }
+}
+@media (max-width: 560px) {
+  .asesor-retrato { max-width: 100%; }
+  .asesor-retrato figure::before { inset: 16px -9px -12px 16px; }
+  .asesor-contacto { align-items: stretch; flex-direction: column; gap: 18px; }
+  .asesor-directo { text-align: center; }
+  .asesor-sep { display: block; height: 0; margin: 4px 0; overflow: hidden; }
+}
