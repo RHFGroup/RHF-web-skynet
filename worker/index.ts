@@ -8,10 +8,21 @@
  * Hoy hay un solo endpoint: POST /api/consulta, que guarda lo que alguien
  * escribe en el formulario de contacto.
  *
- * REGLA DE ORO: guardar es la red DEBAJO de WhatsApp, nunca su reemplazo. El
- * formulario dispara este endpoint sin esperar la respuesta y abre WhatsApp
- * igual. Si este Worker falla, se cae la red — el lead sigue llegando a donde
- * Rafael atiende. Por eso acá no hay nada que pueda bloquear al navegador.
+ * REGLA DE ORO — cambió el 2026-09-19, y es el cambio más importante de este
+ * archivo. Antes el formulario abría WhatsApp y guardar era la red debajo:
+ * si el Worker fallaba, el lead llegaba igual porque la persona mandaba el
+ * mensaje ella misma. Ahora **este endpoint es el único camino**. El
+ * formulario espera su respuesta y le dice a la persona «mensaje enviado»,
+ * así que lo que acá se pierda, se pierde de verdad.
+ *
+ * De ahí las dos obligaciones nuevas:
+ *
+ *  1. **Avisar.** Guardar en una base que nadie consulta es perder el lead con
+ *     más pasos. Cada consulta dispara un mensaje al grupo de Telegram; sin
+ *     ese aviso el dato queda esperando a que alguien se acuerde de mirarlo.
+ *  2. **Decir la verdad al navegador.** Si algo falla acá, la respuesta lo
+ *     dice y el formulario le ofrece WhatsApp a la persona. Nunca se responde
+ *     «ok» sobre algo que no se guardó.
  */
 
 export interface Env {
@@ -20,6 +31,10 @@ export interface Env {
   /** Secreto de Turnstile. Mientras no exista, la verificación se salta y
    *  quedan las defensas de abajo. Se agrega con `wrangler secret put`. */
   TURNSTILE_SECRET?: string;
+  /** Bot de Telegram que avisa de cada consulta. Ver `notificarTelegram`. */
+  TELEGRAM_BOT_TOKEN?: string;
+  /** Id del grupo de Telegram al que se avisa (empieza con `-100`). */
+  TELEGRAM_CHAT_ID?: string;
 }
 
 /**
@@ -169,17 +184,140 @@ async function guardarConsulta(
       )
       .run();
 
-    return json(
-      { ok: true, guardado: true, id: r.meta?.last_row_id ?? null },
-      201,
-      request,
-    );
+    const id = (r.meta?.last_row_id as number | undefined) ?? null;
+
+    // El aviso se espera, a diferencia del guardado del lado del navegador:
+    // la persona ya está viendo un spinner y Telegram responde en ~300 ms.
+    // Si tarda más de 5 s se corta — vale más una respuesta rápida con el
+    // dato guardado que una espera larga por una notificación.
+    const notificado = await notificarTelegram(env, {
+      id,
+      nombre,
+      contacto,
+      proyecto,
+      mensaje,
+      origen,
+      creado: ahora,
+    });
+
+    // La marca de que se avisó no bloquea la respuesta: si esta escritura
+    // falla, el lead ya está guardado y Rafael ya recibió el mensaje.
+    if (notificado && id) {
+      ctx.waitUntil(
+        env.DB.prepare(`UPDATE consultas SET notificado_en = ? WHERE id = ?`)
+          .bind(new Date().toISOString(), id)
+          .run()
+          .then(() => undefined)
+          .catch((e) => {
+            console.error("[consulta] no se pudo marcar notificado_en:", e);
+          }),
+      );
+    }
+
+    return json({ ok: true, guardado: true, id, notificado }, 201, request);
   } catch (e) {
-    // El navegador ya abrió WhatsApp y no está esperando esta respuesta, así
-    // que un error acá no le cuesta el lead a nadie. Queda en el log.
+    // Ahora el navegador SÍ está esperando: devolver 500 hace que el
+    // formulario muestre el error y le ofrezca WhatsApp a la persona, en vez
+    // de decirle «enviado» sobre algo que no se guardó.
     console.error("[consulta] fallo al guardar:", e);
     return json({ ok: false, error: "fallo_al_guardar" }, 500, request);
   }
+}
+
+/**
+ * Avisa al grupo de Telegram que entró una consulta.
+ *
+ * Telegram porque cumple las tres condiciones que pedía el caso: llega al
+ * teléfono al instante, es gratis y no depende de infraestructura de nadie
+ * más. El bot se crea con @BotFather y se mete al grupo; el Worker solo
+ * necesita su token y el id del grupo, los dos como secretos.
+ *
+ * **Falla en silencio a propósito.** Si el bot no está configurado, o
+ * Telegram no responde, la consulta YA está guardada en D1: devolver `false`
+ * deja constancia (`notificado_en` queda vacío y la respuesta lo dice) sin
+ * romperle el envío a quien escribió. Lo que no se hace nunca es reventar
+ * acá y perder el dato.
+ */
+async function notificarTelegram(
+  env: Env,
+  c: {
+    id: number | null;
+    nombre: string;
+    contacto: string;
+    proyecto: string;
+    mensaje: string;
+    origen: string;
+    creado: Date;
+  },
+): Promise<boolean> {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+    // A gritos en el log, porque este es EL fallo silencioso del diseño
+    // nuevo: la persona ve «mensaje enviado», el dato queda guardado, y a
+    // Rafael no le llega nada. Visible con `wrangler tail`.
+    console.error(
+      "[telegram] SIN CONFIGURAR — la consulta se guardó y NADIE fue avisado." +
+        " Faltan los secretos TELEGRAM_BOT_TOKEN y/o TELEGRAM_CHAT_ID.",
+    );
+    return false;
+  }
+
+  const fecha = c.creado.toLocaleString("es-CO", {
+    timeZone: "America/Bogota",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  // Si el contacto trae un teléfono, se arma el enlace para responderle de un
+  // toque. Colombia sin indicativo son 10 dígitos: se le antepone el 57.
+  const digitos = c.contacto.replace(/\D/g, "");
+  const wa =
+    digitos.length >= 10
+      ? `https://wa.me/${digitos.length === 10 ? "57" + digitos : digitos}`
+      : null;
+
+  const lineas = [
+    "🏠 <b>Consulta nueva en rhfliving.com</b>",
+    "",
+    `<b>Nombre:</b> ${esc(c.nombre)}`,
+    `<b>Contacto:</b> ${esc(c.contacto)}`,
+    c.proyecto ? `<b>Proyecto:</b> ${esc(c.proyecto)}` : null,
+    c.mensaje ? `<b>Mensaje:</b> ${esc(c.mensaje)}` : null,
+    "",
+    wa ? `<a href="${wa}">Responder por WhatsApp</a>` : null,
+    `<i>${esc(fecha)} · ${c.origen ? esc(c.origen) + " · " : ""}#${c.id ?? "?"}</i>`,
+  ].filter(Boolean);
+
+  try {
+    const r = await fetch(
+      `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: env.TELEGRAM_CHAT_ID,
+          text: lineas.join("\n"),
+          parse_mode: "HTML",
+          disable_web_page_preview: true,
+        }),
+        signal: AbortSignal.timeout(5000),
+      },
+    );
+    if (!r.ok) {
+      // El cuerpo de Telegram dice exactamente qué pasó («chat not found»,
+      // «bot was kicked»…). Sin esto, diagnosticar cuesta el triple.
+      console.error("[telegram] respondió", r.status, await r.text());
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[telegram] no se pudo avisar:", e);
+    return false;
+  }
+}
+
+/** Escapa lo que Telegram interpreta como HTML. */
+function esc(v: string): string {
+  return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /** ¿Cuántos envíos hizo esta IP en los últimos minutos? */

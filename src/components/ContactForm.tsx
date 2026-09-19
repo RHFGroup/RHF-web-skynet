@@ -15,15 +15,30 @@ import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
  *  2. Después abrió WhatsApp con el mensaje escrito. El dato llegaba a donde
  *     Rafael atiende, sin servidor de por medio.
  *  3. Desde el 18-sep-2026 además lo guarda (POST /api/consulta → D1).
+ *  4. **Desde el 19-sep-2026 ya NO abre WhatsApp: confirma en la página.**
  *
- * REGLA DE ORO DEL PASO 3: **guardar es la red debajo de WhatsApp, nunca su
- * reemplazo.** El `fetch` sale sin `await` y con `keepalive`, y WhatsApp se
- * abre en el mismo gesto del clic. Dos razones, las dos importan:
+ * El paso 4 lo pidió Rafael, y tenía razón en el diagnóstico: mandar a
+ * alguien a WhatsApp después de llenar un formulario es confuso — llena los
+ * campos, y en vez de una confirmación le toca **volver a enviar el mismo
+ * mensaje en otra app**. Quien no completa ese segundo envío se va creyendo
+ * que escribió, y nadie recibe nada.
  *
- *  · Si el endpoint falla, WhatsApp abre igual y el lead no se pierde.
- *  · Si se esperara la respuesta antes de `window.open`, el navegador ya no
- *    estaría en el gesto del usuario y el bloqueador de pop-ups mataría la
- *    ventana. Ese es el bug clásico de este patrón.
+ * **Lo que el cambio exige, y por lo que no se puede hacer solo.** Abrir
+ * WhatsApp era, sin que se notara, el único aviso que existía: Rafael se
+ * enteraba porque le llegaba el mensaje. Al quitarlo, la consulta queda en
+ * una base que nadie consulta. Por eso este cambio viaja junto al aviso por
+ * Telegram del Worker: **confirmar en la página sin avisar a alguien es
+ * perder el lead con mejor experiencia de usuario.**
+ *
+ * De ahí el diseño de abajo, que invierte el del paso 3:
+ *
+ *  · El `fetch` ahora se **espera** (`await`), porque la confirmación tiene
+ *    que ser verdad. Antes salía sin esperar para no perder el gesto del
+ *    clic que abría el pop-up; sin pop-up, esa restricción desapareció.
+ *  · Si el envío falla, se dice, y se ofrece WhatsApp como salida. Nunca se
+ *    muestra «enviado» sobre algo que no se guardó.
+ *  · WhatsApp sigue disponible en la confirmación, como opción de quien
+ *    prefiere chatear — ya no como único camino.
  *
  * La casilla de autorización es obligatoria: sin ella no se envía ni se
  * guarda, que es lo que la Ley 1581 de 2012 exige (previa, expresa e
@@ -46,7 +61,12 @@ const AVISO_VERSION = "2026-09-18";
  * es lo que corresponde a una página que se ve así.
  *
  * Si el script no carga —bloqueador, red mala— no hay token y el Worker
- * rechaza el guardado. WhatsApp abre igual: la regla de oro no cambia.
+ * rechaza el guardado. El formulario lo dice y ofrece WhatsApp, que es la
+ * salida para todos los fallos: nadie se queda sin poder escribir.
+ *
+ * ⚠️ Al 2026-09-19 el Worker **no tiene** `TURNSTILE_SECRET`, así que esta
+ * verificación está apagada y solo operan la trampa para bots, el tope por
+ * IP y la validación de origen. Se activa con `wrangler secret put`.
  */
 const TURNSTILE_SITE_KEY = "0x4AAAAAAE8W_1D4uDCgIB5S";
 
@@ -62,53 +82,16 @@ export default function ContactForm() {
   const [mensaje, setMensaje] = useState("");
   const [autoriza, setAutoriza] = useState(false);
   const [error, setError] = useState("");
-  const [guardado, setGuardado] = useState(false);
+  /** idle → enviando → ok | error. Manda toda la cara del formulario. */
+  const [estado, setEstado] = useState<"idle" | "enviando" | "ok" | "error">("idle");
   /** Trampa para bots. Una persona nunca la ve, así que nunca la llena. */
   const [sitio, setSitio] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
 
-  function enviar(e: React.FormEvent) {
-    e.preventDefault();
-    if (!autoriza) {
-      setError("Necesitamos tu autorización para tratar tus datos antes de continuar.");
-      return;
-    }
-    setError("");
-
-    // El widget deja su token en un input oculto dentro del formulario.
-    const campoToken = formRef.current?.querySelector<HTMLInputElement>(
-      'input[name="cf-turnstile-response"]',
-    );
-    const turnstileToken = campoToken?.value ?? "";
-
-    // Sale sin await: WhatsApp tiene que abrirse dentro del gesto del clic.
-    fetch("/api/consulta", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      keepalive: true,
-      body: JSON.stringify({
-        nombre: nombre.trim(),
-        contacto: contacto.trim(),
-        proyecto,
-        mensaje: mensaje.trim(),
-        autoriza: true,
-        version_aviso: AVISO_VERSION,
-        origen: typeof window !== "undefined" ? window.location.pathname : "",
-        sitio,
-        turnstile: turnstileToken,
-      }),
-    })
-      .then((r) => setGuardado(r.ok))
-      .catch(() => {
-        /* La red se cayó; WhatsApp ya abrió. No hay nada que decirle a nadie. */
-      });
-
-    // Cada token sirve una sola vez: sin este reset, un segundo envío sin
-    // recargar la página llegaría con un token ya gastado.
-    if (turnstileRef.current) window.turnstile?.reset(turnstileRef.current);
-
-    const texto = [
+  /** El mensaje que se le manda a WhatsApp si la persona elige ese camino. */
+  function textoWhatsApp(): string {
+    return [
       `Hola Rafael, soy ${nombre.trim()}.`,
       proyecto ? `Me interesa ${proyecto}.` : "Me interesa tu asesoría inmobiliaria.",
       mensaje.trim() ? mensaje.trim() : null,
@@ -118,7 +101,77 @@ export default function ContactForm() {
     ]
       .filter(Boolean)
       .join("\n");
-    window.open(enlaceWhatsApp(texto), "_blank", "noopener,noreferrer");
+  }
+
+  async function enviar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!autoriza) {
+      setError("Necesitamos tu autorización para tratar tus datos antes de continuar.");
+      return;
+    }
+    setError("");
+    setEstado("enviando");
+
+    // El widget deja su token en un input oculto dentro del formulario.
+    const campoToken = formRef.current?.querySelector<HTMLInputElement>(
+      'input[name="cf-turnstile-response"]',
+    );
+    const turnstileToken = campoToken?.value ?? "";
+
+    try {
+      const r = await fetch("/api/consulta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: nombre.trim(),
+          contacto: contacto.trim(),
+          proyecto,
+          mensaje: mensaje.trim(),
+          autoriza: true,
+          version_aviso: AVISO_VERSION,
+          origen: typeof window !== "undefined" ? window.location.pathname : "",
+          sitio,
+          turnstile: turnstileToken,
+        }),
+      });
+      setEstado(r.ok ? "ok" : "error");
+    } catch {
+      // Red caída, endpoint fuera, bloqueador: todo cae acá y todo se trata
+      // igual, porque para quien escribió el desenlace es el mismo.
+      setEstado("error");
+    } finally {
+      // Cada token sirve una sola vez: sin este reset, un segundo intento sin
+      // recargar la página llegaría con un token ya gastado.
+      if (turnstileRef.current) window.turnstile?.reset(turnstileRef.current);
+    }
+  }
+
+  // ── La confirmación ────────────────────────────────────────────────
+  // Reemplaza al formulario, no se le agrega debajo: quien acaba de enviar
+  // necesita saber que terminó, no volver a ver los campos que llenó.
+  //
+  // ⛔ Sin promesa de tiempo de respuesta. Publicar «te respondemos en X»
+  // nos obliga por el art. 26 de la Ley 1480, y esa decisión sigue abierta:
+  // solo se publica el plazo que Rafael pueda sostener todos los días.
+  if (estado === "ok") {
+    return (
+      <div className="contacto-form form-enviado" role="status">
+        <span className="form-enviado-marca" aria-hidden="true">✓</span>
+        <h3>Mensaje enviado</h3>
+        <p>
+          Gracias{nombre.trim() ? `, ${nombre.trim().split(" ")[0]}` : ""}. Tu
+          consulta ya nos llegó y te escribimos al contacto que nos dejaste.
+        </p>
+        <a
+          className="btn-whatsapp"
+          href={enlaceWhatsApp(textoWhatsApp())}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Prefiero escribir por WhatsApp
+        </a>
+      </div>
+    );
   }
 
   return (
@@ -238,20 +291,37 @@ export default function ContactForm() {
         </p>
       )}
 
-      <button className="btn-primary" type="submit">
-        Enviar por WhatsApp
+      <button
+        className="btn-primary"
+        type="submit"
+        disabled={estado === "enviando"}
+      >
+        {estado === "enviando" ? "Enviando…" : "Enviar mensaje"}
       </button>
 
-      {guardado && (
-        <p className="form-ok" role="status">
-          Tu consulta quedó registrada. Te respondemos por WhatsApp.
-        </p>
+      {/* El fallo se dice, y con salida. Quien llenó el formulario tiene el
+          mensaje ya escrito a un clic: nadie se queda sin poder escribir
+          porque a nosotros se nos cayó algo. */}
+      {estado === "error" && (
+        <div className="form-fallo" role="alert">
+          <p>
+            <strong>El envío falló.</strong> Tu mensaje ya está escrito y listo
+            para mandarlo por WhatsApp, o vuelve a intentarlo en un momento.
+          </p>
+          <a
+            className="btn-whatsapp"
+            href={enlaceWhatsApp(textoWhatsApp())}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Escribir por WhatsApp
+          </a>
+        </div>
       )}
 
       <p className="form-disclaimer">
-        Al enviar se abre WhatsApp con tu mensaje ya escrito y guardamos tu
-        consulta para responderte. La conservamos hasta dos años desde nuestro
-        último contacto, y la borramos antes si nos lo pides.
+        Guardamos tu consulta para responderte. La conservamos hasta dos años
+        desde nuestro último contacto, y la borramos antes si nos lo pides.
       </p>
     </form>
   );
