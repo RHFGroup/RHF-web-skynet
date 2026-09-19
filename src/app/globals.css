@@ -684,11 +684,23 @@ h1, h2, h3, h4 {
   .scrolly-cifra strong { font-size: clamp(38px, 12vw, 56px); }
 }
 
-/* ── El hook del aeropuerto ───────────────────────
+/* ── El cierre del criterio ───────────────────────
    Una línea por idea, ninguna de más de once palabras. `text-wrap: balance`
-   y el ancho contenido evitan que una línea escrita corta se parta en dos
-   visuales, que es lo que rompe el ritmo de lectura. */
-.hook { max-width: 62ch; }
+   evita que una línea escrita corta se parta en dos visuales, que es lo que
+   rompe el ritmo de lectura.
+
+   Par editorial a dos columnas. Antes era una sola columna de 62ch dentro
+   de un contenedor de 1180 px: sobraban 523 px de blanco a la derecha y el
+   tramo se leía inacabado, no deliberado. El plan pedía llenarlo con una
+   foto del viaducto; esa foto no existe (ver el componente), así que el
+   ancho lo resuelve la maqueta, que es el mismo par editorial que usa el
+   resto de la página. */
+.hook {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: start;
+}
 .hook-titular {
   font-family: var(--font-serif), "Cormorant Garamond", serif;
   font-size: clamp(28px, 4vw, 46px);
@@ -696,7 +708,10 @@ h1, h2, h3, h4 {
   color: var(--marino);
   text-wrap: balance;
 }
-.hook-lineas { margin-top: 26px; padding-left: 20px; border-left: 3px solid var(--camel); }
+.hook-titular-col .section-kicker { margin-bottom: 18px; }
+/* Sin margen superior: en el par editorial la columna derecha arranca a la
+   altura del titular, no debajo de él. */
+.hook-lineas { padding-left: 20px; border-left: 3px solid var(--camel); }
 .hook-lineas p {
   margin: 0 0 8px;
   font-size: clamp(15px, 1.5vw, 17px); line-height: 1.5;
@@ -710,7 +725,9 @@ h1, h2, h3, h4 {
   font-size: clamp(20px, 2.2vw, 27px) !important;
   line-height: 1.25; color: var(--marino) !important;
 }
-.section-honesto .zone-fuentes { margin-top: 28px; }
+@media (max-width: 860px) {
+  .hook { grid-template-columns: 1fr; gap: 32px; }
+}
 
 /* ── Mapa de la zona ──────────────────────────────
    El mapa realza la lista, y la lista se lee sola si el mapa queda fuera
@@ -1319,3 +1336,7 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
   .asesor-directo { text-align: center; }
   .asesor-sep { display: block; height: 0; margin: 4px 0; overflow: hidden; }
 }
+
+/* La atribución de las cifras de Zona Norte. Tira delgada, sin el aire de
+   110 px de `.section`: acompaña a los capítulos, no es un tramo propio. */
+.section-fuentes { padding: 0 0 48px; background: var(--white); }

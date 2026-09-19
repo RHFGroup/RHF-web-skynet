@@ -138,32 +138,12 @@ export default function ZonaNorte() {
         </div>
       </section>
 
-      {/* El remate sale del escenario a propósito: llega cuando el usuario ya
-          recorrió los tres argumentos.
-
-          Escrito con la regla de oro de la marca: el dato malo vende si se
-          gira. Dato → traducción → ventaja → cierre, y el cierre va SIEMPRE
-          sobre el beneficio del comprador, nunca sobre lo creíbles que somos
-          nosotros. Una línea por idea, ninguna pasa de once palabras. */}
-      <section className="section section-honesto">
+      {/* La nota de fuentes se queda con las cifras que sostiene: las tres
+          de los capítulos de arriba. El remate del criterio se fue a su
+          propio componente y entra después del mapa — ver
+          `CierreDelCriterio.tsx` para el porqué. */}
+      <section className="section section-fuentes">
         <div className="section-shell">
-          <div className="hook">
-            <p className="hook-titular">
-              Del aeropuerto hay un estudio. Del viaducto, ocho años.
-            </p>
-            <div className="hook-lineas">
-              <p>La ANI evalúa la factibilidad del proyecto.</p>
-              <p>Su concepto se espera en noviembre de 2026.</p>
-              <p className="hook-giro">
-                Traducción: hoy pagas por lo que ya está hecho.
-              </p>
-              <p>Pide que el precio se sostenga en obra entregada.</p>
-              <p>Pregunta qué justifica cada peso antes de separar.</p>
-              <p className="hook-cierre">
-                Compra sobre lo construido. Ese es el criterio.
-              </p>
-            </div>
-          </div>
           <p className="zone-fuentes">
             Cifras contrastadas contra fuentes primarias. Concentración de
             oferta: Camacol Bolívar. Actualizado a agosto de 2026.
