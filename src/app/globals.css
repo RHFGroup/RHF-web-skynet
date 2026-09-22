@@ -1340,3 +1340,54 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
 /* La atribución de las cifras de Zona Norte. Tira delgada, sin el aire de
    110 px de `.section`: acompaña a los capítulos, no es un tramo propio. */
 .section-fuentes { padding: 0 0 48px; background: var(--white); }
+
+/* ── El formulario después de enviar ──────────────────────────────
+   Reemplaza al formulario en vez de sumarse debajo: quien acaba de enviar
+   necesita saber que terminó, no volver a ver los campos que llenó. */
+.form-enviado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 48px 32px;
+}
+.form-enviado-marca {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 9999px;
+  background: rgb(194 165 120 / 0.18);
+  border: 1px solid var(--camel);
+  color: var(--cuero);
+  font-size: 26px;
+  line-height: 1;
+}
+.form-enviado h3 { margin: 0; font-size: 26px; color: var(--marino); }
+.form-enviado p {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.form-enviado .btn-whatsapp { margin-top: 10px; }
+
+/* El fallo del envío. Va en marino y no en rojo de alerta: es un aviso con
+   salida al lado, no un error que la persona tenga que resolver. */
+.form-fallo {
+  margin-top: 14px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border-left: 3px solid var(--cuero);
+  background: rgb(107 74 47 / 0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+.form-fallo p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--marino); }
+.form-fallo .btn-whatsapp { padding: 12px 22px; font-size: 14px; }
+
+.contacto-form button[type="submit"][disabled] { opacity: 0.6; cursor: wait; }
