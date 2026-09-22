@@ -38,16 +38,24 @@ const SELECTORES_DEL_TOGGLE = [
 ];
 
 /**
- * El panel del chat si está montado y visible.
+ * El panel del chat si está abierto.
  *
- * `class~="chat-window"` pide el token exacto: la clase de cierre es
- * `chat-window-out` y no coincide, así que un panel en plena animación de
- * salida cuenta como cerrado, que es lo correcto.
+ * La señal es la **presencia** del token exacto `chat-window`, y nada más:
+ *
+ * - cerrado → el panel no está en el DOM;
+ * - abierto → está, con la clase `chat-window`;
+ * - cerrándose → la clase pasa a `chat-window-out`, que `~=` no coincide, así
+ *   que cuenta como cerrado. Es lo correcto: a mitad de la animación de salida
+ *   lo que corresponde es volverlo a abrir.
+ *
+ * Medido el 21-sep-2026: no se puede usar `opacity` para esto. El contenedor
+ * reporta `opacity: 0` en el estilo computado aun con el panel visible en
+ * pantalla, así que una comprobación de opacidad da «cerrado» cuando está
+ * abierto — y de ahí el botón se iba al respaldo de WhatsApp. La presencia de
+ * la clase sí distingue los tres estados.
  */
 function panelAbierto(): HTMLElement | null {
-  const panel = document.querySelector<HTMLElement>('[class~="chat-window"]');
-  if (!panel) return null;
-  return getComputedStyle(panel).opacity === "0" ? null : panel;
+  return document.querySelector<HTMLElement>('[class~="chat-window"]');
 }
 
 export default function MeInteresaButton({
