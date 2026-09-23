@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import ProyectoLanding, { type ProyectoData } from "@/components/ProyectoLanding";
 
 /**
- * Fuente: `projects/doral-country/doral-country` del vault, que a su vez deriva
- * del Excel del constructor con corte 2026-08-03 y del brochure oficial (15 p).
+ * Fuente: `projects/doral-country/doral-country` del vault. Disponibilidad y
+ * precio: hoja del constructor exportada el 23-sep-2026 y su tabla de precios
+ * por piso «TORRE 1-5» (antes: Excel del 25-jun-2026). Brochure oficial (15 p).
  *
  * ⛔ No publicar acá: precios (faltan estrato, fecha de entrega, cuota de
  * administración y valor de desistimiento); áreas exactas (tres fuentes en
@@ -18,12 +19,12 @@ import ProyectoLanding, { type ProyectoData } from "@/components/ProyectoLanding
  * plan anunciaba gimnasio, que no aparece en ninguna fuente.
  */
 
-const CORTE = "Excel del constructor, corte 3 de agosto de 2026";
+const CORTE = "hoja del constructor exportada el 23 de septiembre de 2026";
 
 export const metadata: Metadata = {
   title: "Doral Country — Apartamentos en Zona Norte de Cartagena",
   description:
-    "Apartamentos de 2 y 3 habitaciones en condominio cerrado. Torre 4 recién abierta. Piscina, cancha múltiple, parque infantil y salón social. Asesoría RHF.",
+    "Apartamentos de 2 y 3 habitaciones en condominio cerrado. Torre 5 en venta. Piscina, cancha múltiple, parque infantil y salón social. Asesoría RHF.",
   keywords: [
     "Doral Country Cartagena",
     "apartamentos Zona Norte Cartagena",
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Doral Country — Apartamentos en Zona Norte de Cartagena",
     description:
-      "Apartamentos de 2 y 3 habitaciones en condominio cerrado. Torre 4 recién abierta. Piscina, cancha múltiple, parque infantil y salón social.",
+      "Apartamentos de 2 y 3 habitaciones en condominio cerrado. Torre 5 en venta. Piscina, cancha múltiple, parque infantil y salón social.",
     url: "/proyectos/doral-country",
     siteName: "RHF Asesoría Inmobiliaria",
     locale: "es_CO",
@@ -52,7 +53,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Doral Country — Apartamentos en Zona Norte de Cartagena",
     description:
-      "Apartamentos de 2 y 3 habitaciones en condominio cerrado. Torre 4 recién abierta.",
+      "Apartamentos de 2 y 3 habitaciones en condominio cerrado. Torre 5 en venta.",
     images: ["/proyectos/doral-country/og.jpg"],
   },
 };
@@ -62,10 +63,10 @@ const doralCountry: ProyectoData = {
   nombre: "Doral Country",
   zona: "Zona Norte",
   heroTitulo: "Apartamentos en un condominio cerrado con piscina y zonas comunes",
-  heroSub: "Torre 4 recién abierta. Quedan 17 apartamentos entre las torres 1 y 2.",
+  heroSub: "Torre 5 en venta. Las torres 1, 2 y 3 están prácticamente vendidas.",
   heroImg: "/proyectos/doral-country/hero.jpg",
   intro:
-    "Condominio cerrado de apartamentos sobre la Vía al Mar, con piscina, cancha múltiple, parque infantil y salón social. Las torres 1 y 2 están casi agotadas y la Torre 4 acaba de abrir con el plazo de cuota inicial más largo del proyecto.",
+    "Condominio cerrado de apartamentos sobre la Vía al Mar, con piscina, cancha múltiple, parque infantil y salón social. Las torres 1, 2 y 3 están prácticamente vendidas y la Torre 5 concentra la mayor parte de la oferta.",
   tipologias: [
     { titulo: "Apartamento de 2 habitaciones", detalle: "Sala-comedor, cocina, zona de labores y baño" },
     { titulo: "Apartamento de 3 habitaciones", detalle: "Sala-comedor, cocina y baño" },
@@ -83,10 +84,10 @@ const doralCountry: ProyectoData = {
     { label: "Ubicación", valor: "Vía al Mar 90A, Zona Norte, Cartagena" },
     { label: "Producto", valor: "Apartamentos de 2 y 3 habitaciones en torres" },
     { label: "Parqueadero", valor: "Comunal" },
-    { label: "Disponibilidad", valor: "111 apartamentos entre las cuatro torres en venta" },
-    { label: "Torres 1 y 2", valor: "Casi agotadas · quedan 17 apartamentos" },
-    { label: "Torre 3", valor: "44 apartamentos disponibles" },
-    { label: "Torre 4", valor: "Recién abierta · 50 apartamentos, plazo de cuota inicial de 39 meses" },
+    { label: "Disponibilidad", valor: "60 apartamentos entre las torres 1 a 5" },
+    { label: "Torres 1, 2 y 3", valor: "Prácticamente vendidas · quedan 17 apartamentos" },
+    { label: "Torre 4", valor: "10 apartamentos disponibles" },
+    { label: "Torre 5", valor: "33 apartamentos disponibles" },
   ],
   fuente: `Disponibilidad: ${CORTE}. Las áreas exactas no se publican mientras las tres fuentes del constructor no coincidan, y la fecha de entrega tampoco: hasta hoy el promotor solo ha dado plazos en meses, sin fecha de calendario. Los pedimos por escrito.`,
   ubicacion: "Vía al Mar 90A, Zona Norte de Cartagena",
