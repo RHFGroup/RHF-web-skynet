@@ -18,6 +18,14 @@
     "run_worker_first": ["/api/*"]
   },
 
+  // El vigía de los agentes (worker/vigia.ts): cada 5 minutos mira que el
+  // chat de la web y el webhook de WhatsApp respondan, y avisa por Telegram si
+  // dejan de hacerlo. Existe por la caída del 23-sep-2026. Los previews de
+  // Workers Builds no corren crons: solo corre la versión de producción.
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+
   // Las consultas del formulario. La lectura se hace con
   // `wrangler d1 execute rhf-leads --remote --command "SELECT ..."`.
   "d1_databases": [

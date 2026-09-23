@@ -8,6 +8,10 @@
  * Hoy hay un solo endpoint: POST /api/consulta, que guarda lo que alguien
  * escribe en el formulario de contacto.
  *
+ * Y desde el 23-sep-2026, un cron: cada 5 minutos el vigía de worker/vigia.ts
+ * mira que el agente (chat de la web y WhatsApp) responda, y avisa por
+ * Telegram si deja de hacerlo. No toca nada de lo que está acá abajo.
+ *
  * REGLA DE ORO — cambió el 2026-09-19, y es el cambio más importante de este
  * archivo. Antes el formulario abría WhatsApp y guardar era la red debajo:
  * si el Worker fallaba, el lead llegaba igual porque la persona mandaba el
@@ -25,6 +29,8 @@
  *     «ok» sobre algo que no se guardó.
  */
 
+import { vigilar } from "./vigia";
+
 export interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
@@ -35,6 +41,9 @@ export interface Env {
   TELEGRAM_BOT_TOKEN?: string;
   /** Id del grupo de Telegram al que se avisa (empieza con `-100`). */
   TELEGRAM_CHAT_ID?: string;
+  /** Opcional: otro chat para los avisos del vigía (worker/vigia.ts). Si no
+   *  existe, el vigía avisa al mismo grupo de las consultas. */
+  TELEGRAM_ALERTAS_CHAT_ID?: string;
 }
 
 /**
@@ -88,6 +97,11 @@ export default {
 
     // Cualquier otra cosa que llegue hasta acá se sirve como asset.
     return env.ASSETS.fetch(request);
+  },
+
+  // El cron de wrangler.jsonc. Ver worker/vigia.ts.
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(vigilar(env, new Date(controller.scheduledTime)));
   },
 } satisfies ExportedHandler<Env>;
 
