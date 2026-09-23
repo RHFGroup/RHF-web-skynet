@@ -118,6 +118,8 @@ const LISTA_INVERCOLOMBIA =
   "LISTADO DE PRECIO Y DISPONIBILIDAD (Invercolombia), archivo del 12 de agosto de 2026";
 const LISTA_DORAL =
   "«Disponibilidad y precios Doral Cartagena.xlsx», archivo original del constructor, modificado el 25 de junio de 2026";
+const HOJA_COUNTRY_SEP =
+  "Hoja «Disponibilidad y precios Doral Cartagena — Doral Country» del constructor, exportada el 23 de septiembre de 2026, con su tabla de precios por piso «TORRE 1-5»";
 const DIRECCION_DORAL = "Vía al mar 90A, Cartagena de Indias";
 const FUENTE_DIRECCION_DORAL =
   "Brochure oficial Doral Cartagena y doralcartagena.com/country, verificados el 7-sep-2026";
@@ -131,7 +133,7 @@ export const PROYECTOS: Proyecto[] = [
     promotor: "Invercolombia MB S.A.S. (comercializa) · Promotora BG",
     estado: "en construcción",
     resumen:
-      "Condominio campestre sobre la vía a Turbaco, con casas de una planta ampliables a segundo piso dentro de un club con más de cincuenta amenidades ya construidas. Es el proyecto de la cartera con el inventario mejor documentado.",
+      "Condominio campestre sobre la vía a Turbaco, con casas de una planta ampliables a segundo piso dentro de un club campestre con más de veinte amenidades ya construidas. Es el proyecto de la cartera con el inventario mejor documentado.",
     tipologias: [
       {
         titulo: "Casa de una planta",
@@ -148,7 +150,7 @@ export const PROYECTOS: Proyecto[] = [
       },
     ],
     amenidades: [
-      "Club campestre con más de 50 amenidades",
+      "Club campestre con más de 20 amenidades",
       "Piscina y solárium",
       "Cancha múltiple",
       "Coworking",
@@ -164,8 +166,8 @@ export const PROYECTOS: Proyecto[] = [
       { label: "Parqueaderos", valor: "2", fuente: "Brochure oficial, pág. 12" },
       { label: "Ampliación", valor: "Segundo piso y terraza", fuente: "Brochure oficial" },
     ],
-    ubicacion: "Vía Turbaco Km 1, Cartagena de Indias, Bolívar",
-    ubicacionFuente: "invercolombia.com.co/blue-garden, consultada el 14-sep-2026",
+    ubicacion: "Vía Turbaco Km 1, Turbaco, Bolívar",
+    ubicacionFuente: "invercolombia.com.co/blue-garden (Vía Turbaco Km 1), consultada el 14-sep-2026 · municipio: ficha de la Feria de Vivienda de El Universal",
     conflictos: [],
     brochurePaginas: 24,
     brochurePdf: "/proyectos/blue-garden/brochure.pdf",
@@ -284,7 +286,7 @@ export const PROYECTOS: Proyecto[] = [
     slug: "doral-west",
     nombre: "Doral West",
     zona: "Zona Norte",
-    promotor: "Doral West S.A.S. · NIT 901.641.288 · Grupo Brieva en alianza con Grupo Rincón",
+    promotor: "Doral West S.A.S. · NIT 901.641.288-2",
     estado: "en construcción",
     resumen:
       "Casas de uno y dos pisos con estructura preparada para crecer hasta un tercer nivel, dentro del desarrollo Doral sobre la Vía al Mar. Es el proyecto de la cartera con fechas de entrega documentadas por manzana.",
@@ -387,34 +389,34 @@ export const PROYECTOS: Proyecto[] = [
     slug: "doral-country",
     nombre: "Doral Country",
     zona: "Zona Norte",
-    promotor: "Doral Cartagena · Grupo Brieva en alianza con Grupo Rincón",
+    promotor: "Doral Cartagena",
     estado: "en lanzamiento",
     resumen:
       "Conjunto cerrado de seis torres sobre la Vía al Mar, con ascensor por torre y diez unidades por piso. Es el lanzamiento más reciente del desarrollo Doral.",
     tipologias: [
       {
         titulo: "Apartamento de 2 alcobas",
-        detalle: "2 habitaciones y 2 baños, con balcón o terraza según el piso.",
-        fuente: LISTA_DORAL + ", hoja «Lista de precios Country»",
+        detalle: "2 habitaciones y 2 baños. En el piso 1 con terraza, en los pisos 2 a 5 con balcón.",
+        fuente: HOJA_COUNTRY_SEP,
         area: {
-          etiqueta: "m2",
-          valor: "40 m²",
-          fuente: LISTA_DORAL + " (encabezado literal de la columna)",
+          etiqueta: "Area",
+          valor: "42 m² (pisos 2 a 5) · 50 m² (piso 1)",
+          fuente: "Tabla de precios «TORRE 1-5» del constructor (encabezado literal «Area»), septiembre de 2026",
           certificadaComoPrivadaConstruida: false,
         },
-        precio: { desde: 259_500_000, hasta: 279_500_000, unidades: 32 },
+        precio: { desde: 311_500_000, hasta: 341_500_000, unidades: 37 },
       },
       {
         titulo: "Apartamento de 3 alcobas",
-        detalle: "3 habitaciones y 2 baños, con balcón o terraza según el piso.",
-        fuente: LISTA_DORAL + ", hoja «Lista de precios Country»",
+        detalle: "3 habitaciones y 2 baños. En el piso 1 con terraza, en los pisos 2 a 5 con balcón.",
+        fuente: HOJA_COUNTRY_SEP,
         area: {
-          etiqueta: "m2",
-          valor: "62 m²",
-          fuente: LISTA_DORAL + " (encabezado literal de la columna)",
+          etiqueta: "Area",
+          valor: "62 m² (pisos 2 a 5) · 70 m² (piso 1)",
+          fuente: "Tabla de precios «TORRE 1-5» del constructor (encabezado literal «Area»), septiembre de 2026",
           certificadaComoPrivadaConstruida: false,
         },
-        precio: { desde: 370_000_000, hasta: 410_000_000, unidades: 26 },
+        precio: { desde: 464_000_000, hasta: 494_000_000, unidades: 23 },
       },
     ],
     amenidades: [
@@ -428,7 +430,8 @@ export const PROYECTOS: Proyecto[] = [
     datos: [
       { label: "Torres", valor: "6", fuente: "doralcartagena.com/country" },
       { label: "Pisos por torre", valor: "5 + altillo", fuente: "doralcartagena.com/country" },
-      { label: "Unidades por piso", valor: "10", fuente: "doralcartagena.com/country" },
+      { label: "Unidades por piso", valor: "10 (12 en la Torre 5)", fuente: "doralcartagena.com/country · " + HOJA_COUNTRY_SEP },
+      { label: "Torres en venta", valor: "1 a 5", fuente: HOJA_COUNTRY_SEP },
       { label: "Parqueadero", valor: "Comunal", fuente: "Brochure del constructor, pág. 13" },
     ],
     ubicacion: DIRECCION_DORAL,
@@ -437,29 +440,28 @@ export const PROYECTOS: Proyecto[] = [
       {
         dato: "Áreas de las tipologías",
         versiones: [
-          { valor: "40 y 62 m²", fuente: LISTA_DORAL + ", de donde salen los precios" },
-          { valor: "42, 50, 63 y 70 m²", fuente: "doralcartagena.com/country, consultada el 14-sep-2026" },
+          { valor: "42 y 62 m² en los pisos 2 a 5 · 50 y 70 m² en el piso 1", fuente: "Tabla de precios «TORRE 1-5» del constructor, septiembre de 2026, de donde salen los precios" },
+          { valor: "40 m² en las torres 1, 2, 3 y 5 · 42 m² en la Torre 4 · 62 m²", fuente: HOJA_COUNTRY_SEP + " (encabezados de la grilla)" },
+          { valor: "42, 50, 63 y 70 m²", fuente: "doralcartagena.com/country, consultada el 23-sep-2026" },
         ],
       },
     ],
     brochurePaginas: 15,
     brochurePdf: "/proyectos/doral-country/brochure.pdf",
     precio: {
-      desde: 259_500_000,
-      hasta: 410_000_000,
+      desde: 311_500_000,
+      hasta: 494_000_000,
       moneda: "COP",
-      unidadesDisponibles: 58,
-      corte: "25 de junio de 2026",
-      fuente: LISTA_DORAL + ", hoja «Lista de precios Country»",
+      unidadesDisponibles: 60,
+      corte: "23 de septiembre de 2026",
+      fuente: HOJA_COUNTRY_SEP,
     },
     precontractual: {
       ...SIN_PRECONTRACTUAL,
       parqueadero: "Comunal",
-      planEtapas: "Torres 1 a 6, sin fechas publicadas",
+      planEtapas: "Seis torres; las torres 1 a 5 en venta, sin fechas de entrega publicadas",
     },
-    reservas: [
-      "Nueve apartamentos de 40 m² figuran en la fuente con el precio de los de 62 m² (T2 104/107/108 y T3 303 a 308). Es una anomalía conocida y sin resolver: esas unidades no se ofrecen hasta que el constructor confirme.",
-    ],
+    reservas: [],
   },
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -467,7 +469,7 @@ export const PROYECTOS: Proyecto[] = [
     slug: "doral-suite",
     nombre: "Doral Suite",
     zona: "Zona Norte",
-    promotor: "Doral Cartagena · Grupo Brieva en alianza con Grupo Rincón",
+    promotor: "Doral Suites S.A.S. · NIT 901.602.295-8",
     estado: "entrega inmediata",
     resumen:
       "Apartaestudios aprobados para renta corta dentro del desarrollo Doral. Quedan siete unidades de sesenta y seis: es inventario final.",

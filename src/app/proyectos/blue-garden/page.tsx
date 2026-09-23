@@ -22,7 +22,7 @@ const p = getProyecto("blue-garden")!;
 export const metadata: Metadata = {
   title: "Blue Garden Condominio — Casas campestres en la vía a Turbaco",
   description:
-    "Casas de una planta de 75 m² sobre lote de 250 m², ampliables a segundo piso, en un club campestre con más de 50 amenidades. Asesoría independiente RHF.",
+    "Casas de una planta de 75 m² sobre lote de 250 m², ampliables a segundo piso, en un club campestre con más de 20 amenidades. Asesoría independiente RHF.",
   keywords: [
     "Blue Garden Cartagena",
     "condominio campestre Turbaco",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Blue Garden Condominio — Casas campestres en la vía a Turbaco",
     description:
-      "Casas de una planta de 75 m² sobre lote de 250 m², dentro de un club campestre con más de 50 amenidades.",
+      "Casas de una planta de 75 m² sobre lote de 250 m², dentro de un club campestre con más de 20 amenidades.",
     url: "/proyectos/blue-garden",
     siteName: "RHF Asesoría Inmobiliaria",
     locale: "es_CO",
