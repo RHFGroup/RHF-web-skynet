@@ -7,7 +7,7 @@ import MeInteresaButton from "@/components/MeInteresaButton";
 import MiniMapa from "@/components/MiniMapa";
 import PieSitio from "@/components/PieSitio";
 import PortadaGaleria from "@/components/PortadaGaleria";
-import Reveal from "@/components/Reveal";
+import RevealGrupo from "@/components/RevealGrupo";
 import TarjetaGiro from "@/components/TarjetaGiro";
 import TipologiasTabs, { type TipologiaVista } from "@/components/TipologiasTabs";
 import VolverACartera from "@/components/VolverACartera";
@@ -385,13 +385,13 @@ export default function ProyectoLanding({ p }: { p: Proyecto }) {
             <div className="section-shell">
               <p className="section-kicker">Nuestra cartera</p>
               <h2 id="pp-otros-titulo">Otros proyectos que asesoramos</h2>
-              <div className="pp-otros-grid">
+              <RevealGrupo className="pp-otros-grid">
                 {otros.map((f, i) => (
-                  <Reveal key={f.slug} variant="up" delay={i * 110}>
+                  <div key={f.slug} style={{ "--i": i } as React.CSSProperties}>
                     <TarjetaGiro ficha={f} />
-                  </Reveal>
+                  </div>
                 ))}
-              </div>
+              </RevealGrupo>
             </div>
           </section>
         )}

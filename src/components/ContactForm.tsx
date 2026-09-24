@@ -47,7 +47,7 @@ import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
  */
 
 /** Versión del texto de autorización de abajo. Cambiarla al cambiar el texto. */
-const AVISO_VERSION = "2026-09-18";
+export const AVISO_VERSION = "2026-09-18";
 
 /**
  * Turnstile — la verificación antibot de Cloudflare.
@@ -68,7 +68,7 @@ const AVISO_VERSION = "2026-09-18";
  * verificación está apagada y solo operan la trampa para bots, el tope por
  * IP y la validación de origen. Se activa con `wrangler secret put`.
  */
-const TURNSTILE_SITE_KEY = "0x4AAAAAAE8W_1D4uDCgIB5S";
+export const TURNSTILE_SITE_KEY = "0x4AAAAAAE8W_1D4uDCgIB5S";
 
 declare global {
   interface Window {

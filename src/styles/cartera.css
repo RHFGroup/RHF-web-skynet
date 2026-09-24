@@ -1,0 +1,115 @@
+/* ─────────────────────────────────────────────────────────────
+   Nuestra cartera (Cartera.tsx): filtros y grilla de tarjetas.
+   Las tarjetas son oscuras: van sobre el marfil.
+   ───────────────────────────────────────────────────────────── */
+
+.cartera {
+  border-top: 1px solid var(--marfil-dark);
+  background: var(--marfil);
+  scroll-margin-top: var(--nav-h);
+}
+.cartera h2 { color: var(--marino); }
+
+.cartera-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 28px;
+  margin-top: 36px;
+  padding: 20px 22px;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 20px;
+  background: var(--white);
+}
+.cartera-grupo { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.cartera-grupo-titulo {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--camel);
+}
+.cartera-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cartera-chips button {
+  padding: 7px 14px;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 9999px;
+  background: var(--marfil);
+  color: var(--marino);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+.cartera-chips button:hover { border-color: var(--camel); }
+.cartera-chips button[aria-pressed="true"] { border-color: var(--marino); background: var(--marino); color: var(--white); }
+.cartera-chips button:focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
+
+.cartera-conteo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.cartera-limpiar {
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cuero);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.cartera-grilla {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px 24px;
+  margin-top: 24px;
+}
+.cartera-vacia {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 24px;
+  padding: 28px;
+  border-radius: 20px;
+  background: var(--white);
+  color: var(--near-black);
+}
+
+@media (max-width: 1080px) {
+  .cartera-grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Teléfono: carrusel que se desliza con el dedo, y filtros en filas que
+   también se deslizan en vez de apilarse. */
+@media (max-width: 640px) {
+  .cartera-filtros { gap: 14px; padding: 16px 0 16px 16px; }
+  .cartera-grupo { width: 100%; }
+  .cartera-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-right: 16px;
+    scrollbar-width: none;
+  }
+  .cartera-chips::-webkit-scrollbar { display: none; }
+  .cartera-grilla {
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: 86%;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 14px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+  }
+  .cartera-celda { scroll-snap-align: start; }
+}

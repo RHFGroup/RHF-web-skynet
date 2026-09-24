@@ -145,6 +145,7 @@ export default function TarjetaGiro({
                   </Link>
                 </h3>
                 <p className="tg-zona">{f.zona}</p>
+                {f.linea && <p className="tg-linea">{f.linea}</p>}
               </div>
               <p className="tg-precio">
                 <strong>{f.precio}</strong>

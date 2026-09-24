@@ -290,6 +290,8 @@ export const PROYECTOS: Proyecto[] = [
     },
     reservas: [],
     tipoInmueble: "casas",
+    // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
+    revisionJuridica: false,
     presentacion: {
       linea: "Casas ampliables · 3 habitaciones · jardín",
       frase: "Casa familiar con lote generoso y posibilidad de ampliación.",
@@ -444,6 +446,8 @@ export const PROYECTOS: Proyecto[] = [
       "El brochure anuncia un precio de arranque inferior al mínimo disponible hoy. No se usa el brochure como fuente de precio.",
     ],
     tipoInmueble: "apartamentos",
+    // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
+    revisionJuridica: false,
     presentacion: {
       linea: "22 torres · 904 apartamentos · 5 etapas",
       // Hasta el 24-sep-2026 decía «Entrada económica con valorización a
@@ -583,6 +587,8 @@ export const PROYECTOS: Proyecto[] = [
     },
     reservas: [],
     tipoInmueble: "casas",
+    // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
+    revisionJuridica: false,
     presentacion: {
       linea: "Casas de 1 y 2 pisos · lote propio · parqueadero privado",
       frase: "Estructura preparada para crecer hasta un tercer nivel. Entregas documentadas por manzana.",
@@ -717,6 +723,8 @@ export const PROYECTOS: Proyecto[] = [
     },
     reservas: [],
     tipoInmueble: "apartamentos",
+    // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
+    revisionJuridica: false,
     presentacion: {
       linea: "Apartamentos en torres · 6 torres · ascensor",
       frase: "El lanzamiento más reciente del desarrollo Doral, sobre la Vía al Mar.",
@@ -815,6 +823,8 @@ export const PROYECTOS: Proyecto[] = [
     },
     reservas: ["No hay fotos ni video de la tipología del piso 4."],
     tipoInmueble: "apartaestudios",
+    // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
+    revisionJuridica: false,
     presentacion: {
       linea: "Apartaestudios · aprobados para renta corta",
       // Las cifras y la fecha salen de la misma hoja que `precio`: si cambia

@@ -10,7 +10,7 @@
    ───────────────────────────────────────────────────────────── */
 
 .tg {
-  --tg-alto: 492px;
+  --tg-alto: 508px;
   position: relative;
   height: var(--tg-alto);
   perspective: 1400px;
@@ -66,7 +66,7 @@
 
 .tg-foto {
   position: relative;
-  height: 52%;
+  height: 46%;
   flex-shrink: 0;
   border-radius: 24px 24px 0 0;
   overflow: hidden;
@@ -137,12 +137,11 @@
 }
 .tg-cabeza {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px 14px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
 }
-.tg-titulos { min-width: 0; flex: 1 1 150px; }
+.tg-titulos { min-width: 0; }
 .tg-nombre {
   font-size: 24px;
   line-height: 1.1;
@@ -158,11 +157,20 @@
   text-transform: uppercase;
   color: var(--camel-light);
 }
+.tg-linea {
+  margin-top: 6px;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgb(243 239 230 / 0.72);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .tg-precio {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
   margin: 0;
 }
 .tg-precio strong {
@@ -307,8 +315,9 @@
   flex: 1;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 14px;
+  gap: 6px;
+  padding: 12px 10px;
+  white-space: nowrap;
   border-radius: 14px;
   font-family: inherit;
   font-size: 13px;
@@ -355,7 +364,7 @@
 }
 
 @media (max-width: 560px) {
-  .tg { --tg-alto: 500px; }
+  .tg { --tg-alto: 516px; }
   .tg-nombre { font-size: 22px; }
   .tg-reverso { padding: 24px 20px 20px; }
 }

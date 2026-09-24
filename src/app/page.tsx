@@ -28,36 +28,16 @@ import QuienTeAsesora from "@/components/QuienTeAsesora";
 import Reveal from "@/components/Reveal";
 import { enlaceWhatsApp, SALUDO_WHATSAPP } from "@/data/contacto";
 import PieSitio from "@/components/PieSitio";
-import { precioDe, proyectosEnOrden } from "@/lib/ficha";
+import RespaldoJuridico from "@/components/RespaldoJuridico";
+import PasoAPaso from "@/components/PasoAPaso";
+import { fichaDe, proyectosEnOrden } from "@/lib/ficha";
 
 /**
- * Las fichas de la cartera salen de `src/data/proyectos.ts`, en el orden de
- * la cartera. Hasta el 24-sep-2026 la presentación de cada proyecto (línea,
- * frase, imagen, enlace) vivía en un arreglo escrito aquí; ahora vive junto al
- * resto de sus datos, y los cinco proyectos tienen página propia.
- *
- * `variante` es la animación de entrada de la ficha en el recorrido.
+ * Las tarjetas de la cartera salen de `src/data/proyectos.ts`, en el orden de
+ * la cartera, armadas en el build por `fichaDe` (src/lib/ficha.ts): el precio
+ * solo si es publicable y con su corte, el área con su rótulo literal.
  */
-const VARIANTES = ["zoom", "up", "up", "left", "blur"] as const;
-
-const proyectos = proyectosEnOrden().map((d, i) => {
-  const precio = precioDe(d);
-  const areas = [...new Set(d.tipologias.map((t) => t.area.valor))].join(" · ");
-  return {
-    nombre: d.nombre,
-    href: `/proyectos/${d.slug}`,
-    zona: d.zona,
-    precio: precio.texto,
-    muestraPrecio: precio.muestra,
-    corte: precio.corte,
-    area: areas,
-    tipologia: d.presentacion?.linea ?? "",
-    descripcion: d.presentacion?.frase ?? d.resumen,
-    destacado: d.presentacion?.nuevo ?? false,
-    imagen: d.fotos?.tarjeta.src ?? null,
-    variante: VARIANTES[i % VARIANTES.length],
-  };
-});
+const fichas = proyectosEnOrden().map(fichaDe);
 
 const WA_LINK = enlaceWhatsApp(SALUDO_WHATSAPP);
 
@@ -126,8 +106,12 @@ export default function Home() {
             del plan de la home. */}
         <QuienTeAsesora />
 
-        {/* ── La cartera ───────────────────────── */}
-        <Cartera proyectos={proyectos} />
+        {/* ── La cartera, el respaldo y el paso a paso ─
+            El visitante ve los proyectos, confía en que la compra es segura
+            y entiende qué sigue. Prompt 4. */}
+        <Cartera fichas={fichas} />
+        <RespaldoJuridico />
+        <PasoAPaso />
 
         {/* ── Contacto ─────────────────────────── */}
         <section className="section section-contacto" id="contacto">
