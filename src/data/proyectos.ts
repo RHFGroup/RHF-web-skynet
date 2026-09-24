@@ -138,6 +138,14 @@ export type Proyecto = {
 
   /** Qué se vende, en plural: arma el título para buscadores y el filtro. */
   tipoInmueble?: "apartamentos" | "casas" | "apartaestudios";
+  /**
+   * Dónde queda el proyecto DENTRO de la foto del hero de la home
+   * (public/zona-norte/corredor-2400.jpg), en porcentaje del ancho y el alto
+   * de la foto: `{ top: "42%", left: "63%", fuente: "…" }`. Solo con la
+   * posición verificada sobre esa toma. Los proyectos que no están en la
+   * foto —Blue Garden, Acacias— nunca llevan pin: el hero los ignora.
+   */
+  heroPin?: { top: string; left: string; fuente: string };
 
   /**
    * Cómo se presenta en la cartera: una línea de producto y una frase corta.

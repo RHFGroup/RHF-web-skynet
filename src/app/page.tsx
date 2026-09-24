@@ -9,7 +9,9 @@
  *    corregido contra la research del vault — sin el aeropuerto como hecho
  *    consumado y sin «la mayor valorización predial».
  *  · La barra de navegación es la de la home vieja, con el logo RHF Living.
- *  · El over the fold es el de home-b: imagen de fondo fija, sin partículas.
+ *  · El over the fold es el de home-b —la foto propia del corredor, sin
+ *    partículas— y desde el 24-sep-2026 está viva (Hero.tsx, prompt 1): Ken
+ *    Burns lento, el texto entra por partes y la cartera pasa debajo.
  *  · El pie de página es el de la home vieja, que trae el bloque legal bueno
  *    (precio de referencia con fecha de corte, etiqueta textual del área,
  *    Ley 675 y numeral 2.16.2) y los enlaces a privacidad y términos.
@@ -24,6 +26,7 @@ import ZonaNorte from "@/components/ZonaNorte";
 import MapaZona from "@/components/MapaZona";
 import CierreDelCriterio from "@/components/CierreDelCriterio";
 import Cartera from "@/components/Cartera";
+import Hero, { type FichaHero } from "@/components/Hero";
 import QuienTeAsesora from "@/components/QuienTeAsesora";
 import Reveal from "@/components/Reveal";
 import { enlaceWhatsApp, SALUDO_WHATSAPP } from "@/data/contacto";
@@ -38,6 +41,12 @@ import { fichaDe, proyectosEnOrden } from "@/lib/ficha";
  * solo si es publicable y con su corte, el área con su rótulo literal.
  */
 const fichas = proyectosEnOrden().map(fichaDe);
+
+/** Las mismas fichas para la franja del hero, con su pin si está verificado. */
+const heroFichas: FichaHero[] = proyectosEnOrden().map((p) => ({
+  ...fichaDe(p),
+  pin: p.heroPin ?? null,
+}));
 
 const WA_LINK = enlaceWhatsApp(SALUDO_WHATSAPP);
 
@@ -64,29 +73,7 @@ export default function Home() {
 
       <main>
         {/* ── Over the fold ────────────────────── */}
-        <section className="hero-wrap" id="inicio">
-          <div className="hero-bg" />
-          <div className="hero-content">
-            <p className="eyebrow">Asesoría inmobiliaria · Cartagena</p>
-            <h1>Tu próximo proyecto,<br />en la mejor ubicación.</h1>
-            <p className="hero-sub">
-              Asesoría inmobiliaria premium en Cartagena y la Zona Norte.
-              Te acompañamos en cada paso para encontrar el proyecto
-              que se ajusta a lo que buscas.
-            </p>
-            <div className="hero-ctas">
-              <a className="btn-primary" href="#cartera">
-                Ver nuestra cartera
-              </a>
-              <a className="btn-ghost" href={WA_LINK} target="_blank" rel="noopener noreferrer">
-                <WhatsAppIcon /> Contactar
-              </a>
-            </div>
-          </div>
-          <p className="hero-credito">
-            Corredor de la Zona Norte, Cartagena · marzo de 2026 · foto propia
-          </p>
-        </section>
+        <Hero fichas={heroFichas} whatsapp={WA_LINK} />
 
         {/* ── Zona Norte (antes que la cartera) ── */}
         <ZonaNorte />
