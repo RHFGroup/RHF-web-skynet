@@ -19,7 +19,6 @@
  * no, dice «Consultar». Nunca se escribe un precio a mano en esta página: fue
  * así como la home terminó anunciando Doral West $145 millones por debajo.
  */
-import Link from "next/link";
 import ContactForm from "@/components/ContactForm";
 import ZonaNorte from "@/components/ZonaNorte";
 import MapaZona from "@/components/MapaZona";
@@ -28,88 +27,35 @@ import Cartera from "@/components/Cartera";
 import QuienTeAsesora from "@/components/QuienTeAsesora";
 import Reveal from "@/components/Reveal";
 import { enlaceWhatsApp, SALUDO_WHATSAPP } from "@/data/contacto";
-import { puedePublicarPrecio, rangoPrecio, getProyecto } from "@/data/proyectos";
+import PieSitio from "@/components/PieSitio";
+import { precioDe, proyectosEnOrden } from "@/lib/ficha";
 
 /**
- * Lo único que se escribe a mano por proyecto: cómo se presenta y a dónde
- * lleva. `href: null` es un proyecto sin landing propia todavía — la ficha
- * queda con «Me interesa» y sin enlace, nunca con un enlace roto.
- * `variante` es la animación de entrada de la ficha en el recorrido.
+ * Las fichas de la cartera salen de `src/data/proyectos.ts`, en el orden de
+ * la cartera. Hasta el 24-sep-2026 la presentación de cada proyecto (línea,
+ * frase, imagen, enlace) vivía en un arreglo escrito aquí; ahora vive junto al
+ * resto de sus datos, y los cinco proyectos tienen página propia.
  *
- * `imagen` es el render del promotor que ya vive en `public/proyectos/<slug>/`,
- * el mismo que abre su landing. `imagen: null` es un proyecto del que todavía
- * tenemos material propio por recibir: la ficha muestra un panel de marca en
- * vez de una foto ajena. Publicamos lo que podemos sostener, también en las
- * imágenes.
+ * `variante` es la animación de entrada de la ficha en el recorrido.
  */
-const PRESENTACION: Record<
-  string,
-  {
-    href: string | null;
-    tipologia: string;
-    descripcion: string;
-    destacado?: boolean;
-    imagen: string | null;
-    variante: "zoom" | "up" | "left" | "blur";
-  }
-> = {
-  "doral-country": {
-    href: "/proyectos/doral-country",
-    tipologia: "Apartamentos en torres · 6 torres · ascensor",
-    descripcion: "El lanzamiento más reciente del desarrollo Doral, sobre la Vía al Mar.",
-    destacado: true,
-    imagen: "/proyectos/doral-country/home.jpg",
-    variante: "zoom",
-  },
-  "doral-suite": {
-    href: null,
-    tipologia: "Apartaestudios · aprobados para renta corta",
-    descripcion: "Inventario final: quedan siete de sesenta y seis unidades.",
-    imagen: null,
-    variante: "up",
-  },
-  "doral-west": {
-    href: "/proyectos/doral-west",
-    tipologia: "Casas de 1 y 2 pisos · lote propio · parqueadero privado",
-    descripcion: "Estructura preparada para crecer hasta un tercer nivel. Entregas documentadas por manzana.",
-    imagen: "/proyectos/doral-west/home.jpg",
-    variante: "up",
-  },
-  "acacias-campestre": {
-    href: null,
-    tipologia: "22 torres · 904 apartamentos · 5 etapas",
-    descripcion: "Entrada económica con valorización a mediano plazo. Perfil inversionista.",
-    imagen: null,
-    variante: "left",
-  },
-  "blue-garden": {
-    href: "/proyectos/blue-garden",
-    tipologia: "Casas ampliables · 3 habitaciones · jardín",
-    descripcion: "Casa familiar con lote generoso y posibilidad de ampliación.",
-    imagen: "/proyectos/blue-garden/home.jpg",
-    variante: "blur",
-  },
-};
+const VARIANTES = ["zoom", "up", "up", "left", "blur"] as const;
 
-const ORDEN = ["doral-country", "doral-suite", "doral-west", "acacias-campestre", "blue-garden"];
-
-const proyectos = ORDEN.map((slug) => {
-  const d = getProyecto(slug)!;
-  const pres = PRESENTACION[slug];
+const proyectos = proyectosEnOrden().map((d, i) => {
+  const precio = precioDe(d);
   const areas = [...new Set(d.tipologias.map((t) => t.area.valor))].join(" · ");
   return {
     nombre: d.nombre,
-    href: pres.href,
+    href: `/proyectos/${d.slug}`,
     zona: d.zona,
-    precio: puedePublicarPrecio(d) && d.precio ? rangoPrecio(d.precio.desde, d.precio.hasta) : "Consultar",
-    muestraPrecio: puedePublicarPrecio(d) && d.precio !== null,
-    corte: d.precio?.corte ?? null,
+    precio: precio.texto,
+    muestraPrecio: precio.muestra,
+    corte: precio.corte,
     area: areas,
-    tipologia: pres.tipologia,
-    descripcion: pres.descripcion,
-    destacado: pres.destacado ?? false,
-    imagen: pres.imagen,
-    variante: pres.variante,
+    tipologia: d.presentacion?.linea ?? "",
+    descripcion: d.presentacion?.frase ?? d.resumen,
+    destacado: d.presentacion?.nuevo ?? false,
+    imagen: d.fotos?.tarjeta.src ?? null,
+    variante: VARIANTES[i % VARIANTES.length],
   };
 });
 
@@ -217,48 +163,7 @@ export default function Home() {
       </main>
 
       {/* ── Footer ─────────────────────── */}
-      <footer className="site-footer">
-        <div className="footer-inner">
-          <div className="footer-top">
-            <img className="footer-brand" src="/marca/rhf-living.svg" alt="RHF Living" width="196" height="44" />
-            <div className="footer-links">
-              <a href="#inicio">Inicio</a>
-              <a href="#cartera">Nuestra cartera</a>
-              <a href="#zonanorte">Zona Norte</a>
-              <a href="#asesor">Quién te asesora</a>
-              <a href="#contacto">Contacto</a>
-            </div>
-          </div>
-          <div className="footer-legal">
-            <p>
-              <strong>Rafael Hernández Franco</strong> — Asesor inmobiliario independiente.
-              La fotografía de portada es propia. Las imágenes de los proyectos son renders
-              y material del promotor. Los precios,
-              áreas y condiciones aquí publicados corresponden a la fecha
-              indicada en cada proyecto y pueden variar sin previo aviso.
-              Para información actualizada, contáctanos directamente.
-            </p>
-            <p className="footer-circular">
-              Los precios aquí publicados son de referencia, en pesos
-              colombianos, a la fecha de corte que acompaña a cada cifra, y
-              están sujetos a disponibilidad. Cada proyecto publica su área
-              con la etiqueta textual de la fuente del promotor y declara si
-              su equivalencia con el área privada construida del artículo 3 de
-              la Ley 675 de 2001 está pendiente de certificación. La
-              información precontractual del numeral 2.16.2 de la Circular 004
-              de la SIC —estrato, cuota de administración, fecha de entrega,
-              valor de desistimiento y plan de etapas— se entrega por escrito
-              antes de cualquier separación.
-            </p>
-            <p className="footer-legal-links">
-              <Link href="/privacidad">Política de tratamiento de datos</Link>
-              {" · "}
-              <Link href="/terminos">Términos de uso</Link>
-            </p>
-            <p className="footer-copy">© {new Date().getFullYear()} RHF Living. Todos los derechos reservados.</p>
-          </div>
-        </div>
-      </footer>
+      <PieSitio />
 
       {/* ── WhatsApp flotante ───────────────── */}
       <a

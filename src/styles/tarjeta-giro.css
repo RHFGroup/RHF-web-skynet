@@ -1,0 +1,372 @@
+/* ─────────────────────────────────────────────────────────────
+   Tarjeta con giro 3D (TarjetaGiro.tsx)
+
+   Oscura sobre marfil: marino de la marca en vez de negro, camel para
+   íconos, precio y detalles. Alto fijo para que ninguna de las dos caras
+   corte su contenido. El giro dura 0,7 s, el ritmo del resto del sitio.
+
+   Ojo con `overflow: hidden`: en una cara con `preserve-3d` aplana el 3D.
+   Por eso el recorte de la foto vive en `.tg-foto`, no en la cara.
+   ───────────────────────────────────────────────────────────── */
+
+.tg {
+  --tg-alto: 492px;
+  position: relative;
+  height: var(--tg-alto);
+  perspective: 1400px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tg-giro {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tg-girada .tg-giro { transform: rotateY(180deg); }
+
+.tg-cara {
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  background: linear-gradient(165deg, var(--marino-light) 0%, var(--marino) 42%, var(--marino-dark) 100%);
+  color: var(--marfil);
+  box-shadow: 0 18px 44px rgb(22 30 43 / 0.22);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+.tg-reverso {
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  padding: 28px 26px 24px;
+}
+.tg-reverso:focus { outline: none; }
+.tg-reverso:focus-visible { outline: 2px solid var(--camel); outline-offset: 3px; }
+
+/* Las capas: cada bloque flota a su profundidad mientras la tarjeta gira. */
+.tg-cabeza  { transform: translateZ(34px); }
+.tg-datos   { transform: translateZ(22px); }
+.tg-pie     { transform: translateZ(14px); }
+.tg-frase   { transform: translateZ(26px); }
+.tg-capas li:nth-child(1) { transform: translateZ(40px); }
+.tg-capas li:nth-child(2) { transform: translateZ(30px); }
+.tg-capas li:nth-child(3) { transform: translateZ(20px); }
+.tg-acciones { transform: translateZ(36px); }
+.tg-cabeza, .tg-datos, .tg-pie, .tg-frase, .tg-capas li, .tg-acciones {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* ── Cara frontal ─────────────────────────────── */
+.tg-frente { display: flex; flex-direction: column; }
+
+.tg-foto {
+  position: relative;
+  height: 52%;
+  flex-shrink: 0;
+  border-radius: 24px 24px 0 0;
+  overflow: hidden;
+  background: var(--marino-dark);
+}
+.tg-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tg:hover .tg-foto img { transform: scale(1.06); }
+.tg-foto::after {
+  /* Un velo abajo para que la foto funda con el marino del cuerpo. */
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 38%;
+  background: linear-gradient(180deg, transparent, rgb(22 30 43 / 0.55));
+  pointer-events: none;
+}
+.tg-panel {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 100%;
+  padding: 22px;
+  background: linear-gradient(160deg, var(--marino-light), var(--marino-dark));
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 30px;
+  color: var(--marfil);
+}
+.tg-estado, .tg-nuevo {
+  position: absolute;
+  top: 14px;
+  z-index: 1;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tg-estado {
+  left: 14px;
+  background: rgb(22 30 43 / 0.78);
+  color: var(--marfil);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.tg-nuevo { right: 14px; background: var(--camel); color: var(--marino); }
+.tg-credito {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  z-index: 1;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: rgb(243 239 230 / 0.78);
+}
+
+.tg-cuerpo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 18px 22px 16px;
+  transform-style: preserve-3d;
+}
+.tg-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px 14px;
+}
+.tg-titulos { min-width: 0; flex: 1 1 150px; }
+.tg-nombre {
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--marfil);
+}
+.tg-nombre a { color: inherit; }
+.tg-nombre a:hover { color: var(--camel-light); }
+.tg-nombre a:focus-visible { outline: 2px solid var(--camel); outline-offset: 3px; border-radius: 4px; }
+.tg-zona {
+  margin-top: 4px;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--camel-light);
+}
+.tg-precio {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  margin: 0;
+}
+.tg-precio strong {
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: var(--camel);
+  color: var(--marino);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.tg-precio span {
+  font-size: 10.5px;
+  color: rgb(243 239 230 / 0.7);
+  white-space: nowrap;
+}
+
+.tg-datos {
+  display: flex;
+  list-style: none;
+  margin: auto 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid rgb(243 239 230 / 0.12);
+}
+.tg-datos li {
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 10px;
+  color: var(--camel);
+}
+.tg-datos li:first-child { padding-left: 0; }
+.tg-datos li + li { border-left: 1px solid rgb(243 239 230 / 0.16); }
+.tg-datos li svg { flex-shrink: 0; margin-top: 1px; }
+.tg-datos li span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 12px;
+  color: rgb(243 239 230 / 0.82);
+}
+.tg-datos strong { font-size: 14px; font-weight: 600; color: var(--marfil); white-space: nowrap; }
+.tg-datos sup { color: var(--camel); }
+.tg-datos small {
+  font-size: 10.5px;
+  color: rgb(243 239 230 / 0.6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tg-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+}
+.tg-sello {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 11px;
+  color: var(--camel-light);
+}
+.tg-ver-mas {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--camel);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.tg-ver-mas:focus-visible { outline: 2px solid var(--camel); outline-offset: 3px; border-radius: 4px; }
+.tg-ver-mas-tactil { display: none; }
+@media (hover: none) {
+  .tg-ver-mas-raton { display: none; }
+  .tg-ver-mas-tactil { display: inline; }
+}
+
+/* ── Reverso ──────────────────────────────────── */
+.tg-kicker {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--camel);
+}
+.tg-frase {
+  margin-top: 10px;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 21px;
+  line-height: 1.25;
+  color: var(--marfil);
+}
+.tg-capas {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  transform-style: preserve-3d;
+}
+.tg-capas li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-left: 2px solid var(--camel);
+  border-radius: 10px;
+  background: rgb(243 239 230 / 0.07);
+  box-shadow: 0 10px 22px rgb(10 14 22 / 0.22);
+}
+.tg-capas span { font-size: 12px; color: rgb(243 239 230 / 0.72); }
+.tg-capas strong { font-size: 13px; font-weight: 600; text-align: right; color: var(--marfil); }
+.tg-entrega { margin-top: 12px; font-size: 12.5px; color: var(--camel-light); }
+.tg-nota {
+  margin-top: 10px;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: rgb(243 239 230 / 0.62);
+}
+.tg-acciones {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+.tg-btn {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+.tg-btn-principal { border: none; background: var(--camel); color: var(--marino); }
+.tg-btn-principal:hover { background: var(--camel-light); transform: translateY(-2px); }
+.tg-btn-secundario { border: 1px solid rgb(243 239 230 / 0.45); background: transparent; color: var(--marfil); }
+.tg-btn-secundario:hover { background: rgb(243 239 230 / 0.1); }
+.tg-btn:focus-visible, .tg-link:focus-visible, .tg-volver:focus-visible {
+  outline: 2px solid var(--camel);
+  outline-offset: 3px;
+}
+.tg-enlaces {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+.tg-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--camel-light);
+  border-bottom: 1px solid rgb(212 188 150 / 0.4);
+}
+.tg-link:hover { color: var(--marfil); border-color: var(--marfil); }
+.tg-volver {
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  color: rgb(243 239 230 / 0.6);
+  cursor: pointer;
+}
+/* Con ratón la tarjeta vuelve sola al salir: el botón sobra. */
+@media (hover: hover) and (pointer: fine) {
+  .tg-volver { visibility: hidden; }
+  .tg-volver:focus-visible { visibility: visible; }
+}
+
+@media (max-width: 560px) {
+  .tg { --tg-alto: 500px; }
+  .tg-nombre { font-size: 22px; }
+  .tg-reverso { padding: 24px 20px 20px; }
+}
+
+/* ── Menos movimiento: un fundido en vez del giro ── */
+@media (prefers-reduced-motion: reduce) {
+  .tg-giro, .tg-girada .tg-giro { transform: none; transition: none; }
+  .tg-cara { transition: opacity 0.3s ease; }
+  .tg-reverso { transform: none; opacity: 0; }
+  .tg-girada .tg-reverso { opacity: 1; }
+  .tg-girada .tg-frente { opacity: 0; }
+  .tg-cabeza, .tg-datos, .tg-pie, .tg-frase, .tg-capas li, .tg-acciones { transform: none !important; }
+  .tg:hover .tg-foto img { transform: none; }
+}

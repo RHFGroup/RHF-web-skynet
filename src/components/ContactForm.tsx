@@ -75,10 +75,15 @@ declare global {
     turnstile?: { reset: (contenedor?: HTMLElement) => void };
   }
 }
-export default function ContactForm() {
+export default function ContactForm({
+  proyectoInicial = "",
+}: {
+  /** En la página de un proyecto, el formulario llega con ese proyecto elegido. */
+  proyectoInicial?: string;
+} = {}) {
   const [nombre, setNombre] = useState("");
   const [contacto, setContacto] = useState("");
-  const [proyecto, setProyecto] = useState("");
+  const [proyecto, setProyecto] = useState(proyectoInicial);
   const [mensaje, setMensaje] = useState("");
   const [autoriza, setAutoriza] = useState(false);
   const [error, setError] = useState("");

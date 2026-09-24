@@ -1,263 +1,473 @@
 import Link from "next/link";
-import MeInteresaButton from "@/components/MeInteresaButton";
 import BloqueLegal from "@/components/BloqueLegal";
-import { getProyecto, puedePublicarPrecio, rangoPrecio } from "@/data/proyectos";
+import BrochureGaleria from "@/components/BrochureGaleria";
+import CabeceraSitio from "@/components/CabeceraSitio";
+import ContactForm from "@/components/ContactForm";
+import MeInteresaButton from "@/components/MeInteresaButton";
+import MiniMapa from "@/components/MiniMapa";
+import PieSitio from "@/components/PieSitio";
+import PortadaGaleria from "@/components/PortadaGaleria";
+import Reveal from "@/components/Reveal";
+import TarjetaGiro from "@/components/TarjetaGiro";
+import TipologiasTabs, { type TipologiaVista } from "@/components/TipologiasTabs";
+import VolverACartera from "@/components/VolverACartera";
+import {
+  IconoAmenidad,
+  IconoDocumento,
+  IconoEscudo,
+  IconoFlecha,
+  IconoWhatsApp,
+} from "@/components/Iconos";
+import { enlaceWhatsApp } from "@/data/contacto";
+import {
+  datosDePieza,
+  faltaPrecontractual,
+  formatoPesos,
+  puedePublicarPrecio,
+  type Proyecto,
+} from "@/data/proyectos";
+import { areaDe, fichaDe, precioDe, proyectosEnOrden } from "@/lib/ficha";
+import "@/styles/proyecto.css";
 
 /**
- * Landing de un proyecto de la cartera.
+ * La página propia de un proyecto — una sola plantilla para los cinco.
  *
- * Cadena de fuente de verdad: Excel de la constructora con fecha de corte →
- * nota del proyecto en el vault (`projects/<proyecto>/`) → este componente.
- * Nada de lo que se muestra acá se escribe sin pasar por la nota.
+ * Todo sale de `src/data/proyectos.ts`. Agregar un proyecto a la cartera es
+ * agregar un elemento a ese archivo: la ruta, el mapa del sitio, la tarjeta y
+ * esta página salen solos (`src/app/proyectos/[slug]/page.tsx`).
  *
- * El precio se publica cuando el proyecto tiene los TRES datos del numeral
- * 2.16.1 de la Circular 004 (área, precio de referencia y ubicación exacta) y
- * SIEMPRE acompañado del bloque legal, que declara la fecha de corte y el
- * estado real del área. El candado es `puedePublicarPrecio`; la cifra sale de
- * `src/data/proyectos.ts`, nunca escrita a mano acá.
+ * Orden de la página, pedido en el prompt 4B: portada, datos clave,
+ * tipologías, amenidades, ubicación, la opinión de Rafael, respaldo,
+ * preguntas frecuentes y otros proyectos. **Cada bloque sin datos se oculta**:
+ * nunca un marcador, nunca texto de relleno.
  *
- * ⛔ El copy de Zona Norte sale de `projects/inmobiliaria/copy-de-la-seccion-
- * zona-norte-que-publicamos-y-que-no`, ya contrastado contra la research. Sin
- * superlativos, sin cifras de valorización, sin el aeropuerto como hecho.
+ * Lo que se conserva de la landing anterior: la galería del brochure, el
+ * bloque legal de la Circular 004 y «Me interesa», que abre el chat.
+ *
+ * Lo que ya no está, a propósito: los textos escritos a mano en cada página
+ * («quedan 7 de 272 casas», «Torre 5 en venta») que no salían de la capa de
+ * datos y ya contradecían la hoja vigente; y el pie que decía «en esta página
+ * no publicamos precios» debajo de un precio publicado.
  */
 
-export type Dato = { label: string; valor: string };
-export type Imagen = { src: string; alt: string };
-
-export type ProyectoData = {
-  nombre: string;
-  zona: string;
-  heroTitulo: string;
-  heroSub: string;
-  heroImg: string;
-  intro: string;
-  tipologias: { titulo: string; detalle: string }[];
-  amenidades: string[];
-  datos: Dato[];
-  fuente: string;
-  ubicacion: string;
-  ubicacionNota: string;
-  galeria: Imagen[];
-  /** Slug en `src/data/proyectos.ts`. De ahí salen el precio y el bloque legal. */
-  slug?: string;
+const ESTADO: Record<Proyecto["estado"], string> = {
+  "en lanzamiento": "En lanzamiento",
+  "en construcción": "En construcción",
+  "entrega inmediata": "Entrega inmediata",
 };
 
-const ZONA_NORTE = [
-  {
-    titulo: "Aquí está la oferta",
-    texto:
-      "Cerca del 70 % de la vivienda nueva que se comercializa en Bolívar está en la Zona Norte. Donde se concentra la oferta se concentra la competencia entre constructores, y eso se nota en las condiciones de compra.",
-    fuente: "Camacol Bolívar",
-  },
-  {
-    titulo: "La vía ya está hecha",
-    texto:
-      "El Viaducto del Gran Manglar opera desde 2018 y el corredor completo hacia Barranquilla desde 2021. La doble calzada de Tierra Baja está al 95 %.",
-    fuente: "ANI · prensa nacional",
-  },
-  {
-    titulo: "El entorno ya funciona",
-    texto:
-      "El hospital Santa Fe y el campus de Uniandes funcionan aquí desde 2018, a 12 km del Centro Histórico. Kristal Malls está en obra desde marzo de 2026, con apertura prevista para 2027.",
-    fuente: "Prensa local",
-  },
-];
+const DESTINOS: Record<NonNullable<Proyecto["tiempos"]>[number]["destino"], string> = {
+  playa: "a la playa",
+  aeropuerto: "al aeropuerto",
+  hospital: "al hospital",
+  centro: "al Centro Histórico",
+};
 
-export default function ProyectoLanding({ p }: { p: ProyectoData }) {
-  const datos = p.slug ? getProyecto(p.slug) : undefined;
+function tipologiasVista(p: Proyecto): TipologiaVista[] {
+  const publica = puedePublicarPrecio(p) && p.precio !== null;
+  return p.tipologias.map((t) => ({
+    titulo: t.titulo,
+    detalle: t.detalle,
+    fuente: t.fuente,
+    area: { etiqueta: t.area.etiqueta, valor: t.area.valor, fuente: t.area.fuente },
+    alcobas: t.alcobas,
+    banos: t.banos,
+    exterior: t.exterior,
+    planos: t.planos ?? [],
+    precio:
+      publica && t.precio && p.precio
+        ? {
+            cifra:
+              t.precio.desde === t.precio.hasta
+                ? formatoPesos(t.precio.desde)
+                : `${formatoPesos(t.precio.desde)} a ${formatoPesos(t.precio.hasta)}`,
+            detalle: `${t.precio.unidades} ${
+              t.precio.unidades === 1 ? "unidad disponible" : "unidades disponibles"
+            } · corte ${p.precio.corte}`,
+          }
+        : null,
+  }));
+}
+
+/** Los tres proyectos que siguen en la cartera, dando la vuelta. */
+function otrosProyectos(p: Proyecto) {
+  const todos = proyectosEnOrden();
+  const i = todos.findIndex((x) => x.slug === p.slug);
+  const resto = [...todos.slice(i + 1), ...todos.slice(0, i)];
+  return resto.slice(0, 3).map(fichaDe);
+}
+
+export default function ProyectoLanding({ p }: { p: Proyecto }) {
+  const precio = precioDe(p);
+  const area = areaDe(p);
+  const ficha = fichaDe(p);
+  const pieza = datosDePieza(p);
+  const pendientes = faltaPrecontractual(p);
+  const whatsappVisita = enlaceWhatsApp(`Hola Rafael, quiero agendar una visita a ${p.nombre}.`);
+  const otros = otrosProyectos(p);
+
+  const franja: { titulo: string; valor: string; nota?: string }[] = [
+    {
+      titulo: precio.muestra ? "Precio de referencia" : "Precio",
+      valor: precio.texto,
+      nota: precio.corte ? `corte ${precio.corte}` : "Te lo damos con su respaldo documental",
+    },
+  ];
+  if (area) {
+    franja.push({
+      titulo: "Área",
+      valor: area.texto,
+      nota:
+        (area.etiquetas.length > 0
+          ? `Como la rotula la fuente: ${area.etiquetas.map((e) => `«${e}»`).join(", ")}`
+          : "Como la publica la fuente") + (area.conflicto ? " · las fuentes difieren, ver tipologías" : ""),
+    });
+  }
+  if (ficha.alcobas) franja.push({ titulo: "Habitaciones", valor: ficha.alcobas });
+  if (ficha.banos) franja.push({ titulo: "Baños", valor: ficha.banos });
+  if (p.precontractual.fechaEntrega) franja.push({ titulo: "Entrega", valor: p.precontractual.fechaEntrega });
+  if (p.precio) {
+    franja.push({
+      titulo: "Disponibles",
+      valor: `${p.precio.unidadesDisponibles} ${p.precio.unidadesDisponibles === 1 ? "unidad" : "unidades"}`,
+      nota: `corte ${p.precio.corte}`,
+    });
+  }
 
   return (
     <>
-      <header className="nav">
-        <div className="nav-inner">
-          <Link className="brand" href="/">RHF</Link>
-          <nav className="nav-links">
-            <Link href="/#cartera">Nuestra cartera</Link>
-            <Link href="/#zonanorte">Zona Norte</Link>
-            <Link href="/#contacto">Contacto</Link>
-          </nav>
-          <MeInteresaButton label="Hablemos" className="nav-cta" />
+      <CabeceraSitio mensaje={`Hola Rafael, vi la página de ${p.nombre} y quiero más información.`} />
+
+      <main className="pp">
+        <div className="pp-migas">
+          <div className="section-shell">
+            <VolverACartera />
+          </div>
         </div>
-      </header>
 
-      <main>
-        {/* ── Hero ───────────────────────────── */}
-        <section className="proyecto-hero">
-          <img className="proyecto-hero-bg" src={p.heroImg} alt={`${p.nombre} — render del proyecto`} />
-          <div className="proyecto-hero-inner">
-            <p className="breadcrumb">
-              <Link href="/#cartera">Nuestra cartera</Link>
-              <span aria-hidden="true"> · </span>
-              {p.nombre}
+        {/* 1 · Portada ─────────────────────────────── */}
+        <PortadaGaleria fotos={p.fotos?.galeria ?? []} nombre={p.nombre}>
+          <p className="eyebrow">
+            {p.zona} · {ESTADO[p.estado]}
+          </p>
+          <h1>{p.nombre}</h1>
+          {p.presentacion && <p className="pp-portada-linea">{p.presentacion.linea}</p>}
+          {p.revisionJuridica && (
+            <p className="pp-sello">
+              <IconoEscudo size={18} /> Revisado por nuestro estudio jurídico
             </p>
-            <p className="eyebrow">{p.zona} · Cartagena</p>
-            <h1>{p.heroTitulo}</h1>
-            <p className="hero-sub">{p.heroSub}</p>
-            <div className="hero-ctas">
-              <MeInteresaButton label="Me interesa este proyecto" className="btn-primary" />
-              <a className="btn-ghost" href="#ficha">Ver los datos</a>
-            </div>
-          </div>
-        </section>
+          )}
+        </PortadaGaleria>
 
-        {/* ── Ficha ──────────────────────────── */}
-        <section className="section" id="ficha">
-          <div className="section-shell">
-            <p className="section-kicker">El proyecto</p>
-            <h2>{p.nombre}</h2>
-            <p className="section-lede">{p.intro}</p>
+        <div className="pp-cuerpo section-shell">
+          <div className="pp-contenido">
+            {/* 2 · Datos clave ─────────────────────── */}
+            <section className="pp-bloque" aria-label="Datos clave">
+              <dl className="pp-franja">
+                {franja.map((d) => (
+                  <div key={d.titulo}>
+                    <dt>{d.titulo}</dt>
+                    <dd>
+                      <strong>{d.valor}</strong>
+                      {d.nota && <span>{d.nota}</span>}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="pp-resumen">{p.resumen}</p>
+            </section>
 
-            <div className="ficha-grid">
-              {p.datos.map((d) => (
-                <div className="ficha-item" key={d.label}>
-                  <p className="ficha-label">{d.label}</p>
-                  <p className="ficha-valor">{d.valor}</p>
+            {/* 3 · Tipologías ──────────────────────── */}
+            <section className="pp-bloque" id="tipologias">
+              <p className="section-kicker">Tipologías</p>
+              <h2>Qué se ofrece</h2>
+              <TipologiasTabs tipologias={tipologiasVista(p)} />
+
+              {p.conflictos.length > 0 && (
+                <div className="pp-conflictos">
+                  <p>
+                    <strong>Datos en los que las fuentes del promotor no coinciden.</strong>{" "}
+                    Publicamos todas las versiones en lugar de elegir una:
+                  </p>
+                  <ul>
+                    {p.conflictos.map((c) => (
+                      <li key={c.dato}>
+                        <em>{c.dato}:</em>{" "}
+                        {c.versiones.map((v, i) => (
+                          <span key={v.fuente}>
+                            {i > 0 && " · "}
+                            {v.valor} <span className="pp-fuente-inline">({v.fuente})</span>
+                          </span>
+                        ))}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              ))}
-            </div>
+              )}
+            </section>
 
-            <p className="aviso-fuente">{p.fuente}</p>
-            {datos && datos.precio && puedePublicarPrecio(datos) && (
-              <p className="proyecto-precio">
-                <strong>{rangoPrecio(datos.precio.desde, datos.precio.hasta)}</strong>{" "}
-                <span>
-                  precio de referencia · {datos.precio.unidadesDisponibles} unidades
-                  disponibles · corte {datos.precio.corte}
-                </span>
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* ── Tipologías y amenidades ────────── */}
-        <section className="section section-alterna">
-          <div className="section-shell">
-            <div className="doble-grid">
-              <div>
-                <p className="section-kicker">Tipologías</p>
-                <h2>Qué se ofrece</h2>
-                <ul className="lista-tipologias">
-                  {p.tipologias.map((t) => (
-                    <li key={t.titulo}>
-                      <strong>{t.titulo}</strong>
-                      <span>{t.detalle}</span>
+            {/* 4 · Amenidades ──────────────────────── */}
+            {p.amenidades.length > 0 && (
+              <section className="pp-bloque" id="amenidades">
+                <p className="section-kicker">Amenidades</p>
+                <h2>Lo que tiene el proyecto</h2>
+                <ul className="pp-amenidades">
+                  {p.amenidades.map((a) => (
+                    <li key={a}>
+                      <IconoAmenidad nombre={a} size={24} />
+                      <span>{a}</span>
                     </li>
                   ))}
                 </ul>
-              </div>
-              <div>
-                <p className="section-kicker">Zonas comunes</p>
-                <h2>Amenidades</h2>
-                <ul className="lista-amenidades">
-                  {p.amenidades.map((a) => (
-                    <li key={a}>{a}</li>
+                <p className="pp-fuente">Según el material publicado por el promotor.</p>
+              </section>
+            )}
+
+            {/* 5 · Ubicación ───────────────────────── */}
+            <section className="pp-bloque" id="ubicacion">
+              <p className="section-kicker">Ubicación</p>
+              <h2>{p.ubicacion ?? "Ubicación exacta por confirmar con el promotor"}</h2>
+              {p.coordenada && (
+                <MiniMapa
+                  lat={p.coordenada.lat}
+                  lon={p.coordenada.lon}
+                  nombre={p.nombre}
+                  fuente={p.coordenada.fuente}
+                />
+              )}
+              <p className="pp-fuente">Fuente: {p.ubicacionFuente}</p>
+              {p.tiempos && p.tiempos.length > 0 && (
+                <ul className="pp-tiempos">
+                  {p.tiempos.map((t) => (
+                    <li key={t.destino}>
+                      <strong>{t.minutos} min</strong> {DESTINOS[t.destino]}
+                      <small>{t.fuente}</small>
+                    </li>
                   ))}
                 </ul>
-                <p className="aviso-fuente">
-                  Amenidades según el brochure oficial del constructor.
+              )}
+              {p.zona === "Zona Norte" && (
+                <p className="pp-enlace-zona">
+                  <Link href="/#zonanorte">
+                    Lo que ya funciona en la Zona Norte <IconoFlecha size={16} />
+                  </Link>
                 </p>
-              </div>
-            </div>
-          </div>
-        </section>
+              )}
+            </section>
 
-        {/* ── Galería ────────────────────────── */}
-        {p.galeria.length > 0 && (
-          <section className="section">
+            {/* 6 · La opinión de Rafael ────────────── */}
+            {p.opinionRafael && (
+              <section className="pp-bloque pp-opinion" id="opinion">
+                <img
+                  className="pp-opinion-foto"
+                  src="/rafael/retrato-520.jpg"
+                  alt="Rafael Hernández Franco"
+                  width={96}
+                  height={120}
+                  loading="lazy"
+                />
+                <div>
+                  <p className="section-kicker">La opinión de Rafael</p>
+                  <h2>Lo que debes saber antes de separar</h2>
+                  <p className="pp-opinion-para">{p.opinionRafael.paraQuien}</p>
+                  <div className="pp-opinion-listas">
+                    <div>
+                      <h3>Puntos fuertes</h3>
+                      <ul>
+                        {p.opinionRafael.fuertes.map((f) => (
+                          <li key={f}>{f}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <h3>Lo que conviene tener en cuenta</h3>
+                      <ul>
+                        {p.opinionRafael.tenerEnCuenta.map((f) => (
+                          <li key={f}>{f}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <p className="pp-fuente">Escrito por Rafael el {p.opinionRafael.fecha}.</p>
+                </div>
+              </section>
+            )}
+
+            {/* 7 · Respaldo ────────────────────────── */}
+            <section className="pp-bloque" id="respaldo">
+              <p className="section-kicker">Respaldo</p>
+              <h2>Quién lo construye y de dónde salen los datos</h2>
+              <dl className="pp-respaldo">
+                <div>
+                  <dt>Promotor y comercialización</dt>
+                  <dd>{p.promotor}</dd>
+                </div>
+                <div>
+                  <dt>Estado del proyecto</dt>
+                  <dd>{ESTADO[p.estado]}</dd>
+                </div>
+                {p.precio && (
+                  <div>
+                    <dt>Precios y disponibilidad</dt>
+                    <dd>
+                      {p.precio.fuente} · corte {p.precio.corte}
+                    </dd>
+                  </div>
+                )}
+                {p.avanceObra && (
+                  <div>
+                    <dt>Avance de obra</dt>
+                    <dd>
+                      <a href={p.avanceObra.url} target="_blank" rel="noopener noreferrer">
+                        Página de avance de la constructora
+                      </a>{" "}
+                      <span className="pp-fuente-inline">({p.avanceObra.fuente})</span>
+                    </dd>
+                  </div>
+                )}
+              </dl>
+              {p.brochurePdf && p.brochurePaginas === 0 && (
+                <p className="pp-brochure-solo">
+                  <a href={p.brochurePdf} target="_blank" rel="noopener noreferrer">
+                    <IconoDocumento size={18} /> Descargar el brochure oficial (PDF)
+                  </a>
+                </p>
+              )}
+              {p.brochurePaginas > 0 && (
+                <BrochureGaleria
+                  slug={p.slug}
+                  paginas={p.brochurePaginas}
+                  pdf={p.brochurePdf}
+                  nombre={p.nombre}
+                />
+              )}
+            </section>
+
+            {/* 8 · Preguntas frecuentes ────────────── */}
+            {p.faq && p.faq.length > 0 && (
+              <section className="pp-bloque" id="preguntas">
+                <p className="section-kicker">Preguntas frecuentes</p>
+                <h2>Lo que más nos preguntan</h2>
+                <div className="pp-faq">
+                  {p.faq.map((q) => (
+                    <details key={q.pregunta}>
+                      <summary>{q.pregunta}</summary>
+                      <p>{q.respuesta}</p>
+                    </details>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* Contacto: columna fija en escritorio ─────── */}
+          <aside className="pp-lateral" aria-label={`Contacto sobre ${p.nombre}`}>
+            <div className="pp-lateral-caja">
+              <p className="pp-lateral-kicker">{precio.muestra ? "Precio de referencia" : "Precio"}</p>
+              <p className="pp-lateral-precio">{precio.texto}</p>
+              <p className="pp-lateral-corte">
+                {precio.corte ? `corte ${precio.corte}` : "Te lo damos con su respaldo documental"}
+              </p>
+              <a className="btn-primary pp-btn" href={whatsappVisita} target="_blank" rel="noopener noreferrer">
+                <IconoWhatsApp size={18} /> Agendar visita
+              </a>
+              <MeInteresaButton label="Me interesa" className="pp-btn pp-btn-secundario" />
+              <a className="pp-lateral-form" href="#contacto">
+                O déjanos tus datos
+              </a>
+            </div>
+          </aside>
+        </div>
+
+        {/* 9 · Otros proyectos ────────────────────────── */}
+        {otros.length > 0 && (
+          <section className="section pp-otros" aria-labelledby="pp-otros-titulo">
             <div className="section-shell">
-              <p className="section-kicker">Galería</p>
-              <h2>Así se ve el proyecto</h2>
-              <div className="galeria-grid">
-                {p.galeria.map((g) => (
-                  <figure key={g.src}>
-                    <img src={g.src} alt={g.alt} loading="lazy" />
-                  </figure>
+              <p className="section-kicker">Nuestra cartera</p>
+              <h2 id="pp-otros-titulo">Otros proyectos que asesoramos</h2>
+              <div className="pp-otros-grid">
+                {otros.map((f, i) => (
+                  <Reveal key={f.slug} variant="up" delay={i * 110}>
+                    <TarjetaGiro ficha={f} />
+                  </Reveal>
                 ))}
               </div>
-              <p className="aviso-fuente">
-                Renders entregados por el constructor. Las imágenes son ilustrativas.
-              </p>
             </div>
           </section>
         )}
 
-        {/* ── Ubicación ──────────────────────── */}
-        <section className="section section-alterna">
-          <div className="section-shell">
-            <p className="section-kicker">Ubicación</p>
-            <h2>{p.ubicacion}</h2>
-            <p className="section-lede">{p.ubicacionNota}</p>
-
-            <div className="zona-cards">
-              {ZONA_NORTE.map((z) => (
-                <article className="zona-card" key={z.titulo}>
-                  <h3>{z.titulo}</h3>
-                  <p>{z.texto}</p>
-                  <p className="zona-card-fuente">{z.fuente}</p>
-                </article>
-              ))}
-            </div>
-
-            <p className="aviso-fuente">
-              Publicamos lo que está construido y en operación. Lo que está en
-              estudio lo decimos como estudio: del nuevo aeropuerto de la zona
-              hay una evaluación de factibilidad ante la ANI, con concepto
-              esperado en noviembre de 2026.
-            </p>
-          </div>
-        </section>
-
-        {/* ── CTA ────────────────────────────── */}
+        {/* Contacto con el proyecto ya elegido ──────────── */}
         <section className="section section-contacto" id="contacto">
-          <div className="section-shell proyecto-cta">
-            <p className="section-kicker">Siguiente paso</p>
-            <h2>¿Te interesa {p.nombre}?</h2>
-            <p className="section-lede">
-              Te pasamos disponibilidad, precios vigentes y condiciones de pago
-              con la fecha de corte del documento del constructor. Escríbenos y
-              te respondemos al instante.
-            </p>
-            <MeInteresaButton label="Hablar con el asesor" className="btn-primary" />
+          <div className="section-shell contacto-shell">
+            <div className="contacto-texto">
+              <p className="section-kicker">Contacto</p>
+              <h2>¿Te interesa {p.nombre}?</h2>
+              <p className="section-lede">
+                Te pasamos disponibilidad, precios vigentes y condiciones de pago
+                con la fecha de corte del documento del constructor.
+              </p>
+              <div className="contacto-canales">
+                <a className="btn-whatsapp" href={whatsappVisita} target="_blank" rel="noopener noreferrer">
+                  <IconoWhatsApp /> Agendar visita por WhatsApp
+                </a>
+              </div>
+            </div>
+            <ContactForm proyectoInicial={p.nombre} />
           </div>
         </section>
-        {datos && <BloqueLegal p={datos} />}
+
+        {/* Avisos legales del proyecto ───────────────────── */}
+        <section className="pp-avisos" aria-label="Avisos legales del proyecto">
+          <div className="section-shell">
+            <BloqueLegal p={p} />
+            {!pieza.completo && (
+              <div className="pp-sin-precio">
+                <h2>Por qué este proyecto no publica precio</h2>
+                <p>
+                  La Circular 004 de 2024 de la Superintendencia de Industria y
+                  Comercio (numeral 2.16.1) exige que toda pieza con precio lleve
+                  también el área y la ubicación exacta del proyecto. Hoy falta:{" "}
+                  {pieza.faltan.join(", ")}. Te damos el precio vigente y su
+                  respaldo documental por el chat, por WhatsApp o en asesoría
+                  directa.
+                </p>
+                {p.reservas.length > 0 && (
+                  <ul>
+                    {p.reservas.map((r) => (
+                      <li key={r}>{r}</li>
+                    ))}
+                  </ul>
+                )}
+                {pendientes.length > 0 && (
+                  <p>
+                    Información precontractual que se entrega por escrito antes de
+                    cualquier separación (numeral 2.16.2): {pendientes.join(", ")}.
+                  </p>
+                )}
+              </div>
+            )}
+            <p className="pp-avisos-texto">
+              Los precios son de referencia, en pesos colombianos, a la fecha de
+              corte indicada, y están sujetos a disponibilidad. Las áreas se citan
+              con la etiqueta textual de la fuente y pueden cambiar por decisión
+              de la constructora. Las imágenes son renders y material del
+              promotor: son ilustrativas y no reproducen necesariamente acabados,
+              mobiliario ni entorno definitivos. Esta página no constituye oferta
+              comercial en los términos del artículo 845 del Código de Comercio.
+            </p>
+          </div>
+        </section>
       </main>
 
-      <footer className="site-footer">
-        <div className="footer-inner">
-          <div className="footer-top">
-            <span className="footer-brand">RHF</span>
-            <div className="footer-links">
-              <Link href="/">Inicio</Link>
-              <Link href="/#cartera">Nuestra cartera</Link>
-              <Link href="/proyectos/doral-west">Doral West</Link>
-              <Link href="/proyectos/doral-country">Doral Country</Link>
-            </div>
-          </div>
-          <div className="footer-legal">
-            <p>
-              <strong>Rafael Hernández Franco</strong> — Asesor inmobiliario
-              independiente. Las imágenes de esta página son renders entregados
-              por el constructor y son ilustrativas. Las áreas, la disponibilidad
-              y las fechas corresponden al documento y la fecha de corte que se
-              indican en cada dato, y pueden variar sin previo aviso.
-            </p>
-            <p className="footer-circular">
-              En esta página no publicamos precios. La Circular 004 de 2024 de
-              la Superintendencia de Industria y Comercio exige que toda pieza
-              con precio incluya diez datos del proyecto —entre ellos el estrato,
-              la cuota de administración estimada y el valor de desistimiento
-              precontractual—, y hoy el constructor no los ha entregado por
-              escrito. Los pedimos y los publicamos cuando los tengamos. Mientras
-              tanto, te damos el precio vigente y su respaldo documental por el
-              chat o en asesoría directa.
-            </p>
-            <p className="footer-copy">
-              © {new Date().getFullYear()} RHF. Todos los derechos reservados.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <PieSitio portadaPropia={false} />
+
+      {/* Móvil: los dos botones siempre a mano, sin tapar el del chat ─── */}
+      <div className="pp-barra-movil" role="region" aria-label={`Contactar sobre ${p.nombre}`}>
+        <a className="pp-barra-visita" href={whatsappVisita} target="_blank" rel="noopener noreferrer">
+          <IconoWhatsApp size={18} /> Agendar visita
+        </a>
+        <MeInteresaButton label="Me interesa" className="pp-barra-interesa" />
+      </div>
     </>
   );
 }
