@@ -14,9 +14,10 @@ export default function CabeceraSitio({ mensaje = SALUDO_WHATSAPP }: { mensaje?:
           <img src="/marca/rhf-living-oscuro.svg" alt="RHF Living" width="215" height="48" />
         </Link>
         <nav className="nav-links" aria-label="Secciones">
+          <Link href="/#mapa">El territorio</Link>
+          <Link href="/asesor">Quién te asesora</Link>
           <Link href="/#cartera">Nuestra cartera</Link>
-          <Link href="/#zonanorte">Zona Norte</Link>
-          <Link href="/#asesor">Quién te asesora</Link>
+          <Link href="/#inmuebles">Inmuebles</Link>
           <a href="#contacto">Contacto</a>
         </nav>
         <a className="nav-cta" href={enlaceWhatsApp(mensaje)} target="_blank" rel="noopener noreferrer">

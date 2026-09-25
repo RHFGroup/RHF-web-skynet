@@ -33,12 +33,17 @@ export type Servicio = {
   confirmado: boolean;
 };
 
+/** Quién te acompaña en el paso (pedido de Rafael del 25-sep-2026). */
+export type Quien = "asesor" | "juridico" | "ambos";
+
 export type Paso = {
   titulo: string;
   texto: string;
   icono: Icono;
   /** Interviene el estudio jurídico: el paso lleva su sello. */
   juridico: boolean;
+  /** Quién acompaña este paso: el asesor, el estudio jurídico o los dos. */
+  quien: Quien;
   confirmado: boolean;
   /** Lo que Rafael tiene que decidir antes de confirmar este paso. */
   pendiente?: string;
@@ -93,6 +98,7 @@ export const PASOS: Paso[] = [
     texto: "Entendemos qué buscas, para qué —vivir, invertir o rentar— y tu presupuesto.",
     icono: "conversacion",
     juridico: false,
+    quien: "asesor",
     confirmado: false,
   },
   {
@@ -100,6 +106,7 @@ export const PASOS: Paso[] = [
     texto: "Seleccionamos los proyectos que encajan contigo y los visitamos juntos.",
     icono: "pin",
     juridico: false,
+    quien: "asesor",
     confirmado: false,
   },
   {
@@ -107,6 +114,7 @@ export const PASOS: Paso[] = [
     texto: "Nuestro estudio jurídico revisa el proyecto, la constructora y los documentos.",
     icono: "escudo",
     juridico: true,
+    quien: "juridico",
     confirmado: false,
   },
   {
@@ -114,6 +122,7 @@ export const PASOS: Paso[] = [
     texto: "Firmas la separación y la promesa de compraventa, ya revisadas.",
     icono: "documento",
     juridico: true,
+    quien: "ambos",
     confirmado: false,
   },
   {
@@ -121,6 +130,7 @@ export const PASOS: Paso[] = [
     texto: "Te ayudamos con la cuota inicial y con el crédito hipotecario o el leasing.",
     icono: "calendario",
     juridico: false,
+    quien: "asesor",
     confirmado: false,
   },
   {
@@ -128,6 +138,7 @@ export const PASOS: Paso[] = [
     texto: "Te mantenemos al tanto del avance de la obra hasta la entrega.",
     icono: "edificio",
     juridico: false,
+    quien: "asesor",
     confirmado: false,
   },
   {
@@ -135,6 +146,7 @@ export const PASOS: Paso[] = [
     texto: "Te acompañamos en la notaría y en el registro del inmueble.",
     icono: "llave",
     juridico: true,
+    quien: "juridico",
     confirmado: false,
   },
   {
@@ -142,6 +154,7 @@ export const PASOS: Paso[] = [
     texto: "Recibes tu inmueble y, si quieres, te ayudamos con su administración o su arriendo.",
     icono: "destello",
     juridico: false,
+    quien: "asesor",
     confirmado: false,
     pendiente: "Solo si ofreces administración o arriendo.",
   },

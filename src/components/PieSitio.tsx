@@ -13,9 +13,12 @@ import Link from "next/link";
  */
 export default function PieSitio({
   portadaPropia = true,
+  avisoImagenes,
 }: {
   /** La home abre con una foto propia; las páginas de proyecto, con material del promotor. */
   portadaPropia?: boolean;
+  /** Reemplaza el aviso de las imágenes cuando la página tiene el suyo (inmuebles, /asesor). */
+  avisoImagenes?: string;
 }) {
   return (
     <footer className="site-footer">
@@ -24,18 +27,20 @@ export default function PieSitio({
           <img className="footer-brand" src="/marca/rhf-living.svg" alt="RHF Living" width="196" height="44" />
           <div className="footer-links">
             <Link href="/#inicio">Inicio</Link>
-            <Link href="/#cartera">Nuestra cartera</Link>
-            <Link href="/#zonanorte">Zona Norte</Link>
+            <Link href="/#mapa">El territorio</Link>
             <Link href="/#asesor">Quién te asesora</Link>
+            <Link href="/#cartera">Nuestra cartera</Link>
+            <Link href="/#inmuebles">Inmuebles disponibles</Link>
             <Link href="/#contacto">Contacto</Link>
           </div>
         </div>
         <div className="footer-legal">
           <p>
             <strong>Rafael Hernández Franco</strong> — Asesor inmobiliario independiente.{" "}
-            {portadaPropia
-              ? "La fotografía de portada es propia. Las imágenes de los proyectos son renders y material del promotor."
-              : "Las imágenes de esta página son renders y material del promotor, y son ilustrativas."}{" "}
+            {avisoImagenes ??
+              (portadaPropia
+                ? "La fotografía de portada es propia. Las imágenes de los proyectos son renders y material del promotor; en los inmuebles disponibles, cada imagen dice si es foto del apartamento o render."
+                : "Las imágenes de esta página son renders y material del promotor, y son ilustrativas.")}{" "}
             Los precios,
             áreas y condiciones aquí publicados corresponden a la fecha
             indicada en cada proyecto y pueden variar sin previo aviso.

@@ -19,6 +19,13 @@
 
 export type Confirmable = { confirmado: boolean };
 
+/**
+ * El nombre completo, como Rafael pidió que aparezca en la sección
+ * (25-sep-2026). En el resto del sitio la marca sigue siendo «Rafael
+ * Hernández Franco».
+ */
+export const NOMBRE_COMPLETO = "Medardo Rafael Hernández Franco";
+
 /** La frase grande debajo del nombre. Rafael elige una. */
 export const PROPUESTA_VALOR: (Confirmable & { id: "a" | "b"; texto: string })[] = [
   {
@@ -41,27 +48,27 @@ export type Pilar = Confirmable & {
   texto: string;
 };
 
-/** «Por qué asesorarte conmigo»: tres tarjetas. */
+/**
+ * «Por qué asesorarte conmigo»: tres tarjetas. El 25-sep-2026 Rafael pidió
+ * esta información «más básica»: un titular y una línea por tarjeta.
+ */
 export const PILARES: Pilar[] = [
   {
-    // Prompt: «Comparo, no empujo … aunque no sea el primero que te mostré».
     icono: "comparar",
-    titulo: "Comparo a tu favor",
-    texto:
-      "Represento proyectos de varias constructoras y te digo cuál encaja contigo, sea el primero que te mostré o el último.",
+    titulo: "Comparo por ti",
+    texto: "Proyectos de varias constructoras, lado a lado.",
     confirmado: false,
   },
   {
     icono: "escudo",
-    titulo: "Respaldo jurídico propio",
-    texto: "Nuestro estudio jurídico revisa el proyecto y los documentos antes de que firmes.",
+    titulo: "Respaldo jurídico",
+    texto: "Nuestro estudio jurídico revisa antes de que firmes.",
     confirmado: false,
   },
   {
     icono: "llave",
-    titulo: "Compré aquí",
-    texto:
-      "Vivo e invertí en la Zona Norte: conozco la decisión desde el lado del comprador. Cada cifra que te doy tiene fuente y fecha.",
+    titulo: "Datos con fuente",
+    texto: "Cada precio, con su fuente y su fecha de corte.",
     confirmado: false,
   },
 ];
@@ -74,29 +81,23 @@ export type Perfil = Confirmable & {
   mensaje: string;
 };
 
-/** «Te asesoro si…»: una pestaña por tipo de comprador. */
-export const PERFILES: Perfil[] = [
-  {
-    id: "cartagena",
-    titulo: "Vives en Cartagena",
-    texto: "Recorremos los proyectos juntos y comparamos en sitio.",
-    mensaje: "Hola Rafael, vivo en Cartagena y quiero recorrer contigo proyectos de la Zona Norte.",
-    confirmado: false,
-  },
-  {
-    id: "otra-ciudad",
-    titulo: "Compras desde otra ciudad",
-    texto: "Te muestro los proyectos por videollamada y organizamos tu visita en un solo viaje.",
-    mensaje: "Hola Rafael, compro desde otra ciudad y quiero ver proyectos de Cartagena por videollamada.",
-    confirmado: false,
-  },
-  {
-    id: "exterior",
-    titulo: "Estás en el exterior",
-    // Lo de la firma a distancia entra solo con el texto validado por el
-    // estudio jurídico.
-    texto: "Recorridos en vivo por videollamada y documentos revisados por nuestro estudio jurídico.",
-    mensaje: "Hola Rafael, vivo en el exterior y quiero invertir en Cartagena. ¿Me muestras proyectos por videollamada?",
-    confirmado: false,
-  },
-];
+/**
+ * «Te asesoro si…»: Rafael pidió quitarlo entero el 25-sep-2026. El tipo se
+ * conserva para el componente PerfilesAsesor, que ya no se usa.
+ */
+export const PERFILES: Perfil[] = [];
+
+/**
+ * El equipo, para la página /asesor. Solo con los datos que Rafael entregue:
+ * nombre, cargo y foto de cada integrante. Mientras falten, la página muestra
+ * a Rafael y al estudio jurídico propio (confirmado el 24-sep-2026), y en las
+ * vistas previas avisa qué falta.
+ */
+export type Integrante = Confirmable & {
+  nombre: string;
+  rol: string;
+  foto: string | null;
+  texto?: string;
+};
+
+export const EQUIPO: Integrante[] = [];

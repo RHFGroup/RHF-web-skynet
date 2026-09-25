@@ -1,6 +1,7 @@
 import Reveal from "@/components/Reveal";
-import IconoProceso, { EtiquetaPropuesta } from "@/components/IconoProceso";
-import { IconoEscudo } from "@/components/Iconos";
+import IconoProceso, { AvisoPropuesta } from "@/components/IconoProceso";
+import { IconoEscudo, IconoWhatsApp } from "@/components/Iconos";
+import { enlaceWhatsApp } from "@/data/contacto";
 import { ESTUDIO_JURIDICO } from "@/data/proceso";
 import { seMuestra } from "@/lib/revision";
 import "@/styles/proceso.css";
@@ -11,12 +12,18 @@ import "@/styles/proceso.css";
  *
  * Fondo marino y texto claro: es una garantía, no letra pequeña. Los
  * servicios salen de src/data/proceso.ts y solo se publican los que Rafael
- * confirme; en las vistas previas se ven todos, marcados como propuesta.
+ * confirme; en las vistas previas se ven todos.
+ *
+ * 25-sep-2026 (pedido de Rafael): un solo «por confirmar» para toda la
+ * sección —antes iba uno por tarjeta— y un solo llamado a la acción, al pie.
  */
+const CONSULTA = enlaceWhatsApp("Hola Rafael, quiero hacerle una consulta al estudio jurídico sobre: ");
+
 export default function RespaldoJuridico() {
   const e = ESTUDIO_JURIDICO;
   const servicios = e.servicios.filter(seMuestra);
   const conFrase = seMuestra(e.frase);
+  const pendiente = (conFrase && !e.frase.confirmado) || servicios.some((s) => !s.confirmado);
 
   return (
     <section className="rj" id="respaldo-juridico" aria-labelledby="rj-titulo">
@@ -26,10 +33,8 @@ export default function RespaldoJuridico() {
             <IconoEscudo size={18} /> Estudio jurídico propio
           </p>
           <h2 id="rj-titulo">{e.titular}</h2>
-          <p className="rj-frase">
-            {conFrase ? e.frase.texto : e.base}
-            {conFrase && <EtiquetaPropuesta confirmado={e.frase.confirmado} />}
-          </p>
+          <p className="rj-frase">{conFrase ? e.frase.texto : e.base}</p>
+          <AvisoPropuesta pendiente={pendiente} nota="toda la sección" />
         </Reveal>
 
         {servicios.length > 0 && (
@@ -42,7 +47,6 @@ export default function RespaldoJuridico() {
                   </span>
                   <h3>{s.titulo}</h3>
                   <p>{s.texto}</p>
-                  <EtiquetaPropuesta confirmado={s.confirmado} />
                 </Reveal>
               </li>
             ))}
@@ -60,6 +64,14 @@ export default function RespaldoJuridico() {
             </p>
           </div>
         )}
+
+        {/* El único llamado a la acción de la sección. */}
+        <Reveal className="rj-cta" variant="up" delay={200}>
+          <p>¿Tienes una duda legal sobre un proyecto o un documento?</p>
+          <a className="rj-cta-boton" href={CONSULTA} target="_blank" rel="noopener noreferrer">
+            <IconoWhatsApp size={18} /> Consulta al estudio jurídico
+          </a>
+        </Reveal>
       </div>
     </section>
   );

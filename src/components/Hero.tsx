@@ -297,10 +297,8 @@ export default function Hero({ fichas, whatsapp }: { fichas: FichaHero[]; whatsa
             <span className="hero-linea">Tu próximo proyecto,</span>{" "}
             <span className="hero-linea">en la mejor ubicación.</span>
           </h1>
-          <p className="hero-sub">
-            Asesoría inmobiliaria premium en Cartagena y la Zona Norte. Te acompañamos en cada paso para encontrar
-            el proyecto que se ajusta a lo que buscas.
-          </p>
+          {/* 25-sep-2026: Rafael pidió subtítulos más cortos. */}
+          <p className="hero-sub">Te ayudamos a elegir el proyecto que se ajusta a lo que buscas.</p>
           <div className="hero-ctas">
             <a className="btn-primary" href="#cartera">
               Ver nuestra cartera
@@ -426,7 +424,7 @@ function Leyenda({ d, indice, total }: { d: Diapositiva; indice: number; total: 
           <p className="hero-leyenda-meta">
             Cerca del {CIFRA_OFERTA.valor} % {CIFRA_OFERTA.rotulo}. Fuente: {CIFRA_OFERTA.fuente}.
           </p>
-          <a className="hero-leyenda-cta" href="#zonanorte">
+          <a className="hero-leyenda-cta" href="#mapa">
             Conoce la zona <IconoFlecha size={16} />
           </a>
         </>

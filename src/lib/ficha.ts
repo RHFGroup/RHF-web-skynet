@@ -19,6 +19,7 @@ import {
   type Proyecto,
 } from "@/data/proyectos";
 import { LUGARES } from "@/data/zona";
+import { precioInmueble, type Inmueble } from "@/data/inmuebles";
 import type { PinProyecto } from "@/components/MapaIlustrado";
 
 export type Ficha = {
@@ -73,6 +74,13 @@ export type Ficha = {
   entrega: string | null;
   /** Dos o tres datos clave para el reverso de la tarjeta. */
   destacados: { titulo: string; texto: string }[];
+  /**
+   * El estado en texto cuando no es uno de proyecto nuevo: los inmuebles
+   * disponibles dicen «Terminado» o «En construcción».
+   */
+  estadoTexto?: string;
+  /** El texto del enlace a la página propia: «Ver proyecto» o «Ver inmueble». */
+  verTexto?: string;
 };
 
 /** Números de un texto de área: «33 – 35 m²» → [33, 35]. */
@@ -198,6 +206,47 @@ export function fichaDe(p: Proyecto): Ficha {
     revisionJuridica: p.revisionJuridica === true,
     entrega: p.precontractual.fechaEntrega,
     destacados,
+  };
+}
+
+/**
+ * La ficha de un inmueble disponible, para la misma tarjeta que gira. El
+ * precio sale solo si está escrito, con su corte; el área, con la etiqueta
+ * literal de su documento (la primera de la lista).
+ */
+export function fichaDeInmueble(i: Inmueble): Ficha {
+  const precio = precioInmueble(i);
+  const area = i.areas[0];
+  const destacados = [
+    { titulo: "Piso", texto: i.piso },
+    ...(i.areas[1] ? [{ titulo: i.areas[1].etiqueta, texto: i.areas[1].valor }] : []),
+    ...(i.parqueadero ? [{ titulo: "Parqueadero", texto: i.parqueadero }] : []),
+  ].slice(0, 3);
+  return {
+    slug: i.slug,
+    nombre: i.nombre,
+    zona: i.zona,
+    estado: i.estado === "En construcción" ? "en construcción" : "entrega inmediata",
+    estadoTexto: i.estado,
+    tipoInmueble: "apartamentos",
+    href: `/inmuebles/${i.slug}`,
+    foto: i.fotos[0] ? { src: i.fotos[0].tarjeta, alt: i.fotos[0].alt, credito: i.fotos[0].credito } : null,
+    fotos: i.fotos.slice(0, 4).map((f) => ({ src: f.tarjeta, alt: f.alt, credito: f.credito })),
+    escaparate: null,
+    precio: precio.texto,
+    muestraPrecio: i.precio !== null,
+    corte: precio.corte,
+    precioDesde: i.precio?.valor ?? null,
+    alcobas: i.habitacionesTarjeta,
+    banos: i.banosTarjeta,
+    area: area ? { texto: area.valor, etiquetas: [area.etiqueta], conflicto: false } : null,
+    linea: i.linea,
+    frase: i.frase,
+    nuevo: false,
+    revisionJuridica: false,
+    entrega: null,
+    destacados,
+    verTexto: "Ver inmueble",
   };
 }
 

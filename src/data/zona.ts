@@ -18,20 +18,39 @@
  *  · Toda cifra nueva necesita nota en el vault antes de entrar aquí. La del
  *    Gran Malecón del Mar está en research/el-gran-malecon-del-mar-que-se-
  *    puede-afirmar-y-que-no.
+ *  · 25-sep-2026 (pedido de Rafael): la sección «Lo que viene» se integró a
+ *    las categorías. Cada obra va en su categoría con su estado —En obra, En
+ *    estudio— y puede llevar una imagen del proceso (`imagen`), solo si es
+ *    foto propia o material autorizado, con su fecha. Los lugares nuevos
+ *    (colegios, universidades, comercio, golf, transporte) y sus fuentes
+ *    están en research/el-territorio-de-la-zona-norte-lo-que-se-puede-
+ *    afirmar-de-colegios-salud-comercio-y-transporte.
  */
 
 export type Estado = "Entregado" | "En obra" | "En estudio";
 
 export type Categoria = "turismo" | "salud" | "educacion" | "comercio" | "conectividad" | "obras";
 
-export type Icono = "playa" | "canoa" | "avion" | "hospital" | "convenciones" | "obra" | "centro";
+export type Icono =
+  | "playa"
+  | "canoa"
+  | "avion"
+  | "hospital"
+  | "convenciones"
+  | "obra"
+  | "centro"
+  | "universidad"
+  | "escuela"
+  | "combustible"
+  | "golf"
+  | "bus";
 
 /** Los filtros del mapa del territorio, en el orden en que se muestran. */
 export const CATEGORIAS: { id: Exclude<Categoria, "obras">; nombre: string }[] = [
   { id: "turismo", nombre: "Playas y turismo" },
   { id: "salud", nombre: "Salud" },
   { id: "educacion", nombre: "Educación" },
-  { id: "comercio", nombre: "Comercio" },
+  { id: "comercio", nombre: "Comercio y ocio" },
   { id: "conectividad", nombre: "Conectividad" },
 ];
 
@@ -63,10 +82,16 @@ export type Lugar = {
   fecha: string;
   /** Solo obras con trazado: la etiqueta que acompaña la línea en el mapa. */
   etiquetaTrazado?: string;
+  /**
+   * Una imagen del proceso de la obra. Solo foto propia o material que su
+   * dueño autorice, con crédito y fecha. Sin imagen, la tarjeta va sin ella.
+   */
+  imagen?: { src: string; alt: string; credito: string; fecha: string };
 };
 
 const OSM = (tipo: "nodo" | "vía", id: number) => `OpenStreetMap, ${tipo} ${id}`;
 const VERIFICADO = "24 de septiembre de 2026";
+const VERIFICADO_25 = "25 de septiembre de 2026";
 
 export const LUGARES: Lugar[] = [
   // ── Hoy puedes disfrutar ────────────────────────────────────────────────
@@ -115,18 +140,124 @@ export const LUGARES: Lugar[] = [
     fuente: "Playa de Punta Canoa, con reseñas de visitantes de 2026 (Tripadvisor)",
     fecha: VERIFICADO,
   },
+  // ── Salud ───────────────────────────────────────────────────────────────
   {
+    // El id se conserva: los tiempos «al hospital» de proyectos.ts apuntan aquí.
     id: "serena-del-mar",
     nombre: "Serena del Mar",
-    frase: "El hospital y el campus de Uniandes funcionan aquí desde 2018.",
+    frase:
+      "Aquí funciona el Hospital Serena del Mar, operado por la Fundación Santa Fe de Bogotá: más de 60 especialidades y urgencias las 24 horas. Es el único hospital de Cartagena en el ranking World's Best Hospitals 2026 de Newsweek.",
     capa: "hoy",
-    categorias: ["salud", "educacion"],
+    categorias: ["salud"],
     icono: "hospital",
-    estado: "Entregado",
-    coordenada: { lat: 10.50637, lon: -75.47068, fuente: OSM("nodo", 8657336575) },
-    fuente: "Research de la Zona Norte del vault, contrastada contra fuentes primarias",
-    fecha: VERIFICADO,
+    // La coordenada es la del sector de Serena del Mar, donde queda el
+    // hospital; el edificio no tiene nodo propio en OpenStreetMap.
+    coordenada: { lat: 10.50637, lon: -75.47068, fuente: OSM("nodo", 8657336575) + " (sector de Serena del Mar)" },
+    fuente:
+      "hospitalserenadelmar.com (especialidades, urgencias y operador) · Newsweek y Statista, World's Best Hospitals 2026 – Colombia: puesto 18 de 50, único de Cartagena",
+    fecha: VERIFICADO_25,
   },
+
+  // ── Educación ───────────────────────────────────────────────────────────
+  {
+    id: "uniandes",
+    nombre: "Universidad de los Andes · Sede Caribe",
+    nombreCorto: "Uniandes",
+    frase: "La sede Caribe de la Universidad de los Andes abrió en mayo de 2018 en Serena del Mar.",
+    capa: "hoy",
+    categorias: ["educacion"],
+    icono: "universidad",
+    coordenada: { lat: 10.507618, lon: -75.471567, fuente: OSM("vía", 1082170787) },
+    fuente: "uniandes.edu.co, «Así fue la inauguración de la Sede Caribe»",
+    fecha: VERIFICADO_25,
+  },
+  {
+    id: "tadeo",
+    nombre: "Universidad Jorge Tadeo Lozano · Campus Internacional del Caribe",
+    nombreCorto: "Tadeo",
+    frase: "Campus de pregrado sobre la Vía al Mar, en el kilómetro 13.",
+    capa: "hoy",
+    categorias: ["educacion"],
+    icono: "universidad",
+    coordenada: { lat: 10.550576, lon: -75.460701, fuente: OSM("vía", 95910511) },
+    fuente: "utadeo.edu.co, ubicación de la Tadeo Caribe",
+    fecha: VERIFICADO_25,
+  },
+  {
+    id: "jorge-washington",
+    nombre: "Colegio Jorge Washington",
+    nombreCorto: "Jorge Washington",
+    frase: "Colegio de preescolar a grado 12, en el kilómetro 12 del Anillo Vial.",
+    capa: "hoy",
+    categorias: ["educacion"],
+    icono: "escuela",
+    coordenada: { lat: 10.544022, lon: -75.461868, fuente: OSM("vía", 95705882) },
+    fuente: "Colegio Jorge Washington: dirección y grados (Wikipedia)",
+    fecha: VERIFICADO_25,
+  },
+  {
+    id: "britanico",
+    nombre: "Colegio Británico de Cartagena",
+    nombreCorto: "Colegio Británico",
+    frase: "Colegio bilingüe con Bachillerato Internacional, en el kilómetro 12 del Anillo Vial.",
+    capa: "hoy",
+    categorias: ["educacion"],
+    icono: "escuela",
+    coordenada: { lat: 10.539753, lon: -75.475011, fuente: OSM("vía", 96425276) },
+    fuente: "cognita.com, ficha del Colegio Británico de Cartagena (Redcol)",
+    fecha: VERIFICADO_25,
+  },
+  {
+    id: "altair",
+    nombre: "Gimnasio Altair",
+    nombreCorto: "Altair",
+    frase: "Colegio en el kilómetro 14 del Anillo Vial.",
+    capa: "hoy",
+    categorias: ["educacion"],
+    icono: "escuela",
+    coordenada: { lat: 10.545106, lon: -75.444991, fuente: OSM("vía", 95705026) },
+    fuente: "gimnasioaltair.edupage.org, contacto",
+    fecha: VERIFICADO_25,
+  },
+
+  // ── Comercio y ocio ─────────────────────────────────────────────────────
+  {
+    id: "las-ramblas",
+    nombre: "Centro Comercial Las Ramblas",
+    nombreCorto: "Las Ramblas",
+    frase: "Supermercado Carulla, restaurantes y estación de servicio.",
+    capa: "hoy",
+    categorias: ["comercio"],
+    icono: "centro",
+    coordenada: { lat: 10.515624, lon: -75.470073, fuente: OSM("nodo", 10579157641) + " (Carulla Las Ramblas)" },
+    fuente: "OpenStreetMap: Carulla, restaurantes y estación Primax en Las Ramblas",
+    fecha: VERIFICADO_25,
+  },
+  {
+    id: "terpel-altoque",
+    nombre: "Estación Terpel con tienda Altoque",
+    nombreCorto: "Terpel",
+    frase: "Estación de servicio con tienda de conveniencia Altoque.",
+    capa: "hoy",
+    categorias: ["comercio"],
+    icono: "combustible",
+    coordenada: { lat: 10.535031, lon: -75.460724, fuente: OSM("vía", 1353435219) },
+    fuente: "OpenStreetMap: estación Terpel (vía 1353435219) y tienda Altoque (nodo 12523307430)",
+    fecha: VERIFICADO_25,
+  },
+  {
+    id: "karibana",
+    nombre: "Karibana",
+    frase: "Campo de golf de 18 hoyos diseñado por Nicklaus Design, abierto en 2012.",
+    capa: "hoy",
+    categorias: ["comercio", "turismo"],
+    icono: "golf",
+    coordenada: { lat: 10.541669, lon: -75.491696, fuente: OSM("nodo", 4228091890) },
+    fuente: "nicklausdesign.com, Club Karibana",
+    fecha: VERIFICADO_25,
+  },
+
+  // ── Conectividad ────────────────────────────────────────────────────────
   {
     id: "aeropuerto",
     nombre: "Aeropuerto Rafael Núñez",
@@ -138,8 +269,34 @@ export const LUGARES: Lugar[] = [
     fuente: "aeropuertocartagena.com.co",
     fecha: VERIFICADO,
   },
+  {
+    id: "terminal-norte",
+    nombre: "Terminal de Transportes del Norte",
+    nombreCorto: "Terminal del Norte",
+    frase: "Abrió en noviembre de 2022 con buses hacia Barranquilla y Santa Marta.",
+    capa: "hoy",
+    categorias: ["conectividad"],
+    icono: "bus",
+    coordenada: { lat: 10.492025, lon: -75.477685, fuente: OSM("vía", 1298648998) },
+    fuente: "Semana, 22-nov-2022: apertura y primeras rutas",
+    fecha: VERIFICADO_25,
+  },
+  {
+    id: "transcaribe-c017",
+    nombre: "Ruta C017 de Transcaribe",
+    nombreCorto: "Transcaribe C017",
+    frase:
+      "Bodeguita – Zona Norte, desde febrero de 2024: pasa por la Terminal del Norte y Serena del Mar, de lunes a viernes en la mañana y en la tarde.",
+    capa: "hoy",
+    categorias: ["conectividad"],
+    icono: "bus",
+    // Es una ruta: no tiene un punto que marcar.
+    coordenada: null,
+    fuente: "transcaribe.gov.co, inauguración de la ruta C017 · El Espectador, 13-feb-2024",
+    fecha: "febrero de 2024",
+  },
 
-  // ── Lo que viene ────────────────────────────────────────────────────────
+  // ── Obras: cada una va en su categoría, con su estado ───────────────────
   {
     id: "gran-malecon",
     nombre: "Gran Malecón del Mar",
@@ -171,26 +328,33 @@ export const LUGARES: Lugar[] = [
   {
     id: "kristal-malls",
     nombre: "Kristal Malls",
-    frase: "Centro comercial en obra desde marzo de 2026, con apertura prevista para 2027.",
+    // «El más grande de Latinoamérica» no tiene respaldo: la constructora lo
+    // presenta como el primer shopping resort de Latinoamérica, y así se cita.
+    frase:
+      "Su constructora lo presenta como el primer shopping resort de Latinoamérica: comercio, hotel y una laguna cristalina abierta al público. Obras iniciadas en marzo de 2026.",
     capa: "viene",
     categorias: ["obras", "comercio"],
     icono: "centro",
     estado: "En obra",
     coordenada: null,
-    fuente: "Prensa local",
-    fecha: "agosto de 2026",
+    fuente:
+      "Arquitectura y Concreto (arquitecturayconcreto.com/kristal-mall) · Inmobiliare, 12-mar-2026 · La República, 25-may-2024",
+    fecha: "marzo de 2026",
   },
   {
     id: "nuevo-aeropuerto",
     nombre: "Nuevo aeropuerto",
-    frase: "La ANI evalúa la factibilidad del proyecto.",
+    frase:
+      // Sin el plazo del evaluador (nov-2026): una pieza permanente no publica
+      // fechas de trámite (criteria/una-pieza-permanente-no-publica-fechas-de-tramite).
+      "La ANI evalúa la iniciativa privada de un nuevo aeropuerto cerca de Bayunca, al norte de la ciudad.",
     capa: "viene",
     categorias: ["obras", "conectividad"],
     icono: "avion",
     estado: "En estudio",
     coordenada: null,
-    fuente: "Agencia Nacional de Infraestructura (ANI)",
-    fecha: "agosto de 2026",
+    fuente: "El Universal, 14-may-2026 · Agencia Nacional de Infraestructura (ANI)",
+    fecha: "mayo de 2026",
   },
 ];
 
@@ -308,7 +472,7 @@ export const NOTA_FUENTES =
 
 /** Las fuentes del mapa y del bloque de Cartagena, para el pie de la sección. */
 export const NOTA_MAPA =
-  "Patrimonio de la Humanidad: UNESCO, Lista del Patrimonio Mundial. Lugares del mapa: OpenStreetMap, verificados el 24 de septiembre de 2026. Gran Malecón del Mar: Alcaldía de Cartagena y El Universal, julio de 2026.";
+  "Patrimonio de la Humanidad: UNESCO, Lista del Patrimonio Mundial. Lugares del mapa: OpenStreetMap, verificados el 24 y el 25 de septiembre de 2026. Gran Malecón del Mar: Alcaldía de Cartagena y El Universal, julio de 2026.";
 
 /**
  * Tiempos de trayecto desde la Zona Norte, medidos y entregados por Rafael,

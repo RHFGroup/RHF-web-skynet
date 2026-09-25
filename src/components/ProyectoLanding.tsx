@@ -250,8 +250,8 @@ export default function ProyectoLanding({ p }: { p: Proyecto }) {
               )}
               {p.zona === "Zona Norte" && (
                 <p className="pp-enlace-zona">
-                  <Link href="/#zonanorte">
-                    Lo que ya funciona en la Zona Norte <IconoFlecha size={16} />
+                  <Link href="/#mapa">
+                    Colegios, salud, comercio y vías de la Zona Norte <IconoFlecha size={16} />
                   </Link>
                 </p>
               )}

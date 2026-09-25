@@ -594,6 +594,11 @@ export const PROYECTOS: Proyecto[] = [
       "Parqueadero privado por casa",
       "Estructura preparada para ampliación",
       "Zonas verdes",
+      // Zonas comunes del brochure oficial «Doral West — Casas y Lotes» (2026).
+      "Cancha de pádel",
+      "Cancha múltiple y de tenis",
+      "Piscina de adultos y niños",
+      "Gimnasio",
     ],
     datos: [
       { label: "Casas disponibles", valor: "49", fuente: LISTA_DORAL },
@@ -633,7 +638,11 @@ export const PROYECTOS: Proyecto[] = [
     // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
     revisionJuridica: false,
     presentacion: {
-      linea: "Casas de 1 y 2 pisos · lote propio · parqueadero privado",
+      // «Bifamiliares»: pedido de Rafael, asesor del proyecto (25-sep-2026). El
+      // brochure del constructor llama «casas individuales» a las de un piso y
+      // «casas adosadas» a las de dos; su render de fachada muestra las de un
+      // piso en pareja. Nota en el vault: publico/doral-west.
+      linea: "Casas bifamiliares de 1 y 2 pisos · lote propio",
       frase: "Estructura preparada para crecer hasta un tercer nivel. Entregas documentadas por manzana.",
     },
     fotos: {

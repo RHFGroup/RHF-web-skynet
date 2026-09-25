@@ -9,10 +9,19 @@ import { olvidarSalida, vieneDeLaCartera } from "@/lib/volver";
  * pestaña, vuelve con el historial: la home reaparece donde la dejó. Si llegó
  * por un enlace compartido, la lleva a la cartera.
  */
-export default function VolverACartera({ className = "pp-volver" }: { className?: string }) {
+export default function VolverACartera({
+  className = "pp-volver",
+  href = "/#cartera",
+  texto = "Volver a la cartera",
+}: {
+  className?: string;
+  /** A dónde lleva cuando no hay historial: la cartera o los inmuebles. */
+  href?: string;
+  texto?: string;
+}) {
   return (
     <Link
-      href="/#cartera"
+      href={href}
       className={className}
       onClick={(e) => {
         if (vieneDeLaCartera() && window.history.length > 1) {
@@ -22,7 +31,7 @@ export default function VolverACartera({ className = "pp-volver" }: { className?
         }
       }}
     >
-      <IconoFlechaIzq size={16} /> Volver a la cartera
+      <IconoFlechaIzq size={16} /> {texto}
     </Link>
   );
 }

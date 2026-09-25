@@ -1,146 +1,276 @@
 /* ─────────────────────────────────────────────────────────────
-   Quién te asesora — lo que suma el prompt 5 (QuienTeAsesora.tsx)
+   Quién te asesora (QuienTeAsesora.tsx) y la página /asesor
+   (PaginaAsesor.tsx)
 
-   La propuesta de valor, los tres pilares y el «Te asesoro si…». Todo sale
-   de src/data/asesor.ts y, sin confirmar, solo se ve en las vistas previas.
+   25-sep-2026: la sección de la home es la versión corta —foto de perfil,
+   nombre completo, oficio, una frase, tres pilares básicos y dos botones— y
+   va sobre café oscuro (secciones.css). El detalle vive en /asesor, con las
+   secciones alternando azul y café.
    ───────────────────────────────────────────────────────────── */
 
-.asesor-propuesta {
-  margin: 22px 0 0;
+/* ── Home: la versión corta ──────────────────── */
+.asesor-corto { scroll-margin-top: var(--nav-h); }
+.asesor-corto-grid {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 76px;
+  align-items: center;
+}
+
+/* La foto, con un marco camel desplazado detrás. */
+.asesor-foto figure { position: relative; margin: 0; }
+.asesor-foto picture,
+.ap-portada-foto picture { position: relative; z-index: 0; display: block; }
+.asesor-foto picture::before,
+.ap-portada-foto picture::before {
+  content: "";
+  position: absolute;
+  inset: 22px -22px -22px 22px;
+  z-index: -1;
+  border: 1px solid rgb(194 165 120 / 0.6);
+  border-radius: 28px;
+}
+.asesor-foto img,
+.ap-portada-foto img,
+.ap-historia-foto img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 28px;
+  box-shadow: 0 34px 70px -34px rgb(0 0 0 / 0.7);
+  filter: saturate(0.96) contrast(1.02);
+}
+
+.asesor-corto-texto h2 { max-width: 15ch; font-size: clamp(34px, 4vw, 52px); line-height: 1.06; }
+.asesor-rol {
+  margin-top: 12px;
+  color: var(--cuero);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.asesor-corto-frase {
+  max-width: 34em;
+  margin-top: 20px;
+  color: rgb(243 239 230 / 0.86);
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+/* Los tres pilares, en una línea cada uno. */
+.asesor-pilares-corto { margin-top: 30px; }
+.asesor-pilares-corto h3 {
+  color: var(--camel-light);
+  font-family: var(--font-sans), "Montserrat", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.asesor-pilares-corto-lista {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.asesor-pilar-corto {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgb(243 239 230 / 0.14);
+  border-radius: 16px;
+  background: rgb(243 239 230 / 0.05);
+  transition: border-color 0.45s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), background 0.45s ease;
+}
+.asesor-pilar-corto:hover { border-color: rgb(212 188 150 / 0.65); background: rgb(243 239 230 / 0.08); transform: translateY(-3px); }
+.asesor-pilar-corto-icono {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgb(194 165 120 / 0.2);
+  color: var(--camel-light);
+}
+.asesor-pilar-corto p { display: flex; flex-direction: column; gap: 3px; margin: 0; }
+.asesor-pilar-corto strong { color: var(--marfil); font-size: 14.5px; font-weight: 600; line-height: 1.3; }
+.asesor-pilar-corto span { color: rgb(243 239 230 / 0.74); font-size: 13px; line-height: 1.45; }
+
+.asesor-corto-acciones { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.asesor-btn-detalle svg { transition: transform 0.35s ease; }
+.asesor-btn-detalle:hover svg { transform: translateX(4px); }
+.asesor-directo { margin-top: 16px; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+.asesor-directo a {
+  padding-bottom: 1px;
+  border-bottom: 1px solid var(--camel);
+  color: var(--marino);
+  font-weight: 600;
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+.asesor-sep { margin: 0 10px; color: var(--marfil-dark); }
+
+/* El cuerpo y las credenciales (en /asesor). */
+.asesor-cuerpo { max-width: 580px; margin-top: 26px; }
+.asesor-cuerpo p { margin-top: 16px; font-size: 16px; line-height: 1.72; }
+.asesor-cuerpo p:first-child { margin-top: 0; }
+.asesor-credenciales {
+  display: grid;
+  gap: 2px;
+  max-width: 580px;
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.asesor-credenciales li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 0 14px 18px;
+  border-left: 2px solid var(--camel);
+}
+.asesor-credenciales strong { font-family: var(--font-sans), "Montserrat", sans-serif; font-size: 15px; font-weight: 600; line-height: 1.35; }
+.asesor-credenciales span { font-size: 12px; letter-spacing: 0.04em; }
+
+/* ── /asesor ─────────────────────────────────── */
+.ap-portada { padding: 88px 0 104px; }
+.ap-portada-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 72px;
+  align-items: center;
+}
+.ap-portada h1 { max-width: 14ch; margin-top: 14px; font-size: clamp(40px, 5.4vw, 68px); line-height: 1.03; }
+.ap-frase { max-width: 36em; margin-top: 22px; color: rgb(243 239 230 / 0.86); font-size: 18px; line-height: 1.65; }
+.ap-propuesta {
   max-width: 30em;
-  font-family: var(--font-serif), "Cormorant Garamond", ui-serif, Georgia, serif;
-  font-size: clamp(24px, 2.4vw, 30px);
-  font-weight: 500;
-  line-height: 1.22;
-  color: var(--marino);
+  margin-top: 16px;
+  color: var(--camel-light);
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: clamp(21px, 2vw, 26px);
+  line-height: 1.25;
 }
-.asesor-propuesta-alterna { margin-top: 12px; font-size: clamp(19px, 1.8vw, 22px); color: var(--cuero); }
-.asesor-propuesta .propuesta { margin-left: 10px; vertical-align: middle; }
+.ap-propuesta .propuesta { margin-left: 10px; vertical-align: middle; font-family: var(--font-sans), "Montserrat", sans-serif; }
+.ap-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 26px; margin-top: 32px; }
+.ap-acciones .asesor-directo { margin: 0; }
 
-.asesor-extra { margin-top: 86px; }
-.asesor-bloque-titulo {
-  font-family: var(--font-serif), "Cormorant Garamond", ui-serif, Georgia, serif;
-  font-size: clamp(26px, 2.8vw, 34px);
-  color: var(--marino);
+.ap-historia-grid {
+  display: grid;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 76px;
+  align-items: center;
 }
+.ap-historia-foto figure { margin: 0; }
+.ap-historia-foto figcaption {
+  margin-top: 14px;
+  color: rgb(243 239 230 / 0.58);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ap-historia-texto h2 { max-width: 20ch; font-size: clamp(30px, 3.6vw, 44px); }
 
-/* Los tres pilares */
-.asesor-pilares-lista {
+.ap-pilares-lista {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
-  margin-top: 26px;
+  margin-top: 34px;
 }
-.asesor-pilar {
-  position: relative;
-  padding: 28px 26px 26px;
-  border: 1px solid var(--marfil-dark);
+.ap-pilar {
+  padding: 28px 26px;
+  border: 1px solid rgb(243 239 230 / 0.14);
   border-radius: 22px;
-  background: var(--white);
-  box-shadow: 0 18px 40px -30px rgb(22 30 43 / 0.45);
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s ease, border-color 0.5s ease;
+  background: rgb(243 239 230 / 0.05);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.5s ease;
 }
-.asesor-pilar:hover {
-  transform: translateY(-6px);
-  border-color: var(--camel);
-  box-shadow: 0 26px 50px -30px rgb(22 30 43 / 0.55);
-}
-.asesor-pilar-icono {
+.ap-pilar:hover { border-color: rgb(212 188 150 / 0.65); transform: translateY(-6px); }
+.ap-pilar-icono {
   display: grid;
   place-items: center;
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: var(--marino);
-  color: var(--camel);
-  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.asesor-pilar:hover .asesor-pilar-icono { transform: rotate(-6deg) scale(1.06); }
-.asesor-pilar h4 {
-  margin-top: 18px;
-  font-family: var(--font-serif), "Cormorant Garamond", serif;
-  font-size: 24px;
+  background: var(--camel);
   color: var(--marino);
 }
-.asesor-pilar p { margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: var(--near-black); }
-.asesor-pilar .propuesta { margin-top: 12px; }
+.ap-pilar h3 { margin-top: 18px; color: var(--marfil); font-size: 26px; }
+.ap-pilar p { margin-top: 8px; color: rgb(243 239 230 / 0.78); font-size: 15px; line-height: 1.6; }
 
-/* Te asesoro si… */
-.asesor-perfiles { margin-top: 64px; }
-.asesor-perfiles-tabs {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 22px;
-  padding: 6px;
-  border: 1px solid var(--marfil-dark);
-  border-radius: 9999px;
-  background: var(--white);
+.ap-equipo-lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 34px;
 }
-.asesor-perfiles-tabs button {
-  padding: 11px 20px;
-  border: none;
-  border-radius: 9999px;
-  background: transparent;
-  color: var(--marino);
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.35s ease, color 0.35s ease;
-}
-.asesor-perfiles-tabs button:hover { background: var(--marfil); }
-.asesor-perfiles-tabs button.activa { background: var(--marino); color: var(--white); }
-.asesor-perfiles-tabs button:focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
-.asesor-perfil {
-  display: flex;
-  flex-wrap: wrap;
+.ap-persona {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 22px;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px 28px;
-  margin-top: 18px;
-  padding: 26px 28px;
-  border-radius: 22px;
-  background: linear-gradient(160deg, var(--marino-light) 0%, var(--marino) 55%, var(--marino-dark) 100%);
-  color: var(--marfil);
+  padding: 20px;
+  border: 1px solid rgb(243 239 230 / 0.14);
+  border-radius: 24px;
+  background: rgb(243 239 230 / 0.05);
 }
-.asesor-perfil-texto {
-  margin: 0;
-  max-width: 36em;
-  font-family: var(--font-serif), "Cormorant Garamond", serif;
-  font-size: clamp(21px, 2vw, 26px);
-  line-height: 1.3;
-  animation: asesor-perfil-entra 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.asesor-perfil-texto .propuesta {
-  margin-left: 10px;
-  vertical-align: middle;
-  border-color: rgb(212 188 150 / 0.6);
-  background: rgb(194 165 120 / 0.14);
+.ap-persona img { width: 150px; height: 188px; border-radius: 18px; object-fit: cover; }
+.ap-persona-icono {
+  display: grid;
+  place-items: center;
+  width: 150px;
+  height: 188px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, var(--marino-light), var(--marino-dark));
   color: var(--camel-light);
 }
-@keyframes asesor-perfil-entra {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: none; }
+.ap-persona h3 { color: var(--marfil); font-size: 24px; line-height: 1.15; }
+.ap-persona-rol {
+  margin-top: 6px;
+  color: var(--camel-light);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
+.ap-persona p { margin: 8px 0 0; color: rgb(243 239 230 / 0.8); font-size: 14.5px; line-height: 1.55; }
+.ap-persona .ap-persona-rol { margin-top: 6px; }
+.ap-enlace {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgb(212 188 150 / 0.45);
+  color: var(--camel-light);
+  font-size: 14px;
+  font-weight: 600;
+}
+.ap-enlace:hover { color: var(--marfil); border-color: var(--marfil); }
 
-@media (max-width: 900px) {
-  .asesor-pilares-lista { grid-template-columns: 1fr; }
-  .asesor-extra { margin-top: 64px; }
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 1080px) {
+  .asesor-corto-grid { grid-template-columns: 320px minmax(0, 1fr); gap: 52px; }
+  .asesor-pilares-corto-lista { grid-template-columns: minmax(0, 1fr); }
+  .ap-portada-grid { grid-template-columns: minmax(0, 1fr) 340px; gap: 44px; }
+  .ap-historia-grid { grid-template-columns: 320px minmax(0, 1fr); gap: 48px; }
+  .ap-pilares-lista, .ap-equipo-lista { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 860px) {
+  .asesor-corto-grid, .ap-portada-grid, .ap-historia-grid { grid-template-columns: minmax(0, 1fr); gap: 44px; }
+  .asesor-foto, .ap-historia-foto { max-width: 360px; }
+  .ap-portada-foto { order: -1; max-width: 340px; }
+  .ap-portada { padding: 56px 0 80px; }
 }
 @media (max-width: 560px) {
-  .asesor-perfiles-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; border-radius: 18px; scrollbar-width: none; }
-  .asesor-perfiles-tabs::-webkit-scrollbar { display: none; }
-  .asesor-perfiles-tabs button { flex: none; }
-  .asesor-perfil { padding: 22px 20px; }
-  .asesor-perfil .btn-whatsapp { width: 100%; justify-content: center; }
+  .asesor-foto { max-width: 84%; }
+  .asesor-corto-acciones > * { width: 100%; justify-content: center; }
+  .ap-persona { grid-template-columns: minmax(0, 1fr); }
+  .ap-persona img, .ap-persona-icono { width: 100%; height: 260px; }
+  .ap-acciones > .btn-whatsapp { width: 100%; justify-content: center; }
+  .asesor-sep { display: block; height: 0; margin: 4px 0; overflow: hidden; }
 }
-
 @media (prefers-reduced-motion: reduce) {
-  .asesor-pilar, .asesor-pilar-icono { transition: none; }
-  .asesor-pilar:hover, .asesor-pilar:hover .asesor-pilar-icono { transform: none; }
-  .asesor-perfil-texto { animation: none; }
+  .asesor-pilar-corto, .ap-pilar, .asesor-btn-detalle svg { transition: none; }
+  .asesor-pilar-corto:hover, .ap-pilar:hover { transform: none; }
 }
-
-/* La etiqueta de propuesta, en letra de texto aunque vaya dentro de una frase en serif. */
-.asesor-propuesta .propuesta, .asesor-perfil-texto .propuesta { font-family: var(--font-sans), "Montserrat", sans-serif; }

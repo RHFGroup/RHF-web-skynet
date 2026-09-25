@@ -198,7 +198,7 @@ export default function TarjetaGiro({
                 <span>{f.nombre}</span>
               </div>
             )}
-            <span className="tg-estado">{ESTADO[f.estado]}</span>
+            <span className="tg-estado">{f.estadoTexto ?? ESTADO[f.estado]}</span>
             {f.nuevo && <span className="tg-nuevo">Nuevo</span>}
             {fotos.length > 1 && (
               <span className="tg-puntos" aria-hidden="true">
@@ -323,7 +323,7 @@ export default function TarjetaGiro({
           </div>
           <div className="tg-enlaces">
             <Link className="tg-link" href={f.href} onClick={alSalir}>
-              Ver proyecto <IconoFlecha size={16} />
+              {f.verTexto ?? "Ver proyecto"} <IconoFlecha size={16} />
             </Link>
             <button type="button" className="tg-volver" onClick={() => girar(false, true)}>
               Volver

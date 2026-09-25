@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Script from "next/script";
 import { PROYECTOS } from "@/data/proyectos";
+import { INMUEBLES } from "@/data/inmuebles";
 import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
 
 /**
@@ -221,11 +222,20 @@ export default function ContactForm({
           onChange={(e) => setProyecto(e.target.value)}
         >
           <option value="">Selecciona un proyecto</option>
-          {PROYECTOS.map((p) => (
-            <option key={p.slug} value={p.nombre}>
-              {p.nombre}
-            </option>
-          ))}
+          <optgroup label="Proyectos de la cartera">
+            {PROYECTOS.map((p) => (
+              <option key={p.slug} value={p.nombre}>
+                {p.nombre}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Inmuebles disponibles">
+            {INMUEBLES.map((i) => (
+              <option key={i.slug} value={i.nombre}>
+                {i.nombre}
+              </option>
+            ))}
+          </optgroup>
           <option value="Otro / No estoy seguro">Otro / No estoy seguro</option>
         </select>
       </label>

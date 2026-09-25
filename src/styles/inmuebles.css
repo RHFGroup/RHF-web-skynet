@@ -1,0 +1,41 @@
+/* ─────────────────────────────────────────────────────────────
+   Inmuebles disponibles: la sección de la home (Inmuebles.tsx) y la página
+   de cada uno (InmuebleLanding.tsx).
+
+   La sección reutiliza la grilla de la cartera (cartera.css) y la tarjeta que
+   gira (tarjeta-giro.css); va sobre café (secciones.css). La página reutiliza
+   la plantilla de proyecto (proyecto.css) y suma el plano y las fuentes.
+   ───────────────────────────────────────────────────────────── */
+
+.inmuebles { scroll-margin-top: var(--nav-h); }
+.inmuebles-grilla { margin-top: 36px; }
+
+/* ── Página de cada inmueble ─────────────────── */
+.pi .pp-resumen + .pp-resumen { margin-top: 12px; }
+.pi-dependencias { max-width: 60ch; margin: 0 0 8px; color: var(--near-black); font-size: 16px; line-height: 1.7; }
+.pi-plano {
+  max-width: 720px;
+  margin: 26px 0 0;
+  padding: 18px;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 20px;
+  background: var(--white);
+}
+.pi-plano img { width: 100%; height: auto; }
+.pi-plano figcaption { margin-top: 10px; color: var(--text-muted); font-size: 12px; }
+.pi-fuentes {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pi-fuentes li {
+  padding: 12px 16px;
+  border-left: 2px solid var(--camel);
+  border-radius: 0 12px 12px 0;
+  background: rgb(194 165 120 / 0.09);
+  color: var(--near-black);
+  font-size: 14px;
+  line-height: 1.55;
+}

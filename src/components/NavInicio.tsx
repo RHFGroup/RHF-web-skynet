@@ -55,9 +55,10 @@ export default function NavInicio({ whatsapp }: { whatsapp: string }) {
           <img className="brand-oscuro" src="/marca/rhf-living-oscuro.svg" alt="RHF Living" width="215" height="48" />
         </a>
         <nav className="nav-links" aria-label="Secciones">
-          <a href="#cartera">Nuestra cartera</a>
-          <a href="#zonanorte">Zona Norte</a>
+          <a href="#mapa">El territorio</a>
           <a href="#asesor">Quién te asesora</a>
+          <a href="#cartera">Nuestra cartera</a>
+          <a href="#inmuebles">Inmuebles</a>
           <a href="#contacto">Contacto</a>
         </nav>
         <a className="nav-cta" href={whatsapp} target="_blank" rel="noopener noreferrer">

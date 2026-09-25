@@ -4,9 +4,14 @@
  * «El territorio» — el mapa real de la zona (prompt 3, rama feat/territorio-mapa).
  *
  * El mapa ilustrado de la sección Zona Norte cuenta la historia; este es la
- * herramienta para explorar con precisión: proyectos, servicios, lo que viene
- * y el contacto. Filtros por categoría, tarjetas a la derecha, vuelo suave al
+ * herramienta para explorar con precisión: proyectos, servicios, obras y el
+ * contacto. Filtros por categoría, tarjetas a la derecha, vuelo suave al
  * punto elegido y, al final, «Agendar recorrido».
+ *
+ * 25-sep-2026 (pedido de Rafael): sin la pestaña «Lo que viene». Cada obra va
+ * en su categoría —el malecón en turismo, Kristal Malls en comercio, la doble
+ * calzada y el nuevo aeropuerto en conectividad— con su estado a la vista y,
+ * si existe, una imagen del proceso.
  *
  * ⛔ **Cada pin es una afirmación.** Solo entran puntos con coordenada
  * verificada, y cada tarjeta dice «Coordenada verificada» con su fuente. Los
@@ -40,7 +45,7 @@ import { cargarLeaflet, TESELAS } from "@/lib/leaflet";
 import { usePrefersReducedMotion } from "@/lib/motion";
 import "@/styles/territorio.css";
 
-type Filtro = "todo" | "proyectos" | Exclude<Categoria, "obras"> | "viene";
+type Filtro = "todo" | "proyectos" | Exclude<Categoria, "obras">;
 
 type Item =
   | { tipo: "proyecto"; id: string; ficha: Ficha; pin: PinProyecto | null }
@@ -77,10 +82,14 @@ function coincide(it: Item, f: Filtro): boolean {
   if (f === "todo") return true;
   if (f === "proyectos") return it.tipo === "proyecto";
   if (it.tipo === "proyecto") return false;
-  if (f === "viene") return it.lugar.capa === "viene";
-  // Las categorías muestran lo que funciona hoy; lo que viene tiene su filtro.
-  return it.lugar.capa === "hoy" && it.lugar.categorias.includes(f);
+  // Cada categoría muestra lo que ya funciona y, con su estado, lo que está en obra.
+  return it.lugar.categorias.includes(f);
 }
+
+/** La categoría principal de un lugar: la primera que no es «obras». */
+const categoriaDe = (l: Lugar) => l.categorias.find((c) => c !== "obras") ?? "turismo";
+const ORDEN_CATEGORIAS = CATEGORIAS.map((c) => c.id as string);
+const nombreCategoria = (l: Lugar) => CATEGORIAS.find((c) => c.id === categoriaDe(l))?.nombre ?? "";
 
 function coordenadaDe(it: Item): { lat: number; lon: number } | null {
   if (it.tipo === "lugar") return it.lugar.coordenada;
@@ -121,8 +130,14 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
         ficha: f,
         pin: pines.find((p) => p.slug === f.slug) ?? null,
       })),
-      ...LUGARES.filter((l) => l.capa === "hoy").map((l) => ({ tipo: "lugar" as const, id: l.id, lugar: l })),
-      ...LUGARES.filter((l) => l.capa === "viene").map((l) => ({ tipo: "lugar" as const, id: l.id, lugar: l })),
+      // Por categoría, y dentro de cada una lo que funciona antes que lo que está en obra.
+      ...[...LUGARES]
+        .sort(
+          (a, b) =>
+            ORDEN_CATEGORIAS.indexOf(categoriaDe(a)) - ORDEN_CATEGORIAS.indexOf(categoriaDe(b)) ||
+            (a.capa === b.capa ? 0 : a.capa === "hoy" ? -1 : 1),
+        )
+        .map((l) => ({ tipo: "lugar" as const, id: l.id, lugar: l })),
     ],
     [proyectos, pines],
   );
@@ -130,7 +145,6 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
     { id: "todo", nombre: "Todo" },
     { id: "proyectos", nombre: "Proyectos" },
     ...CATEGORIAS,
-    { id: "viene", nombre: "Lo que viene" },
   ].filter((f) => items.some((it) => coincide(it, f.id as Filtro))) as { id: Filtro; nombre: string }[];
   const visibles = items.filter((it) => coincide(it, filtro));
   const itemElegido = elegido ? items.find((it) => it.id === elegido.id) ?? null : null;
@@ -364,10 +378,7 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
       <div className="section-shell">
         <p className="section-kicker">El territorio</p>
         <h2>Mira la zona antes de mirar el apartamento</h2>
-        <p className="section-lede">
-          Mueve el mapa y reconoce el terreno: la Ciénaga de la Virgen, la Vía al Mar y los servicios que ya
-          funcionan.
-        </p>
+        <p className="section-lede">Colegios, salud, comercio y vías: lo que ya funciona y lo que está en obra.</p>
 
         <div className="tr-filtros" role="group" aria-label="Qué mostrar en el mapa">
           {filtros.map((f) => (
@@ -565,7 +576,10 @@ function Cabeza({ it }: { it: Item }) {
         dangerouslySetInnerHTML={{ __html: svgGlifo(l.icono, 18) }}
       />
       <span className="tr-cabeza-texto">
-        {l.estado && <span className={"tr-estado tr-estado-" + claseEstado(l.estado)}>{l.estado}</span>}
+        <span className="tr-eyebrow-fila">
+          <span className="tr-eyebrow">{nombreCategoria(l)}</span>
+          {l.estado && <span className={"tr-estado tr-estado-" + claseEstado(l.estado)}>{l.estado}</span>}
+        </span>
         <strong>{l.nombre}</strong>
         <span className="tr-frase">{l.frase}</span>
       </span>
@@ -597,6 +611,14 @@ function Detalle({ it, enHoja = false }: { it: Item; enHoja?: boolean }) {
   return (
     <div className="tr-detalle">
       {enHoja && <Cabeza it={it} />}
+      {l.imagen && (
+        <figure className="tr-imagen">
+          <img src={l.imagen.src} alt={l.imagen.alt} loading="lazy" decoding="async" />
+          <figcaption>
+            {l.imagen.credito} · {l.imagen.fecha}
+          </figcaption>
+        </figure>
+      )}
       {l.coordenada && <p className="tr-fuente">Coordenada verificada · {l.coordenada.fuente}</p>}
       <p className="tr-fuente">
         Fuente: {l.fuente} · {l.fecha}

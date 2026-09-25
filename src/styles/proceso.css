@@ -16,6 +16,14 @@
   letter-spacing: 0.04em;
 }
 
+/* Una sola marca por sección (AvisoPropuesta). */
+.propuesta-seccion { display: table; margin-top: 16px; font-size: 11px; }
+.rj .propuesta, .pa .propuesta, .tono .propuesta {
+  border-color: rgb(212 188 150 / 0.7);
+  background: rgb(194 165 120 / 0.16);
+  color: var(--camel-light);
+}
+
 /* ── Respaldo jurídico ───────────────────────── */
 .rj {
   position: relative;
@@ -104,6 +112,42 @@
 .rj-responsable strong { font-size: 16px; color: var(--white); }
 .rj-responsable span { font-size: 13px; color: rgb(243 239 230 / 0.7); }
 
+/* El único llamado a la acción de la sección (25-sep-2026). */
+.rj-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 28px;
+  margin-top: 44px;
+  padding: 24px 28px;
+  border: 1px solid rgb(194 165 120 / 0.38);
+  border-radius: 22px;
+  background: rgb(243 239 230 / 0.05);
+}
+.rj-cta p {
+  margin: 0;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: clamp(21px, 2.1vw, 27px);
+  line-height: 1.25;
+  color: var(--marfil);
+}
+.rj-cta-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 24px;
+  border-radius: 14px;
+  background: var(--camel);
+  color: var(--marino);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+.rj-cta-boton:hover { background: var(--camel-light); transform: translateY(-2px); }
+.rj-cta-boton:focus-visible { outline: 2px solid var(--camel-light); outline-offset: 3px; }
+
 @media (max-width: 1080px) {
   .rj-servicios { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -112,96 +156,158 @@
   .rj-servicios { grid-template-columns: 1fr; gap: 12px; margin-top: 36px; }
 }
 
-/* ── Paso a paso ─────────────────────────────── */
-.pa { background: var(--white); border-top: 1px solid var(--marfil-dark); scroll-margin-top: var(--nav-h); }
-.pa h2 { color: var(--marino); }
-.pa-lista {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 44px 24px;
-  margin: 56px 0 0;
-  padding: 0;
-  list-style: none;
+/* ── Paso a paso ─────────────────────────────── 
+   25-sep-2026: línea de tiempo al centro, pasos a un lado y al otro, y el
+   color de quien acompaña: camel el asesor, azul el estudio jurídico. La
+   sección va sobre café oscuro (secciones.css). */
+.pa { scroll-margin-top: var(--nav-h); }
+.pa-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 22px 40px;
 }
-.pa-nodo { position: relative; display: flex; align-items: center; height: 52px; }
-.pa-circulo {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 52px;
-  height: 52px;
-  border: 1px solid var(--marfil-dark);
-  border-radius: 50%;
-  background: var(--marfil);
-  color: var(--text-muted);
-  transition: background 0.6s ease, color 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease;
-}
-.pa-conector {
-  position: absolute;
-  left: 60px;
-  right: -16px;
-  top: 50%;
-  height: 2px;
-  background: var(--marfil-dark);
-  transform: translateY(-50%);
-}
-.pa-conector span {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: var(--camel);
-  transform: scaleX(var(--llenado, 0));
-  transform-origin: left center;
-  transition: transform 0.25s linear;
-}
-/* Fin de fila en escritorio: la línea no cruza al otro renglón. */
-.pa-paso:nth-child(4n) .pa-conector { display: none; }
-
-.pa-paso.activo .pa-circulo {
-  border-color: var(--camel);
-  background: var(--marino);
-  color: var(--camel);
-  box-shadow: 0 0 0 6px rgb(194 165 120 / 0.16);
-}
-.pa-texto { margin-top: 18px; }
-.pa-numero {
-  display: block;
-  font-family: var(--font-serif), "Cormorant Garamond", serif;
-  font-size: 42px;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--marfil-dark);
-  transition: color 0.6s ease;
-}
-.pa-paso.activo .pa-numero { color: var(--camel); }
-.pa-texto h3 { margin-top: 8px; font-size: 22px; line-height: 1.2; color: var(--marino); }
-.pa-texto p { margin-top: 8px; font-size: 14px; line-height: 1.6; color: var(--text-muted); }
-.pa-sello {
+.pa-leyenda { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.pa-quien {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 10px;
-  margin-right: 8px;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 9999px;
-  background: var(--marino);
-  color: var(--camel-light);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  white-space: nowrap;
 }
+.pa-quien-asesor { border: 1px solid rgb(212 188 150 / 0.5); background: rgb(194 165 120 / 0.16); color: var(--camel-light); }
+.pa-quien-juridico { border: 1px solid rgb(160 184 226 / 0.5); background: rgb(116 146 196 / 0.2); color: #d3def2; }
+
+.pa-linea {
+  position: relative;
+  display: grid;
+  gap: 22px;
+  margin: 52px 0 0;
+  padding: 0;
+  list-style: none;
+}
+/* El eje: una pista tenue y, encima, la parte ya recorrida. */
+.pa-linea::before,
+.pa-linea::after {
+  content: "";
+  position: absolute;
+  top: 26px;
+  bottom: 26px;
+  left: 50%;
+  width: 2px;
+  border-radius: 2px;
+  transform: translateX(-50%);
+}
+.pa-linea::before { background: rgb(243 239 230 / 0.14); }
+.pa-linea::after {
+  background: linear-gradient(180deg, var(--camel-light), var(--camel));
+  transform: translateX(-50%) scaleY(var(--avance, 0));
+  transform-origin: center top;
+  transition: transform 0.25s linear;
+}
+
+.pa-paso {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr);
+  align-items: center;
+}
+.pa-punto {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-column: 2;
+  grid-row: 1;
+  place-items: center;
+  justify-self: center;
+  width: 54px;
+  height: 54px;
+  border: 1px solid rgb(243 239 230 / 0.28);
+  border-radius: 50%;
+  background: #2a1d14;
+  color: rgb(243 239 230 / 0.55);
+  transition: background 0.6s ease, color 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease, transform 0.6s ease;
+}
+.pa-paso.activo .pa-punto {
+  border-color: var(--camel);
+  background: var(--camel);
+  color: var(--marino);
+  box-shadow: 0 0 0 7px rgb(194 165 120 / 0.18);
+  transform: scale(1.05);
+}
+.pa-es-juridico.activo .pa-punto,
+.pa-es-ambos.activo .pa-punto {
+  border-color: #a9bde2;
+  background: #a9bde2;
+  color: var(--marino-dark);
+  box-shadow: 0 0 0 7px rgb(143 168 214 / 0.2);
+}
+
+.pa-tarjeta {
+  position: relative;
+  grid-row: 1;
+  padding: 22px 24px 24px;
+  border: 1px solid rgb(243 239 230 / 0.12);
+  border-radius: 20px;
+  background: rgb(243 239 230 / 0.05);
+  opacity: 0.3;
+  transition:
+    opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.5s ease,
+    background 0.5s ease;
+}
+.pa-izq .pa-tarjeta { grid-column: 1; transform: translateX(-40px); }
+.pa-der .pa-tarjeta { grid-column: 3; transform: translateX(40px); }
+.pa-paso.activo .pa-tarjeta { opacity: 1; transform: none; }
+.pa-es-juridico .pa-tarjeta,
+.pa-es-ambos .pa-tarjeta {
+  border-color: rgb(160 184 226 / 0.28);
+  background: linear-gradient(160deg, rgb(58 74 102 / 0.42), rgb(31 42 61 / 0.3));
+}
+.pa-tarjeta:hover { border-color: rgb(212 188 150 / 0.6); }
+/* El trazo corto que une la tarjeta con el eje. */
+.pa-tarjeta::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 1px;
+  background: rgb(243 239 230 / 0.22);
+}
+.pa-izq .pa-tarjeta::after { right: -23px; }
+.pa-der .pa-tarjeta::after { left: -23px; }
+
+.pa-tarjeta-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pa-numero {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1;
+  color: rgb(243 239 230 / 0.28);
+  transition: color 0.6s ease;
+}
+.pa-paso.activo .pa-numero { color: var(--camel-light); }
+.pa-tarjeta h3 { margin-top: 10px; font-size: 24px; line-height: 1.2; color: var(--marfil); }
+.pa-tarjeta p { margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: rgb(243 239 230 / 0.8); }
+.pa-tarjeta .pa-pendiente { font-size: 12px; font-style: italic; color: var(--camel-light); }
 
 .pa-exterior {
   margin-top: 44px;
   padding: 22px 24px;
   border-left: 3px solid var(--camel);
   border-radius: 0 14px 14px 0;
-  background: var(--marfil);
+  background: rgb(243 239 230 / 0.06);
 }
-.pa-exterior h3 { font-size: 22px; color: var(--marino); }
-.pa-exterior ul { margin: 10px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.6; }
-.pa-exterior-fuente { margin-top: 10px; font-size: 12px; color: var(--text-muted); }
+.pa-exterior h3 { font-size: 22px; color: var(--marfil); }
+.pa-exterior ul { margin: 10px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.6; color: rgb(243 239 230 / 0.82); }
+.pa-exterior-fuente { margin-top: 10px; font-size: 12px; color: rgb(243 239 230 / 0.6); }
 
 .pa-cta {
   display: flex;
@@ -209,20 +315,21 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px 32px;
-  margin-top: 64px;
+  margin-top: 60px;
   padding: 30px 32px;
+  border: 1px solid rgb(212 188 150 / 0.35);
   border-radius: 24px;
-  background: var(--marfil);
+  background: rgb(243 239 230 / 0.06);
 }
-.pa-cta h3 { font-size: 30px; color: var(--marino); }
-.pa-cta p { margin-top: 6px; font-size: 15px; color: var(--text-muted); }
+.pa-cta h3 { font-size: 30px; color: var(--marfil); }
+.pa-cta p { margin-top: 6px; font-size: 15px; color: rgb(243 239 230 / 0.75); }
 .pa-cta-botones { display: flex; flex-wrap: wrap; gap: 12px; }
 .pa-btn-guia {
   padding: 14px 24px;
-  border: 1px solid var(--marino);
+  border: 1px solid rgb(243 239 230 / 0.5);
   border-radius: 14px;
   background: transparent;
-  color: var(--marino);
+  color: var(--marfil);
   font-family: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -254,29 +361,23 @@
 .guia-lista { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
 .guia-cerrar { border: none; background: none; font-family: inherit; color: var(--cuero); cursor: pointer; }
 
-/* Teléfono: la línea baja en vertical, a la izquierda. */
+/* Teléfono: la línea baja a la izquierda y todos los pasos van a su derecha. */
 @media (max-width: 860px) {
-  .pa-lista { grid-template-columns: 1fr; gap: 0; }
-  .pa-paso { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 18px; }
-  .pa-nodo { flex-direction: column; height: auto; }
-  .pa-paso:nth-child(4n) .pa-conector { display: block; }
-  .pa-conector {
-    position: relative;
-    left: auto;
-    right: auto;
-    top: auto;
-    flex: 1;
-    width: 2px;
-    height: auto;
-    min-height: 36px;
-    transform: none;
-  }
-  .pa-conector span { transform: scaleY(var(--llenado, 0)); transform-origin: center top; }
-  .pa-texto { margin-top: 4px; padding-bottom: 32px; }
+  .pa-cabeza { align-items: flex-start; flex-direction: column; }
+  .pa-linea { gap: 16px; margin-top: 36px; }
+  .pa-linea::before, .pa-linea::after { left: 27px; }
+  .pa-paso { grid-template-columns: 54px minmax(0, 1fr); gap: 14px; align-items: start; }
+  .pa-punto { grid-column: 1; }
+  .pa-izq .pa-tarjeta, .pa-der .pa-tarjeta { grid-column: 2; transform: translateY(26px); }
+  .pa-paso.activo .pa-tarjeta { transform: none; }
+  .pa-tarjeta { padding: 18px 18px 20px; }
+  .pa-tarjeta::after { display: none; }
   .pa-numero { font-size: 32px; }
+  .pa-tarjeta h3 { font-size: 21px; }
   .pa-cta { padding: 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pa-circulo, .pa-numero, .pa-conector span { transition: none; }
+  .pa-punto, .pa-numero, .pa-tarjeta, .pa-linea::after { transition: none; }
+  .pa-tarjeta, .pa-izq .pa-tarjeta, .pa-der .pa-tarjeta { opacity: 1; transform: none; }
 }

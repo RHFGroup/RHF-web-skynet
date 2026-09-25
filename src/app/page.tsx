@@ -18,16 +18,22 @@
  *    (precio de referencia con fecha de corte, etiqueta textual del área,
  *    Ley 675 y numeral 2.16.2) y los enlaces a privacidad y términos.
  *
+ * 25-sep-2026 (pedido de Rafael, vista previa del PR #31): fuera la sección
+ * Zona Norte con su mapa ilustrado y «El criterio» (los archivos quedan, sin
+ * usar); El territorio sube a primera sección; «Quién te asesora» queda
+ * corto, con botón a /asesor; entra «Inmuebles disponibles» debajo de la
+ * cartera; y cada sección va en su color, alternando azul y café oscuros
+ * (src/styles/secciones.css).
+ *
  * Las tarjetas leen de `src/data/proyectos.ts`. El precio aparece solo cuando
  * el proyecto tiene los tres datos del numeral 2.16.1 de la Circular 004; si
  * no, dice «Consultar». Nunca se escribe un precio a mano en esta página: fue
  * así como la home terminó anunciando Doral West $145 millones por debajo.
  */
 import ContactForm from "@/components/ContactForm";
-import ZonaNorte from "@/components/ZonaNorte";
 import MapaZona from "@/components/MapaZona";
-import CierreDelCriterio from "@/components/CierreDelCriterio";
 import Cartera from "@/components/Cartera";
+import Inmuebles from "@/components/Inmuebles";
 import Hero, { type FichaHero } from "@/components/Hero";
 import NavInicio from "@/components/NavInicio";
 import Animador from "@/components/Animador";
@@ -38,8 +44,12 @@ import { enlaceWhatsApp, SALUDO_WHATSAPP } from "@/data/contacto";
 import PieSitio from "@/components/PieSitio";
 import RespaldoJuridico from "@/components/RespaldoJuridico";
 import PasoAPaso from "@/components/PasoAPaso";
-import { fichaDe, pinDelMapa, proyectosEnOrden } from "@/lib/ficha";
+import { INMUEBLES } from "@/data/inmuebles";
+import { PASOS } from "@/data/proceso";
+import { fichaDe, fichaDeInmueble, pinDelMapa, proyectosEnOrden } from "@/lib/ficha";
+import { seMuestra } from "@/lib/revision";
 import type { PinProyecto } from "@/components/MapaIlustrado";
+import "@/styles/secciones.css";
 
 /**
  * Las tarjetas de la cartera salen de `src/data/proyectos.ts`, en el orden de
@@ -54,17 +64,52 @@ const heroFichas: FichaHero[] = proyectosEnOrden().map((p) => ({
   pin: p.heroPin ?? null,
 }));
 
+/** Los inmuebles disponibles, con la misma tarjeta de la cartera. */
+const fichasInmuebles = INMUEBLES.map(fichaDeInmueble);
+
 /**
- * Las secciones Zona Norte y El territorio muestran los proyectos de la Zona
- * Norte: todos en sus listas y, en los mapas, solo los que tienen coordenada
- * verificada en proyectos.ts (hoy ninguno). Blue Garden y Acacias no van:
- * no están en la Zona Norte.
+ * El territorio muestra los proyectos de la Zona Norte: todos en su lista y,
+ * en el mapa, solo los que tienen coordenada verificada en proyectos.ts (hoy
+ * ninguno). Blue Garden y Acacias no van: no están en la Zona Norte.
  */
 const proyectosZonaNorte = proyectosEnOrden().filter((p) => p.zona === "Zona Norte");
 const fichasZonaNorte = proyectosZonaNorte.map(fichaDe);
 const pinesZonaNorte = proyectosZonaNorte.map(pinDelMapa).filter((p): p is PinProyecto => p !== null);
 
 const WA_LINK = enlaceWhatsApp(SALUDO_WHATSAPP);
+
+/**
+ * Los colores de las secciones, en orden: azul, café, azul, café… con un tono
+ * distinto para cada una. Se asignan sobre las secciones que de verdad se
+ * publican, para que la alternancia no se rompa cuando una se oculta (el paso
+ * a paso no sale en producción mientras ningún paso esté confirmado).
+ */
+const TONOS = [
+  "tono-azul-1",
+  "tono-cafe-1",
+  "tono-azul-2",
+  "tono-cafe-2",
+  "tono-azul-3",
+  "tono-cafe-3",
+  "tono-azul-4",
+];
+
+/**
+ * El orden de la home: el territorio primero (la zona antes que el
+ * apartamento), quién te asesora, la cartera, los inmuebles disponibles, el
+ * respaldo jurídico, el paso a paso y el contacto.
+ */
+function secciones(): { id: string; nodo: React.ReactNode }[] {
+  return [
+    { id: "territorio", nodo: <MapaZona proyectos={fichasZonaNorte} pines={pinesZonaNorte} /> },
+    { id: "asesor", nodo: <QuienTeAsesora /> },
+    { id: "cartera", nodo: <Cartera fichas={fichas} /> },
+    ...(fichasInmuebles.length > 0 ? [{ id: "inmuebles", nodo: <Inmuebles fichas={fichasInmuebles} /> }] : []),
+    { id: "respaldo", nodo: <RespaldoJuridico /> },
+    ...(PASOS.some(seMuestra) ? [{ id: "pasos", nodo: <PasoAPaso /> }] : []),
+    { id: "contacto", nodo: <Contacto /> },
+  ];
+}
 
 export default function Home() {
   return (
@@ -76,62 +121,12 @@ export default function Home() {
         {/* ── Over the fold ────────────────────── */}
         <Hero fichas={heroFichas} whatsapp={WA_LINK} />
 
-        {/* ── Zona Norte (antes que la cartera) ── */}
-        <ZonaNorte proyectos={fichasZonaNorte} pines={pinesZonaNorte} />
-
-        {/* ── El territorio · mapa interactivo ─── */}
-        <MapaZona proyectos={fichasZonaNorte} pines={pinesZonaNorte} />
-
-        {/* ── El cierre del criterio ────────────
-            Remata los tres tramos de territorio —capítulos, mapa, este— y
-            entrega al bloque de Rafael. Estaba antes del mapa y el remate
-            llegaba con el tema todavía abierto. */}
-        <CierreDelCriterio />
-
-        {/* ── Quién te asesora ──────────────────
-            Va antes de la cartera a propósito: el visitante sabe por qué
-            escucharnos antes de que le mostremos qué tenemos. Es el orden
-            del plan de la home. */}
-        <QuienTeAsesora />
-
-        {/* ── La cartera, el respaldo y el paso a paso ─
-            El visitante ve los proyectos, confía en que la compra es segura
-            y entiende qué sigue. Prompt 4. */}
-        <Cartera fichas={fichas} />
-        <RespaldoJuridico />
-        <PasoAPaso />
-
-        {/* ── Contacto ─────────────────────────── */}
-        <section className="section section-contacto" id="contacto">
-          <div className="section-shell contacto-shell">
-            <Reveal className="contacto-texto" variant="up">
-              <p className="section-kicker">Contacto</p>
-              <h2>Hablemos de tu próximo proyecto</h2>
-              <p className="section-lede">
-                Te asesoramos sin compromiso. Cuéntanos qué buscas
-                y te guiamos al proyecto que mejor se ajuste a tus planes.
-              </p>
-              <div className="contacto-canales">
-                <a
-                  className="btn-whatsapp"
-                  href={WA_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <WhatsAppIcon /> Escríbenos por WhatsApp
-                </a>
-                <p className="contacto-chat-hint">
-                  ¿Prefieres chatear directo en la página? Usa el ícono
-                  de chat abajo a la derecha — nuestro agente te responde
-                  al instante sobre disponibilidad, plazos y condiciones.
-                </p>
-              </div>
-            </Reveal>
-            <Reveal variant="up" delay={140}>
-              <ContactForm />
-            </Reveal>
+        {/* ── Las secciones, cada una en su color ── */}
+        {secciones().map((x, i) => (
+          <div key={x.id} className={`tono ${TONOS[i % TONOS.length]}`}>
+            {x.nodo}
           </div>
-        </section>
+        ))}
       </main>
 
       {/* Las entradas al hacer scroll de toda la página (titulares, eyebrows,
@@ -145,6 +140,35 @@ export default function Home() {
           Aparece cuando la portada sale de la pantalla. */}
       <WhatsAppFlotante trasDe="#inicio" />
     </>
+  );
+}
+
+function Contacto() {
+  return (
+    <section className="section section-contacto" id="contacto">
+      <div className="section-shell contacto-shell">
+        <Reveal className="contacto-texto" variant="up">
+          <p className="section-kicker">Contacto</p>
+          <h2>Hablemos de tu próximo proyecto</h2>
+          <p className="section-lede">
+            Te asesoramos sin compromiso. Cuéntanos qué buscas y te guiamos al proyecto que mejor se ajuste a tus
+            planes.
+          </p>
+          <div className="contacto-canales">
+            <a className="btn-whatsapp" href={WA_LINK} target="_blank" rel="noopener noreferrer">
+              <WhatsAppIcon /> Escríbenos por WhatsApp
+            </a>
+            <p className="contacto-chat-hint">
+              ¿Prefieres chatear directo en la página? Usa el ícono de chat abajo a la derecha — nuestro agente te
+              responde al instante sobre disponibilidad, plazos y condiciones.
+            </p>
+          </div>
+        </Reveal>
+        <Reveal variant="up" delay={140}>
+          <ContactForm />
+        </Reveal>
+      </div>
+    </section>
   );
 }
 
