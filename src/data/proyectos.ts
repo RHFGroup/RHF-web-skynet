@@ -66,6 +66,12 @@ export type Foto = {
   credito: string;
   ancho: number;
   alto: number;
+  /**
+   * La misma imagen en 1200 px, cuando la original es más grande. La usan la
+   * tarjeta de la cartera y las pantallas angostas: no descargan 2400 px para
+   * mostrar 400.
+   */
+  src1200?: string;
 };
 
 /** Un plano tal como lo publica la fuente, con la página de donde sale. */
@@ -167,6 +173,14 @@ export type Proyecto = {
     tarjeta: Foto;
     galeria: Foto[];
     compartir: string;
+    /**
+     * La imagen del proyecto en la portada de la home, a pantalla completa,
+     * con su versión de 1200 px. `enfoque` es el `object-position` del recorte
+     * («50% 60%»): qué parte de la imagen se conserva cuando la pantalla la
+     * corta. `mini` es la miniatura de 168 × 120 px para elegirla en la
+     * portada. Si falta el escaparate, la portada usa la primera de la galería.
+     */
+    escaparate?: Foto & { enfoque?: string; mini?: string };
   };
   /**
    * ¿El estudio jurídico de RHF Living ya revisó este proyecto? Lo confirma
@@ -313,6 +327,7 @@ export const PROYECTOS: Proyecto[] = [
         alto: 1200,
       },
       galeria: [
+        { src: "/proyectos/blue-garden/escaparate-2400.jpg", src1200: "/proyectos/blue-garden/escaparate-1200.jpg", alt: "Blue Garden — casas del condominio con su jardín y parqueadero", credito: DEL_PROMOTOR + " · brochure oficial, pág. 20", ancho: 2400, alto: 1350 },
         { src: "/proyectos/blue-garden/home.jpg", alt: "Blue Garden — terraza de una casa del condominio", credito: DEL_PROMOTOR, ancho: 1200, alto: 1200 },
         { src: "/proyectos/blue-garden/brochure/p05.jpg", alt: "Blue Garden — vista aérea del club campestre", credito: DEL_PROMOTOR + " · brochure oficial, pág. 5", ancho: 1200, alto: 960 },
         { src: "/proyectos/blue-garden/brochure/p06.jpg", alt: "Blue Garden — lago del club campestre", credito: DEL_PROMOTOR + " · brochure oficial, pág. 6", ancho: 1200, alto: 960 },
@@ -322,6 +337,16 @@ export const PROYECTOS: Proyecto[] = [
         { src: "/proyectos/blue-garden/brochure/p16.jpg", alt: "Blue Garden — cocina y comedor de la casa modelo", credito: DEL_PROMOTOR + " · brochure oficial, pág. 16", ancho: 1200, alto: 960 },
       ],
       compartir: "/proyectos/blue-garden/og.jpg",
+      escaparate: {
+        src: "/proyectos/blue-garden/escaparate-2400.jpg",
+        mini: "/proyectos/blue-garden/mini.jpg",
+        src1200: "/proyectos/blue-garden/escaparate-1200.jpg",
+        alt: "Blue Garden — casas del condominio con su jardín y parqueadero",
+        credito: DEL_PROMOTOR + " · brochure oficial, pág. 20",
+        ancho: 2400,
+        alto: 1350,
+        enfoque: "58% 60%",
+      },
     },
   },
 
@@ -472,7 +497,7 @@ export const PROYECTOS: Proyecto[] = [
         alto: 799,
       },
       galeria: [
-        { src: "/proyectos/acacias-campestre/home.jpg", alt: "Acacias Campestre — piscina y solárium frente a las torres", credito: DEL_PROMOTOR + " · brochure oficial, pág. 10", ancho: 1600, alto: 799 },
+        { src: "/proyectos/acacias-campestre/home.jpg", src1200: "/proyectos/acacias-campestre/escaparate-1200.jpg", alt: "Acacias Campestre — piscina y solárium frente a las torres", credito: DEL_PROMOTOR + " · brochure oficial, pág. 10", ancho: 1600, alto: 799 },
         { src: "/proyectos/acacias-campestre/galeria-1.jpg", alt: "Acacias Campestre — vista aérea de la piscina y las torres", credito: DEL_PROMOTOR + " · brochure oficial, pág. 9", ancho: 1600, alto: 799 },
         { src: "/proyectos/acacias-campestre/galeria-2.jpg", alt: "Acacias Campestre — cancha múltiple y parque infantil", credito: DEL_PROMOTOR + " · brochure oficial, pág. 11", ancho: 1600, alto: 799 },
         { src: "/proyectos/acacias-campestre/galeria-3.jpg", alt: "Acacias Campestre — parqueaderos junto a las torres", credito: DEL_PROMOTOR + " · brochure oficial, pág. 12", ancho: 1600, alto: 799 },
@@ -480,6 +505,16 @@ export const PROYECTOS: Proyecto[] = [
         { src: "/proyectos/acacias-campestre/galeria-5.jpg", alt: "Acacias Campestre — habitación principal del apartamento modelo de 70 m²", credito: DEL_PROMOTOR + " · brochure oficial, pág. 20", ancho: 1600, alto: 771 },
       ],
       compartir: "/proyectos/acacias-campestre/og.jpg",
+      escaparate: {
+        src: "/proyectos/acacias-campestre/home.jpg",
+        mini: "/proyectos/acacias-campestre/mini.jpg",
+        src1200: "/proyectos/acacias-campestre/escaparate-1200.jpg",
+        alt: "Acacias Campestre — piscina y solárium frente a las torres",
+        credito: DEL_PROMOTOR + " · brochure oficial, pág. 10",
+        ancho: 1600,
+        alto: 799,
+        enfoque: "55% 50%",
+      },
     },
   },
 
@@ -610,7 +645,7 @@ export const PROYECTOS: Proyecto[] = [
         alto: 888,
       },
       galeria: [
-        { src: "/proyectos/doral-west/hero.jpg", alt: "Doral West — vista aérea del condominio de casas junto a la Vía al Mar", credito: DEL_PROMOTOR, ancho: 1920, alto: 1218 },
+        { src: "/proyectos/doral-west/hero.jpg", src1200: "/proyectos/doral-west/escaparate-1200.jpg", alt: "Doral West — vista aérea del condominio de casas junto a la Vía al Mar", credito: DEL_PROMOTOR, ancho: 1920, alto: 1218 },
         { src: "/proyectos/doral-west/fotos/01.jpg", alt: "Doral West — vista aérea del condominio y la zona de piscina", credito: DEL_PROMOTOR, ancho: 1600, alto: 1015 },
         { src: "/proyectos/doral-west/fotos/02.jpg", alt: "Doral West — canchas y casas del condominio", credito: DEL_PROMOTOR, ancho: 1600, alto: 1015 },
         { src: "/proyectos/doral-west/galeria-3.jpg", alt: "Doral West — senderos y zonas verdes del condominio", credito: DEL_PROMOTOR, ancho: 1100, alto: 698 },
@@ -619,6 +654,16 @@ export const PROYECTOS: Proyecto[] = [
         { src: "/proyectos/doral-west/fotos/05.jpg", alt: "Doral West — habitación de la casa modelo", credito: DEL_PROMOTOR, ancho: 960, alto: 1280 },
       ],
       compartir: "/proyectos/doral-west/og.jpg",
+      escaparate: {
+        src: "/proyectos/doral-west/hero.jpg",
+        mini: "/proyectos/doral-west/mini.jpg",
+        src1200: "/proyectos/doral-west/escaparate-1200.jpg",
+        alt: "Doral West — vista aérea del condominio de casas junto a la Vía al Mar",
+        credito: DEL_PROMOTOR,
+        ancho: 1920,
+        alto: 1218,
+        enfoque: "55% 45%",
+      },
     },
   },
 
@@ -747,13 +792,23 @@ export const PROYECTOS: Proyecto[] = [
         alto: 738,
       },
       galeria: [
-        { src: "/proyectos/doral-country/hero.jpg", alt: "Doral Country — torres, piscina y parqueadero del condominio", credito: DEL_PROMOTOR, ancho: 1920, alto: 886 },
+        { src: "/proyectos/doral-country/hero.jpg", src1200: "/proyectos/doral-country/escaparate-1200.jpg", alt: "Doral Country — torres, piscina y parqueadero del condominio", credito: DEL_PROMOTOR, ancho: 1920, alto: 886 },
         { src: "/proyectos/doral-country/galeria-1.jpg", alt: "Doral Country — vista aérea del condominio con la piscina y el parque infantil", credito: DEL_PROMOTOR, ancho: 1100, alto: 506 },
         { src: "/proyectos/doral-country/galeria-2.jpg", alt: "Doral Country — parque infantil y zonas verdes entre las torres", credito: DEL_PROMOTOR, ancho: 1100, alto: 507 },
         { src: "/proyectos/doral-country/galeria-3.jpg", alt: "Doral Country — fachada de las torres con la piscina y la zona social", credito: DEL_PROMOTOR, ancho: 1100, alto: 506 },
         { src: "/proyectos/doral-country/galeria-4.jpg", alt: "Doral Country — fachada de las torres desde el acceso al condominio", credito: DEL_PROMOTOR, ancho: 1100, alto: 506 },
       ],
       compartir: "/proyectos/doral-country/og.jpg",
+      escaparate: {
+        src: "/proyectos/doral-country/hero.jpg",
+        mini: "/proyectos/doral-country/mini.jpg",
+        src1200: "/proyectos/doral-country/escaparate-1200.jpg",
+        alt: "Doral Country — torres, piscina y parqueadero del condominio",
+        credito: DEL_PROMOTOR,
+        ancho: 1920,
+        alto: 886,
+        enfoque: "50% 55%",
+      },
     },
   },
 
@@ -841,13 +896,15 @@ export const PROYECTOS: Proyecto[] = [
     },
     fotos: {
       tarjeta: {
-        src: "/proyectos/doral-suite/home.jpg",
-        alt: "Doral Suite — vista aérea del edificio sobre la Vía al Mar",
-        credito: DEL_PROMOTOR,
-        ancho: 912,
-        alto: 518,
+        src: "/proyectos/doral-suite/escaparate-1200.jpg",
+        alt: "Doral Suite — vista aérea del edificio entregado, con los condominios vecinos",
+        credito: DEL_PROMOTOR + " · doralcartagena.com",
+        ancho: 1200,
+        alto: 544,
       },
       galeria: [
+        { src: "/proyectos/doral-suite/escaparate-2400.jpg", src1200: "/proyectos/doral-suite/escaparate-1200.jpg", alt: "Doral Suite — vista aérea del edificio entregado, con los condominios vecinos", credito: DEL_PROMOTOR + " · doralcartagena.com", ancho: 2400, alto: 1088 },
+        { src: "/proyectos/doral-suite/piscina-2400.jpg", src1200: "/proyectos/doral-suite/piscina-1200.jpg", alt: "Doral Suite — vista aérea del edificio y su piscina junto a la Vía al Mar", credito: DEL_PROMOTOR + " · doralcartagena.com", ancho: 2400, alto: 847 },
         { src: "/proyectos/doral-suite/home.jpg", alt: "Doral Suite — vista aérea del edificio sobre la Vía al Mar", credito: DEL_PROMOTOR + " · brochure Doral Cartagena, pág. 4", ancho: 912, alto: 518 },
         { src: "/proyectos/doral-suite/fotos/01.jpg", alt: "Doral Suite — cocina de un apartaestudio", credito: DEL_PROMOTOR, ancho: 1200, alto: 1600 },
         { src: "/proyectos/doral-suite/fotos/04.jpg", alt: "Doral Suite — espacio principal de un apartaestudio con ventana", credito: DEL_PROMOTOR, ancho: 1200, alto: 1600 },
@@ -856,6 +913,16 @@ export const PROYECTOS: Proyecto[] = [
         { src: "/proyectos/doral-suite/fotos/06.jpg", alt: "Doral Suite — baño", credito: DEL_PROMOTOR, ancho: 1600, alto: 900 },
       ],
       compartir: "/proyectos/doral-suite/og.jpg",
+      escaparate: {
+        src: "/proyectos/doral-suite/escaparate-2400.jpg",
+        mini: "/proyectos/doral-suite/mini.jpg",
+        src1200: "/proyectos/doral-suite/escaparate-1200.jpg",
+        alt: "Doral Suite — vista aérea del edificio entregado, con los condominios vecinos",
+        credito: DEL_PROMOTOR + " · doralcartagena.com",
+        ancho: 2400,
+        alto: 1088,
+        enfoque: "48% 55%",
+      },
     },
   },
 ];

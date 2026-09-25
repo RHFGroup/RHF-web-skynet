@@ -24,9 +24,28 @@
  * ⛔ Lo que NO entra acá, por decisión del propio Rafael: detalle de su
  * compra (proyecto, unidad o cifras), fiducia, y cualquier comparación entre
  * tipologías o proyectos.
+ *
+ * Prompt 5 (25-sep-2026): la propuesta de valor, los tres pilares y el «Te
+ * asesoro si…» salen de src/data/asesor.ts. Mientras Rafael no los confirme,
+ * se ven solo en las vistas previas, marcados como propuesta; en producción
+ * la sección queda como estaba. La biografía se acorta cuando los pilares
+ * estén confirmados: hasta entonces, ellos no salen y ella sostiene el bloque.
  */
 import Reveal from "@/components/Reveal";
+import RevealGrupo from "@/components/RevealGrupo";
+import PerfilesAsesor from "@/components/PerfilesAsesor";
+import { EtiquetaPropuesta } from "@/components/IconoProceso";
+import { IconoCapas, IconoEscudo, IconoLlave } from "@/components/Iconos";
+import { PERFILES, PILARES, PROPUESTA_VALOR, type Pilar } from "@/data/asesor";
 import { CORREO, TELEFONO_VISIBLE, WHATSAPP, enlaceWhatsApp } from "@/data/contacto";
+import { seMuestra } from "@/lib/revision";
+import "@/styles/asesor.css";
+
+const ICONO_PILAR: Record<Pilar["icono"], React.ReactNode> = {
+  comparar: <IconoCapas size={24} />,
+  escudo: <IconoEscudo size={24} />,
+  llave: <IconoLlave size={24} />,
+};
 
 const WA_LINK = enlaceWhatsApp("Hola Rafael, vi tu página y quiero hablar contigo sobre: ");
 
@@ -71,6 +90,9 @@ const personaJsonLd = {
 };
 
 export default function QuienTeAsesora() {
+  const propuestas = PROPUESTA_VALOR.filter(seMuestra);
+  const pilares = PILARES.filter(seMuestra);
+  const perfiles = PERFILES.filter(seMuestra);
   return (
     <section className="section section-asesor" id="asesor">
       <script
@@ -115,6 +137,13 @@ export default function QuienTeAsesora() {
           <p className="asesor-rol">
             Asesor inmobiliario independiente · Cartagena de Indias
           </p>
+
+          {propuestas.map((o) => (
+            <p key={o.id} className={"asesor-propuesta" + (o.id === "b" ? " asesor-propuesta-alterna" : "")}>
+              {o.texto}
+              <EtiquetaPropuesta confirmado={o.confirmado} nota={`opción ${o.id.toUpperCase()}`} />
+            </p>
+          ))}
 
           <div className="asesor-cuerpo">
             <p>
@@ -164,6 +193,27 @@ export default function QuienTeAsesora() {
           </div>
         </Reveal>
       </div>
+
+      {(pilares.length > 0 || perfiles.length > 0) && (
+        <div className="section-shell asesor-extra">
+          {pilares.length > 0 && (
+            <div className="asesor-pilares">
+              <h3 className="asesor-bloque-titulo">Por qué asesorarte conmigo</h3>
+              <RevealGrupo className="asesor-pilares-lista">
+                {pilares.map((p, i) => (
+                  <article key={p.titulo} className="asesor-pilar" style={{ "--i": i } as React.CSSProperties}>
+                    <span className="asesor-pilar-icono">{ICONO_PILAR[p.icono]}</span>
+                    <h4>{p.titulo}</h4>
+                    <p>{p.texto}</p>
+                    <EtiquetaPropuesta confirmado={p.confirmado} />
+                  </article>
+                ))}
+              </RevealGrupo>
+            </div>
+          )}
+          <PerfilesAsesor perfiles={perfiles} />
+        </div>
+      )}
     </section>
   );
 }

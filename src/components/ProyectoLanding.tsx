@@ -11,6 +11,8 @@ import RevealGrupo from "@/components/RevealGrupo";
 import TarjetaGiro from "@/components/TarjetaGiro";
 import TipologiasTabs, { type TipologiaVista } from "@/components/TipologiasTabs";
 import VolverACartera from "@/components/VolverACartera";
+import WhatsAppFlotante from "@/components/WhatsAppFlotante";
+import Animador from "@/components/Animador";
 import {
   IconoAmenidad,
   IconoDocumento,
@@ -388,7 +390,7 @@ export default function ProyectoLanding({ p }: { p: Proyecto }) {
               <RevealGrupo className="pp-otros-grid">
                 {otros.map((f, i) => (
                   <div key={f.slug} style={{ "--i": i } as React.CSSProperties}>
-                    <TarjetaGiro ficha={f} />
+                    <TarjetaGiro ficha={f} retraso={i * 900} />
                   </div>
                 ))}
               </RevealGrupo>
@@ -460,6 +462,16 @@ export default function ProyectoLanding({ p }: { p: Proyecto }) {
       </main>
 
       <PieSitio portadaPropia={false} />
+
+      {/* Escritorio: la foto de Rafael, encima del botón del chat ─── */}
+      <WhatsAppFlotante
+        trasDe=".pp-portada"
+        soloEscritorio
+        mensaje={`Hola Rafael, vi ${p.nombre} en tu página y me interesa: `}
+      />
+
+      {/* Las entradas al hacer scroll, como en la home ─── */}
+      <Animador />
 
       {/* Móvil: los dos botones siempre a mano, sin tapar el del chat ─── */}
       <div className="pp-barra-movil" role="region" aria-label={`Contactar sobre ${p.nombre}`}>

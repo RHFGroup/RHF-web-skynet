@@ -1,0 +1,83 @@
+/* ─────────────────────────────────────────────────────────────
+   Entradas al hacer scroll (Animador.tsx) y detalles que se mueven
+
+   Las clases .anim-* las pone Animador en el navegador, solo sobre lo que
+   está fuera de pantalla, y las quita cuando la entrada termina. El HTML
+   servido no las tiene: sin JS se ve todo.
+   ───────────────────────────────────────────────────────────── */
+
+.anim {
+  transition:
+    opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 1.05s cubic-bezier(0.22, 1, 0.36, 1),
+    clip-path 1.15s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.9s ease;
+  transition-delay: calc(var(--anim-i, 0) * 90ms);
+}
+
+/* Titulares: se descubren de abajo hacia arriba mientras suben. */
+.anim-titulo {
+  opacity: 0;
+  transform: translateY(36px);
+  clip-path: inset(100% 0 -12% 0);
+}
+/* Eyebrow camel: entra desde la izquierda. */
+.anim-kicker { opacity: 0; transform: translateX(-36px); }
+/* Párrafos de entrada: suben con un leve desenfoque. */
+.anim-sube { opacity: 0; transform: translateY(40px); filter: blur(6px); }
+/* Botones: suben un poco después del texto. */
+.anim-boton { opacity: 0; transform: translateY(28px) scale(0.96); transition-delay: 0.18s; }
+/* Imágenes grandes: se abren desde el centro mientras se alejan. */
+.anim-imagen {
+  opacity: 0.2;
+  transform: scale(1.14);
+  clip-path: inset(14% 10% 14% 10%);
+}
+
+.anim.anim-visible {
+  opacity: 1;
+  transform: none;
+  clip-path: inset(0 0 -12% 0);
+  filter: none;
+}
+.anim-imagen.anim-visible { clip-path: inset(0); }
+
+/* ── El botón principal: un brillo cruza al pasar el cursor ── */
+.btn-primary, .btn-whatsapp { position: relative; overflow: hidden; isolation: isolate; }
+.btn-primary::after, .btn-whatsapp::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.22) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.btn-primary:hover::after, .btn-whatsapp:hover::after { transform: translateX(120%); }
+
+/* ── Imágenes con profundidad: se desplazan más lento que la página ──
+   Solo donde el navegador anima con el scroll sin JavaScript. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .zn-render img {
+      animation: anim-profundidad linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+  }
+}
+@keyframes anim-profundidad {
+  from { transform: translateY(-5%) scale(1.12); }
+  to { transform: translateY(5%) scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim, .anim-titulo, .anim-kicker, .anim-sube, .anim-boton, .anim-imagen {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+    filter: none !important;
+  }
+  .btn-primary::after, .btn-whatsapp::after { display: none; }
+}

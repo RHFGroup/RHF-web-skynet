@@ -10,8 +10,10 @@
  *    consumado y sin «la mayor valorización predial».
  *  · La barra de navegación es la de la home vieja, con el logo RHF Living.
  *  · El over the fold es el de home-b —la foto propia del corredor, sin
- *    partículas— y desde el 24-sep-2026 está viva (Hero.tsx, prompt 1): Ken
- *    Burns lento, el texto entra por partes y la cartera pasa debajo.
+ *    partículas—. Desde el 25-sep-2026 es un escaparate (Hero.tsx): abre con
+ *    esa foto y pasa por los proyectos de la cartera a pantalla completa, con
+ *    su precio y su corte, y miniaturas para elegir.
+ *  · El menú es transparente sobre la portada y marfil al bajar (NavInicio).
  *  · El pie de página es el de la home vieja, que trae el bloque legal bueno
  *    (precio de referencia con fecha de corte, etiqueta textual del área,
  *    Ley 675 y numeral 2.16.2) y los enlaces a privacidad y términos.
@@ -27,6 +29,9 @@ import MapaZona from "@/components/MapaZona";
 import CierreDelCriterio from "@/components/CierreDelCriterio";
 import Cartera from "@/components/Cartera";
 import Hero, { type FichaHero } from "@/components/Hero";
+import NavInicio from "@/components/NavInicio";
+import Animador from "@/components/Animador";
+import WhatsAppFlotante from "@/components/WhatsAppFlotante";
 import QuienTeAsesora from "@/components/QuienTeAsesora";
 import Reveal from "@/components/Reveal";
 import { enlaceWhatsApp, SALUDO_WHATSAPP } from "@/data/contacto";
@@ -64,23 +69,8 @@ const WA_LINK = enlaceWhatsApp(SALUDO_WHATSAPP);
 export default function Home() {
   return (
     <>
-      {/* ── Nav ─────────────────────────────── */}
-      <header className="nav">
-        <div className="nav-inner">
-          <a className="brand" href="#inicio" aria-label="RHF Living — inicio">
-            <img src="/marca/rhf-living-oscuro.svg" alt="RHF Living" width="215" height="48" />
-          </a>
-          <nav className="nav-links">
-            <a href="#cartera">Nuestra cartera</a>
-            <a href="#zonanorte">Zona Norte</a>
-            <a href="#asesor">Quién te asesora</a>
-            <a href="#contacto">Contacto</a>
-          </nav>
-          <a className="nav-cta" href={WA_LINK} target="_blank" rel="noopener noreferrer">
-            Escríbenos
-          </a>
-        </div>
-      </header>
+      {/* ── Nav: transparente sobre la portada, marfil al bajar ── */}
+      <NavInicio whatsapp={WA_LINK} />
 
       <main>
         {/* ── Over the fold ────────────────────── */}
@@ -144,19 +134,16 @@ export default function Home() {
         </section>
       </main>
 
+      {/* Las entradas al hacer scroll de toda la página (titulares, eyebrows,
+          párrafos, botones e imágenes). No pinta nada. */}
+      <Animador />
+
       {/* ── Footer ─────────────────────── */}
       <PieSitio />
 
-      {/* ── WhatsApp flotante ───────────────── */}
-      <a
-        className="whatsapp-float"
-        href={WA_LINK}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Chat por WhatsApp"
-      >
-        <WhatsAppIcon />
-      </a>
+      {/* ── WhatsApp flotante, con la foto de Rafael ──
+          Aparece cuando la portada sale de la pantalla. */}
+      <WhatsAppFlotante trasDe="#inicio" />
     </>
   );
 }

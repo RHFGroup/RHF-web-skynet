@@ -18,11 +18,17 @@
  *    lector de pantalla.
  *  · Menos movimiento: sin giro, un fundido entre las dos caras (CSS).
  *
+ * Las fotos rotan: la tarjeta pasa por hasta cuatro imágenes del proyecto
+ * (fundido y un acercamiento lento), cada 3,6 s, solo mientras está a la
+ * vista y de frente. Cada tarjeta arranca con un desfase (`retraso`) para que
+ * la grilla no cambie toda a la vez. Con menos movimiento, queda la primera.
+ * Las imágenes se piden de a una, antes de que les toque.
+ *
  * Todos los datos llegan armados desde el servidor (`fichaDe`): esta tarjeta
  * no calcula precios ni áreas, los muestra.
  */
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import MeInteresaButton from "@/components/MeInteresaButton";
 import {
@@ -35,6 +41,7 @@ import {
 } from "@/components/Iconos";
 import { enlaceWhatsApp } from "@/data/contacto";
 import type { Ficha } from "@/lib/ficha";
+import { usePrefersReducedMotion } from "@/lib/motion";
 import { marcarSalidaDesdeCartera } from "@/lib/volver";
 import "@/styles/tarjeta-giro.css";
 
@@ -43,6 +50,9 @@ const ESTADO: Record<Ficha["estado"], string> = {
   "en construcción": "En construcción",
   "entrega inmediata": "Entrega inmediata",
 };
+
+/** Cada cuánto cambia la foto de la tarjeta. */
+const INTERVALO_FOTOS_MS = 3600;
 
 /** El rótulo del área en la cara frontal: el literal si es corto. */
 function rotuloArea(etiquetas: string[]): string {
@@ -54,19 +64,64 @@ export default function TarjetaGiro({
   ficha,
   desdeCartera = false,
   prioritaria = false,
+  retraso = 0,
 }: {
   ficha: Ficha;
   /** La tarjeta está en la cartera de la home: «Volver» regresa aquí. */
   desdeCartera?: boolean;
   prioritaria?: boolean;
+  /** Desfase del primer cambio de foto, en ms, para que no roten todas juntas. */
+  retraso?: number;
 }) {
   const [girada, setGirada] = useState(false);
   const ultimoPuntero = useRef<string>("mouse");
+  const tarjeta = useRef<HTMLElement>(null);
   const reverso = useRef<HTMLDivElement>(null);
   const botonVerMas = useRef<HTMLButtonElement>(null);
   const router = useRouter();
+  const reducido = usePrefersReducedMotion();
 
   const f = ficha;
+  const fotos = f.fotos.length > 0 ? f.fotos : f.foto ? [f.foto] : [];
+  const [fotoActiva, setFotoActiva] = useState(0);
+  // La que sale queda debajo, entera, mientras la nueva entra encima.
+  const [fotoPrevia, setFotoPrevia] = useState<number | null>(null);
+  const activaRef = useRef(0);
+  const [montadas, setMontadas] = useState(1);
+  const [aLaVista, setALaVista] = useState(false);
+
+  useEffect(() => {
+    const el = tarjeta.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setALaVista(e.isIntersecting), { threshold: 0.35 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // La siguiente foto se pide antes de que le toque.
+  useEffect(() => {
+    if (!aLaVista) return;
+    setMontadas((m) => Math.max(m, Math.min(fotos.length, fotoActiva + 2)));
+  }, [aLaVista, fotoActiva, fotos.length]);
+
+  useEffect(() => {
+    if (reducido || !aLaVista || girada || fotos.length < 2) return;
+    let intervalo = 0;
+    const avanzar = () => {
+      const antes = activaRef.current;
+      activaRef.current = (antes + 1) % fotos.length;
+      setFotoPrevia(antes);
+      setFotoActiva(activaRef.current);
+    };
+    const primero = window.setTimeout(() => {
+      avanzar();
+      intervalo = window.setInterval(avanzar, INTERVALO_FOTOS_MS);
+    }, INTERVALO_FOTOS_MS + retraso);
+    return () => {
+      window.clearTimeout(primero);
+      window.clearInterval(intervalo);
+    };
+  }, [reducido, aLaVista, girada, fotos.length, retraso]);
   const whatsapp = enlaceWhatsApp(`Hola Rafael, quiero agendar una visita a ${f.nombre}.`);
   const alSalir = () => {
     if (desdeCartera) marcarSalidaDesdeCartera();
@@ -88,6 +143,7 @@ export default function TarjetaGiro({
 
   return (
     <article
+      ref={tarjeta}
       className={"tg" + (girada ? " tg-girada" : "")}
       aria-label={f.nombre}
       onPointerDown={(e) => {
@@ -119,13 +175,24 @@ export default function TarjetaGiro({
         {/* ── Cara frontal ─────────────────────────── */}
         <div className="tg-cara tg-frente" inert={girada}>
           <div className="tg-foto">
-            {f.foto ? (
-              <img
-                src={f.foto.src}
-                alt={f.foto.alt}
-                loading={prioritaria ? "eager" : "lazy"}
-                decoding="async"
-              />
+            {fotos.length > 0 ? (
+              fotos.slice(0, montadas).map((foto, i) => (
+                <img
+                  key={foto.src}
+                  className={
+                    i === fotoActiva
+                      ? "tg-foto-activa" + (fotoPrevia !== null ? " tg-foto-entra" : "")
+                      : i === fotoPrevia
+                        ? "tg-foto-previa"
+                        : undefined
+                  }
+                  src={foto.src}
+                  alt={i === 0 ? foto.alt : ""}
+                  aria-hidden={i === 0 ? undefined : true}
+                  loading={prioritaria && i === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                />
+              ))
             ) : (
               <div className="tg-panel" aria-hidden="true">
                 <span>{f.nombre}</span>
@@ -133,7 +200,14 @@ export default function TarjetaGiro({
             )}
             <span className="tg-estado">{ESTADO[f.estado]}</span>
             {f.nuevo && <span className="tg-nuevo">Nuevo</span>}
-            {f.foto && <span className="tg-credito">{f.foto.credito}</span>}
+            {fotos.length > 1 && (
+              <span className="tg-puntos" aria-hidden="true">
+                {fotos.map((foto, i) => (
+                  <i key={foto.src} className={i === fotoActiva ? "activo" : undefined} />
+                ))}
+              </span>
+            )}
+            {fotos.length > 0 && <span className="tg-credito">{fotos[fotoActiva]?.credito}</span>}
           </div>
 
           <div className="tg-cuerpo">

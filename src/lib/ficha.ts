@@ -15,6 +15,7 @@ import {
   PROYECTOS,
   puedePublicarPrecio,
   rangoPrecio,
+  type Foto,
   type Proyecto,
 } from "@/data/proyectos";
 import { LUGARES } from "@/data/zona";
@@ -28,6 +29,23 @@ export type Ficha = {
   tipoInmueble: Proyecto["tipoInmueble"] | null;
   href: string;
   foto: { src: string; alt: string; credito: string } | null;
+  /**
+   * Las fotos que rotan en la tarjeta: la de la tarjeta primero y después las
+   * horizontales de la galería, en 1200 px cuando existe esa versión. Hasta 4.
+   */
+  fotos: { src: string; alt: string; credito: string }[];
+  /** La imagen a pantalla completa de la portada de la home. */
+  escaparate: {
+    src: string;
+    src1200: string;
+    alt: string;
+    credito: string;
+    enfoque: string;
+    /** Miniatura para elegirla en la portada. */
+    mini: string;
+    /** Ancho real de `src`, para el `srcset`. */
+    ancho: number;
+  } | null;
   /** «desde $311.500.000» o «Consultar». */
   precio: string;
   muestraPrecio: boolean;
@@ -114,6 +132,38 @@ export function precioDe(p: Proyecto) {
   };
 }
 
+/** Fotos para la tarjeta que rota: horizontales, livianas y sin repetir. */
+function fotosDeTarjeta(p: Proyecto): Ficha["fotos"] {
+  if (!p.fotos) return [];
+  const vistas = new Set<string>();
+  const salida: Ficha["fotos"] = [];
+  const candidatas = [p.fotos.tarjeta, ...p.fotos.galeria.filter((f) => f.ancho >= f.alto)];
+  for (const f of candidatas) {
+    const src = f.src1200 ?? f.src;
+    if (vistas.has(src)) continue;
+    vistas.add(src);
+    salida.push({ src, alt: f.alt, credito: f.credito });
+    if (salida.length === 4) break;
+  }
+  return salida;
+}
+
+/** La imagen de la portada: la del escaparate o, si falta, la primera de la galería. */
+function escaparateDe(p: Proyecto): Ficha["escaparate"] {
+  const e: (Foto & { enfoque?: string; mini?: string }) | undefined =
+    p.fotos?.escaparate ?? p.fotos?.galeria[0];
+  if (!e) return null;
+  return {
+    src: e.src,
+    src1200: e.src1200 ?? e.src,
+    alt: e.alt,
+    credito: e.credito,
+    enfoque: e.enfoque ?? "50% 50%",
+    mini: e.mini ?? e.src1200 ?? e.src,
+    ancho: e.ancho,
+  };
+}
+
 export function fichaDe(p: Proyecto): Ficha {
   const precio = precioDe(p);
   const destacados = p.datos
@@ -133,6 +183,8 @@ export function fichaDe(p: Proyecto): Ficha {
     foto: p.fotos
       ? { src: p.fotos.tarjeta.src, alt: p.fotos.tarjeta.alt, credito: p.fotos.tarjeta.credito }
       : null,
+    fotos: fotosDeTarjeta(p),
+    escaparate: escaparateDe(p),
     precio: precio.texto,
     muestraPrecio: precio.muestra,
     corte: precio.corte,

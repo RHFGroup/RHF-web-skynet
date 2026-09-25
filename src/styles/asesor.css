@@ -1,0 +1,146 @@
+/* ─────────────────────────────────────────────────────────────
+   Quién te asesora — lo que suma el prompt 5 (QuienTeAsesora.tsx)
+
+   La propuesta de valor, los tres pilares y el «Te asesoro si…». Todo sale
+   de src/data/asesor.ts y, sin confirmar, solo se ve en las vistas previas.
+   ───────────────────────────────────────────────────────────── */
+
+.asesor-propuesta {
+  margin: 22px 0 0;
+  max-width: 30em;
+  font-family: var(--font-serif), "Cormorant Garamond", ui-serif, Georgia, serif;
+  font-size: clamp(24px, 2.4vw, 30px);
+  font-weight: 500;
+  line-height: 1.22;
+  color: var(--marino);
+}
+.asesor-propuesta-alterna { margin-top: 12px; font-size: clamp(19px, 1.8vw, 22px); color: var(--cuero); }
+.asesor-propuesta .propuesta { margin-left: 10px; vertical-align: middle; }
+
+.asesor-extra { margin-top: 86px; }
+.asesor-bloque-titulo {
+  font-family: var(--font-serif), "Cormorant Garamond", ui-serif, Georgia, serif;
+  font-size: clamp(26px, 2.8vw, 34px);
+  color: var(--marino);
+}
+
+/* Los tres pilares */
+.asesor-pilares-lista {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 26px;
+}
+.asesor-pilar {
+  position: relative;
+  padding: 28px 26px 26px;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 22px;
+  background: var(--white);
+  box-shadow: 0 18px 40px -30px rgb(22 30 43 / 0.45);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s ease, border-color 0.5s ease;
+}
+.asesor-pilar:hover {
+  transform: translateY(-6px);
+  border-color: var(--camel);
+  box-shadow: 0 26px 50px -30px rgb(22 30 43 / 0.55);
+}
+.asesor-pilar-icono {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--marino);
+  color: var(--camel);
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.asesor-pilar:hover .asesor-pilar-icono { transform: rotate(-6deg) scale(1.06); }
+.asesor-pilar h4 {
+  margin-top: 18px;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 24px;
+  color: var(--marino);
+}
+.asesor-pilar p { margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: var(--near-black); }
+.asesor-pilar .propuesta { margin-top: 12px; }
+
+/* Te asesoro si… */
+.asesor-perfiles { margin-top: 64px; }
+.asesor-perfiles-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 22px;
+  padding: 6px;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 9999px;
+  background: var(--white);
+}
+.asesor-perfiles-tabs button {
+  padding: 11px 20px;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--marino);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.35s ease, color 0.35s ease;
+}
+.asesor-perfiles-tabs button:hover { background: var(--marfil); }
+.asesor-perfiles-tabs button.activa { background: var(--marino); color: var(--white); }
+.asesor-perfiles-tabs button:focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
+.asesor-perfil {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px 28px;
+  margin-top: 18px;
+  padding: 26px 28px;
+  border-radius: 22px;
+  background: linear-gradient(160deg, var(--marino-light) 0%, var(--marino) 55%, var(--marino-dark) 100%);
+  color: var(--marfil);
+}
+.asesor-perfil-texto {
+  margin: 0;
+  max-width: 36em;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: clamp(21px, 2vw, 26px);
+  line-height: 1.3;
+  animation: asesor-perfil-entra 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.asesor-perfil-texto .propuesta {
+  margin-left: 10px;
+  vertical-align: middle;
+  border-color: rgb(212 188 150 / 0.6);
+  background: rgb(194 165 120 / 0.14);
+  color: var(--camel-light);
+}
+@keyframes asesor-perfil-entra {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 900px) {
+  .asesor-pilares-lista { grid-template-columns: 1fr; }
+  .asesor-extra { margin-top: 64px; }
+}
+@media (max-width: 560px) {
+  .asesor-perfiles-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; border-radius: 18px; scrollbar-width: none; }
+  .asesor-perfiles-tabs::-webkit-scrollbar { display: none; }
+  .asesor-perfiles-tabs button { flex: none; }
+  .asesor-perfil { padding: 22px 20px; }
+  .asesor-perfil .btn-whatsapp { width: 100%; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asesor-pilar, .asesor-pilar-icono { transition: none; }
+  .asesor-pilar:hover, .asesor-pilar:hover .asesor-pilar-icono { transform: none; }
+  .asesor-perfil-texto { animation: none; }
+}
+
+/* La etiqueta de propuesta, en letra de texto aunque vaya dentro de una frase en serif. */
+.asesor-propuesta .propuesta, .asesor-perfil-texto .propuesta { font-family: var(--font-sans), "Montserrat", sans-serif; }

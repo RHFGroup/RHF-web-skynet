@@ -11,6 +11,11 @@
  * Los datos llegan armados del servidor (`fichaDe`): esta sección filtra y
  * ordena, no calcula precios. El filtro de precio usa solo precios
  * publicables; los proyectos «Consultar» no entran en él, y se dice.
+ *
+ * Desde el 25-sep-2026 los filtros son una sola barra de listas desplegables
+ * (antes, un panel de botones que empujaba las tarjetas fuera de la primera
+ * pantalla): lo primero que se ve de la sección son los proyectos. Las fotos
+ * de cada tarjeta rotan, cada una con su desfase.
  */
 import { useMemo, useState } from "react";
 import RevealGrupo from "@/components/RevealGrupo";
@@ -83,45 +88,59 @@ export default function Cartera({ fichas }: { fichas: Ficha[] }) {
           el cursor —o toca— para ver lo que hace especial a cada proyecto.
         </p>
 
-        <div className="cartera-filtros" role="group" aria-label="Filtrar la cartera">
-          <Grupo titulo="Zona" opciones={zonas.map((z) => ({ id: z, etiqueta: z }))} valor={zona} alCambiar={setZona} />
-          <Grupo
-            titulo="Tipo"
-            opciones={tipos.map((t) => ({ id: t, etiqueta: TIPOS[t] ?? t }))}
-            valor={tipo}
-            alCambiar={setTipo}
-          />
-          <Grupo
-            titulo="Estado"
-            opciones={estados.map((e) => ({ id: e, etiqueta: ESTADOS[e] }))}
-            valor={estado}
-            alCambiar={setEstado}
-          />
-          {hayPrecios && (
-            <Grupo
-              titulo="Precio desde"
-              opciones={RANGOS.map((r) => ({ id: r.id, etiqueta: r.etiqueta }))}
-              valor={rango}
-              alCambiar={setRango}
+        <div className="cartera-barra">
+          <div className="cartera-filtros" role="group" aria-label="Filtrar la cartera">
+            <Filtro
+              titulo="Zona"
+              todas="Todas"
+              opciones={zonas.map((z) => ({ id: z, etiqueta: z }))}
+              valor={zona}
+              alCambiar={setZona}
             />
-          )}
+            <Filtro
+              titulo="Tipo"
+              todas="Todos"
+              opciones={tipos.map((t) => ({ id: t, etiqueta: TIPOS[t] ?? t }))}
+              valor={tipo}
+              alCambiar={setTipo}
+            />
+            <Filtro
+              titulo="Estado"
+              todas="Todos"
+              opciones={estados.map((e) => ({ id: e, etiqueta: ESTADOS[e] }))}
+              valor={estado}
+              alCambiar={setEstado}
+            />
+            {hayPrecios && (
+              <Filtro
+                titulo="Precio desde"
+                todas="Todos"
+                opciones={RANGOS.map((r) => ({ id: r.id, etiqueta: r.etiqueta }))}
+                valor={rango}
+                alCambiar={setRango}
+              />
+            )}
+          </div>
+          <p className="cartera-conteo" aria-live="polite">
+            <strong>{visibles.length}</strong> {visibles.length === 1 ? "proyecto" : "proyectos"}
+            {filtrando && (
+              <button type="button" className="cartera-limpiar" onClick={limpiar}>
+                Ver toda la cartera
+              </button>
+            )}
+          </p>
         </div>
-
-        <p className="cartera-conteo" aria-live="polite">
-          {visibles.length === 1 ? "1 proyecto" : `${visibles.length} proyectos`}
-          {rango && " · los proyectos con precio a consultar no entran en el filtro de precio"}
-          {filtrando && (
-            <button type="button" className="cartera-limpiar" onClick={limpiar}>
-              Ver toda la cartera
-            </button>
-          )}
-        </p>
+        {rango && (
+          <p className="cartera-nota-precio">
+            Los proyectos con precio a consultar no entran en el filtro de precio.
+          </p>
+        )}
 
         {visibles.length > 0 ? (
           <RevealGrupo className="cartera-grilla">
             {visibles.map((f, i) => (
               <div key={f.slug} className="cartera-celda" style={{ "--i": i % 3 } as React.CSSProperties}>
-                <TarjetaGiro ficha={f} desdeCartera prioritaria={i === 0} />
+                <TarjetaGiro ficha={f} desdeCartera prioritaria={i === 0} retraso={i * 900} />
               </div>
             ))}
           </RevealGrupo>
@@ -138,36 +157,32 @@ export default function Cartera({ fichas }: { fichas: Ficha[] }) {
   );
 }
 
-function Grupo({
+/** Una lista desplegable nativa: compacta, accesible y cómoda en el teléfono. */
+function Filtro({
   titulo,
+  todas,
   opciones,
   valor,
   alCambiar,
 }: {
   titulo: string;
+  todas: string;
   opciones: { id: string; etiqueta: string }[];
   valor: string | null;
   alCambiar: (v: string | null) => void;
 }) {
   if (opciones.length < 2) return null;
   return (
-    <div className="cartera-grupo">
-      <span className="cartera-grupo-titulo">{titulo}</span>
-      <div className="cartera-chips">
-        <button type="button" aria-pressed={valor === null} onClick={() => alCambiar(null)}>
-          Todos
-        </button>
+    <label className={"cartera-filtro" + (valor ? " activo" : "")}>
+      <span>{titulo}</span>
+      <select value={valor ?? ""} onChange={(e) => alCambiar(e.target.value || null)}>
+        <option value="">{todas}</option>
         {opciones.map((o) => (
-          <button
-            key={o.id}
-            type="button"
-            aria-pressed={valor === o.id}
-            onClick={() => alCambiar(valor === o.id ? null : o.id)}
-          >
+          <option key={o.id} value={o.id}>
             {o.etiqueta}
-          </button>
+          </option>
         ))}
-      </div>
-    </div>
+      </select>
+    </label>
   );
 }

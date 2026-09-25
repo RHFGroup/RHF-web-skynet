@@ -201,7 +201,7 @@ export default function ZonaNorte({ proyectos, pines }: { proyectos: Ficha[]; pi
         </div>
 
         {/* ── El render ── */}
-        <Reveal className="zn-render-bloque">
+        <div className="zn-render-bloque">
           <figure className="zn-render">
             <img
               src="/proyectos/doral-west/home.jpg"
@@ -211,7 +211,7 @@ export default function ZonaNorte({ proyectos, pines }: { proyectos: Ficha[]; pi
             />
             <figcaption>Doral West, en la Zona Norte · render del promotor</figcaption>
           </figure>
-        </Reveal>
+        </div>
 
         <div className="zn-fuentes">
           <p>{NOTA_FUENTES}</p>

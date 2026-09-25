@@ -17,6 +17,7 @@ export default function RevealGrupo({ className = "", children }: { className?: 
   return (
     <div
       ref={ref}
+      data-revela=""
       className={[className, armed ? "stagger" : "", visible ? "is-visible" : ""].filter(Boolean).join(" ")}
     >
       {children}
