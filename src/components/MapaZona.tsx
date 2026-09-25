@@ -306,7 +306,7 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
 
     const c = coordenadaDe(it);
     if (mapa && c) {
-      mapa.flyTo([c.lat, c.lon], Math.max(mapa.getZoom(), 14.5), { duration: reducido ? 0 : 1.1 });
+      mapa.flyTo([c.lat, c.lon], Math.max(mapa.getZoom(), 14), { duration: reducido ? 0 : 1.1 });
     }
     if (mapa && L && it.tipo === "proyecto" && it.pin) {
       it.pin.tiempos.forEach((tr) => {

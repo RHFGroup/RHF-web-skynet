@@ -62,7 +62,10 @@ export function cargarLeaflet(): Promise<unknown> {
     const js = document.createElement("script");
     js.src = LEAFLET_JS;
     js.async = true;
-    js.onload = () => resolve(w.L);
+    js.onload = () => {
+      sinCosturas(w.L);
+      resolve(w.L);
+    };
     js.onerror = () => {
       // Se permite reintentar en la próxima visita a un mapa.
       w.__leafletPromesa = undefined;
@@ -72,4 +75,25 @@ export function cargarLeaflet(): Promise<unknown> {
   });
 
   return w.__leafletPromesa;
+}
+
+/**
+ * Con zoom fraccionario (los mapas encuadran con precisión de un cuarto de
+ * zoom), Chrome deja líneas blancas de un píxel entre teselas. Cada tesela se
+ * dibuja un píxel más grande y se solapa con la vecina: la costura desaparece.
+ */
+function sinCosturas(L: unknown) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const leaflet = L as any;
+  if (!leaflet?.GridLayer || leaflet.__sinCosturas) return;
+  leaflet.__sinCosturas = true;
+  const original = leaflet.GridLayer.prototype._initTile;
+  leaflet.GridLayer.include({
+    _initTile(this: { getTileSize: () => { x: number; y: number } }, tile: HTMLElement) {
+      original.call(this, tile);
+      const t = this.getTileSize();
+      tile.style.width = `${t.x + 1}px`;
+      tile.style.height = `${t.y + 1}px`;
+    },
+  });
 }
