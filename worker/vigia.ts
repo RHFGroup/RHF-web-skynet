@@ -24,10 +24,25 @@
  *  - Que Cloudflare desafíe al vigía (cabecera `cf-mitigated`). Eso no prueba
  *    que el servicio esté caído, pero sí que el vigía quedó ciego, y un vigía
  *    ciego que calla es peor que uno que avisa de más.
- * Cualquier otra respuesta (200, 400, 403, 404, 426…) es el servicio
- * contestando, aunque sea para decir que la petición no le sirve: el chat
- * espera un WebSocket y el webhook espera a Meta. A propósito no se abre un
- * WebSocket de verdad, porque podría abrirle una sesión al agente cada 5 min.
+ *
+ * EL CHAT se prueba como lo abre la web: un WebSocket de verdad, con el origen
+ * rhfliving.com, un `ping` y su `pong`. El agente no abre sesión hasta el
+ * primer mensaje con `sessionId`, y el ping lo contesta sin llamar al modelo:
+ * no crea conversaciones ni gasta saldo. Además de lo de arriba, en el chat
+ * cuenta como caído:
+ *  - Que conteste sin abrir el WebSocket (200, 400, 404, 426…): el túnel y el
+ *    servidor están, pero la web no podría conversar.
+ *  - Que cierre con 1008: el agente rechaza el origen de la web (su lista
+ *    `allowed_origins`), y en la web el chat no conectaría.
+ *  - Que abra y no conteste el ping en 5 s.
+ * Hasta el 25-sep el chat se pedía con un GET simple. El agente lo anotaba como
+ * ERROR, con la traza completa, cada 5 minutos (290 al día), y tapaba los
+ * errores de verdad en el log.
+ *
+ * EL WEBHOOK de WhatsApp se pide con un GET simple, que no deja rastro en el
+ * log del agente. Cualquier respuesta que no sea de caída (200, 400, 403,
+ * 404…) es el servicio contestando, aunque sea para decir que la petición no
+ * le sirve: el webhook espera a Meta.
  *
  * CUÁNDO AVISA.
  *  - Al segundo chequeo fallido seguido (≈10 min). Uno solo puede ser un
@@ -54,11 +69,13 @@ const OBJETIVOS = [
     clave: "chat-web",
     nombre: "Chat de la web",
     url: "https://atencion-hrf.syberloop.com/",
+    sondeo: "websocket",
   },
   {
     clave: "whatsapp",
     nombre: "WhatsApp",
     url: "https://wa-hrf.syberloop.com/whatsapp/webhook",
+    sondeo: "http",
   },
 ] as const;
 
@@ -70,6 +87,12 @@ export const FALLOS_PARA_AVISAR = 2;
 export const RECORDATORIO_HORAS = 6;
 /** Lo que se le espera a cada dirección antes de darla por muda. */
 const ESPERA_MS = 10_000;
+/** Lo que se le espera al `pong` del chat, ya abierta la conexión. */
+const ESPERA_PONG_MS = 5_000;
+/** El origen con el que la web abre el chat; el agente solo acepta los de su lista. */
+const ORIGEN_WEB = "https://rhfliving.com";
+/** Cómo se presenta el vigía en cada petición. */
+const IDENTIDAD = "rhfliving-vigia/1 (+https://rhfliving.com)";
 
 /** Respuestas que prueban que el servicio no contesta. Ver arriba. */
 const CODIGOS_DE_CAIDA = new Set([
@@ -208,7 +231,9 @@ export async function vigilar(env: Env, ahora: Date): Promise<void> {
     const { results } = await env.DB.prepare(`SELECT * FROM vigia`).all<Fila>();
     const previas = new Map((results ?? []).map((f) => [f.clave, f]));
 
-    const sondeos = await Promise.all(OBJETIVOS.map((o) => sondear(o.url)));
+    const sondeos = await Promise.all(
+      OBJETIVOS.map((o) => (o.sondeo === "websocket" ? sondearChat(o.url) : sondear(o.url))),
+    );
     const decisiones = OBJETIVOS.map((objetivo, i) => {
       const previa = previas.get(objetivo.clave) ?? null;
       const sondeo = sondeos[i];
@@ -242,29 +267,131 @@ export async function vigilar(env: Env, ahora: Date): Promise<void> {
 }
 
 /** Pide la dirección y traduce la respuesta. Ver «qué cuenta como caído». */
-async function sondear(url: string): Promise<Sondeo> {
+export async function sondear(url: string): Promise<Sondeo> {
   let r: Response;
   try {
     r = await fetch(url, {
       redirect: "manual",
-      headers: {
-        Accept: "*/*",
-        "User-Agent": "rhfliving-vigia/1 (+https://rhfliving.com)",
-      },
+      headers: { Accept: "*/*", "User-Agent": IDENTIDAD },
       signal: AbortSignal.timeout(ESPERA_MS),
     });
   } catch (e) {
-    const nombre = e instanceof Error ? e.name : "";
-    if (nombre === "TimeoutError" || nombre === "AbortError") {
-      return { ok: false, pista: "servicio", detalle: `no respondió en ${ESPERA_MS / 1000} s` };
-    }
-    return {
-      ok: false,
-      pista: "red",
-      detalle: `error de red: ${e instanceof Error ? e.message : "desconocido"}`,
-    };
+    return sinRespuesta(e);
+  }
+  const caida = await leerCaida(r);
+  if (caida) return caida;
+  await r.body?.cancel();
+  return { ok: true, detalle: `responde (${r.status})` };
+}
+
+/**
+ * Abre el chat como lo abre la web y le manda un `ping`. Ver «el chat».
+ * La conexión se cierra siempre, conteste o no.
+ */
+export async function sondearChat(url: string): Promise<Sondeo> {
+  let r: Response;
+  try {
+    r = await fetch(url, {
+      headers: { Upgrade: "websocket", Origin: ORIGEN_WEB, "User-Agent": IDENTIDAD },
+      signal: AbortSignal.timeout(ESPERA_MS),
+    });
+  } catch (e) {
+    return sinRespuesta(e);
   }
 
+  const ws = r.webSocket;
+  if (!ws) {
+    const caida = await leerCaida(r);
+    if (caida) return caida;
+    await r.body?.cancel();
+    return { ok: false, pista: "servicio", detalle: `contesta (${r.status}) pero no abre el chat` };
+  }
+
+  ws.accept();
+  const sondeo = await new Promise<Sondeo>((resolver) => {
+    let listo = false;
+    const fin = (s: Sondeo) => {
+      if (listo) return;
+      listo = true;
+      clearTimeout(reloj);
+      resolver(s);
+    };
+    const reloj = setTimeout(
+      () =>
+        fin({
+          ok: false,
+          pista: "servicio",
+          detalle: `abre la conexión pero no contesta el ping en ${ESPERA_PONG_MS / 1000} s`,
+        }),
+      ESPERA_PONG_MS,
+    );
+    ws.addEventListener("message", (ev) => {
+      if (tipoDeMensaje(ev.data) === "pong") {
+        fin({ ok: true, detalle: "abre el chat y contesta el ping (101)" });
+      }
+    });
+    ws.addEventListener("close", (ev) => {
+      fin(
+        ev.code === 1008
+          ? {
+              ok: false,
+              pista: "servicio",
+              detalle: `el agente rechaza el origen ${ORIGEN_WEB} (1008): revisar allowed_origins`,
+            }
+          : {
+              ok: false,
+              pista: "servicio",
+              detalle: `el chat cerró la conexión sin contestar el ping (${ev.code})`,
+            },
+      );
+    });
+    ws.addEventListener("error", () => {
+      fin({ ok: false, pista: "servicio", detalle: "el chat abrió la conexión y falló" });
+    });
+    try {
+      ws.send(JSON.stringify({ type: "ping" }));
+    } catch {
+      fin({ ok: false, pista: "servicio", detalle: "el chat abrió la conexión pero no recibió el ping" });
+    }
+  });
+
+  try {
+    ws.close(1000, "vigia");
+  } catch {
+    // Ya estaba cerrada (por ejemplo, el 1008).
+  }
+  return sondeo;
+}
+
+/** El `type` de un mensaje del chat, o "" si no es JSON con `type`. */
+function tipoDeMensaje(dato: unknown): string {
+  if (typeof dato !== "string") return "";
+  try {
+    const m = JSON.parse(dato) as { type?: unknown } | null;
+    return typeof m?.type === "string" ? m.type : "";
+  } catch {
+    return "";
+  }
+}
+
+/** La dirección ni siquiera respondió: tardó demasiado o falló la red. */
+function sinRespuesta(e: unknown): Sondeo {
+  const nombre = e instanceof Error ? e.name : "";
+  if (nombre === "TimeoutError" || nombre === "AbortError") {
+    return { ok: false, pista: "servicio", detalle: `no respondió en ${ESPERA_MS / 1000} s` };
+  }
+  return {
+    ok: false,
+    pista: "red",
+    detalle: `error de red: ${e instanceof Error ? e.message : "desconocido"}`,
+  };
+}
+
+/**
+ * Si la respuesta prueba una caída, o deja ciego al vigía, dice cuál. Si no,
+ * devuelve null y deja el cuerpo sin leer.
+ */
+async function leerCaida(r: Response): Promise<Sondeo | null> {
   if (r.headers.get("cf-mitigated")) {
     await r.body?.cancel();
     return {
@@ -274,10 +401,7 @@ async function sondear(url: string): Promise<Sondeo> {
     };
   }
 
-  if (!CODIGOS_DE_CAIDA.has(r.status)) {
-    await r.body?.cancel();
-    return { ok: true, detalle: `responde (${r.status})` };
-  }
+  if (!CODIGOS_DE_CAIDA.has(r.status)) return null;
 
   const cuerpo = (await r.text().catch(() => "")).slice(0, 8000);
   const codigo = /error code:?\s*(\d{4})|cf-error-code[^>]*>\s*(\d{4})/i.exec(cuerpo);
