@@ -17,6 +17,8 @@ import {
   rangoPrecio,
   type Proyecto,
 } from "@/data/proyectos";
+import { LUGARES } from "@/data/zona";
+import type { PinProyecto } from "@/components/MapaIlustrado";
 
 export type Ficha = {
   slug: string;
@@ -177,4 +179,48 @@ export function dondeQueda(p: Proyecto): string {
     default:
       return `en ${p.zona}`;
   }
+}
+
+// ── El pin de un proyecto en el mapa ilustrado de la Zona Norte ────────────
+
+/**
+ * Los tiempos de `proyectos.ts` se llevan a lugares del mapa: el aeropuerto,
+ * el hospital de Serena del Mar y la playa con coordenada más cercana. El
+ * Centro no tiene punto en el encuadre del corredor, así que su tiempo no
+ * dibuja línea (sigue en la página del proyecto).
+ */
+const LUGAR_DE_DESTINO: Partial<Record<NonNullable<Proyecto["tiempos"]>[number]["destino"], string>> = {
+  aeropuerto: "aeropuerto",
+  hospital: "serena-del-mar",
+};
+const PLAYAS = ["la-boquilla", "manzanillo", "punta-canoa"];
+
+/**
+ * El pin del proyecto, SOLO si tiene coordenada verificada en proyectos.ts.
+ * Sin coordenada devuelve null y el proyecto no se marca: sigue en la fila de
+ * proyectos debajo del mapa.
+ */
+export function pinDelMapa(p: Proyecto): PinProyecto | null {
+  if (!p.coordenada) return null;
+  const { lat, lon, fuente } = p.coordenada;
+  const f = fichaDe(p);
+  const playaCercana = LUGARES.filter((l) => PLAYAS.includes(l.id) && l.coordenada)
+    .map((l) => ({ id: l.id, d: Math.hypot(l.coordenada!.lat - lat, l.coordenada!.lon - lon) }))
+    .sort((a, b) => a.d - b.d)[0]?.id;
+  const tiempos = (p.tiempos ?? []).flatMap((t) => {
+    const lugar = t.destino === "playa" ? playaCercana : LUGAR_DE_DESTINO[t.destino];
+    return lugar ? [{ lugar, minutos: t.minutos, fuente: t.fuente }] : [];
+  });
+  return {
+    slug: p.slug,
+    nombre: p.nombre,
+    lat,
+    lon,
+    fuente,
+    precio: f.precio,
+    corte: f.corte,
+    linea: f.linea,
+    foto: f.foto?.src ?? null,
+    tiempos,
+  };
 }

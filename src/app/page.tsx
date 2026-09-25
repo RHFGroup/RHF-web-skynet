@@ -33,7 +33,8 @@ import { enlaceWhatsApp, SALUDO_WHATSAPP } from "@/data/contacto";
 import PieSitio from "@/components/PieSitio";
 import RespaldoJuridico from "@/components/RespaldoJuridico";
 import PasoAPaso from "@/components/PasoAPaso";
-import { fichaDe, proyectosEnOrden } from "@/lib/ficha";
+import { fichaDe, pinDelMapa, proyectosEnOrden } from "@/lib/ficha";
+import type { PinProyecto } from "@/components/MapaIlustrado";
 
 /**
  * Las tarjetas de la cartera salen de `src/data/proyectos.ts`, en el orden de
@@ -47,6 +48,16 @@ const heroFichas: FichaHero[] = proyectosEnOrden().map((p) => ({
   ...fichaDe(p),
   pin: p.heroPin ?? null,
 }));
+
+/**
+ * La sección Zona Norte muestra los proyectos de la Zona Norte: todos en la
+ * fila de debajo del mapa y, en el mapa, solo los que tienen coordenada
+ * verificada en proyectos.ts (hoy ninguno). Blue Garden y Acacias no van:
+ * no están en la Zona Norte.
+ */
+const proyectosZonaNorte = proyectosEnOrden().filter((p) => p.zona === "Zona Norte");
+const fichasZonaNorte = proyectosZonaNorte.map(fichaDe);
+const pinesZonaNorte = proyectosZonaNorte.map(pinDelMapa).filter((p): p is PinProyecto => p !== null);
 
 const WA_LINK = enlaceWhatsApp(SALUDO_WHATSAPP);
 
@@ -76,7 +87,7 @@ export default function Home() {
         <Hero fichas={heroFichas} whatsapp={WA_LINK} />
 
         {/* ── Zona Norte (antes que la cartera) ── */}
-        <ZonaNorte />
+        <ZonaNorte proyectos={fichasZonaNorte} pines={pinesZonaNorte} />
 
         {/* ── El territorio · mapa interactivo ─── */}
         <MapaZona />
