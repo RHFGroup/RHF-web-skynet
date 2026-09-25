@@ -170,9 +170,13 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
     revisar();
     window.addEventListener("scroll", alMover, { passive: true });
     window.addEventListener("resize", alMover, { passive: true });
+    // Una pestaña abierta en segundo plano no recibe eventos de scroll: al
+    // volver a primer plano se mide otra vez.
+    document.addEventListener("visibilitychange", revisar);
     return () => {
       window.removeEventListener("scroll", alMover);
       window.removeEventListener("resize", alMover);
+      document.removeEventListener("visibilitychange", revisar);
     };
   }, []);
 
