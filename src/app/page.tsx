@@ -25,6 +25,12 @@
  * cartera; y cada sección va en su color, alternando azul y café oscuros
  * (src/styles/secciones.css).
  *
+ * 25-sep-2026, tarde (ya publicada esa versión): «Proyectos que asesoramos» y
+ * «Apartamentos terminados y en construcción» van juntos, en un solo bloque;
+ * las secciones se reordenan para quien visita la web (qué hay → dónde queda
+ * → quién te asesora → con qué respaldo → hablemos); y el café sale: las
+ * secciones alternan azul y blanco.
+ *
  * Las tarjetas leen de `src/data/proyectos.ts`. El precio aparece solo cuando
  * el proyecto tiene los tres datos del numeral 2.16.1 de la Circular 004; si
  * no, dice «Consultar». Nunca se escribe un precio a mano en esta página: fue
@@ -78,52 +84,69 @@ const pinesZonaNorte = proyectosZonaNorte.map(pinDelMapa).filter((p): p is PinPr
 
 const WA_LINK = enlaceWhatsApp(SALUDO_WHATSAPP);
 
-/**
- * Los colores de las secciones, en orden: azul, café, azul, café… con un tono
- * distinto para cada una. Se asignan sobre las secciones que de verdad se
- * publican, para que la alternancia no se rompa cuando una se oculta (el paso
- * a paso no sale en producción mientras ningún paso esté confirmado).
- */
-const TONOS = [
-  "tono-azul-1",
-  "tono-cafe-1",
-  "tono-azul-2",
-  "tono-cafe-2",
-  "tono-azul-3",
-  "tono-cafe-3",
-  "tono-azul-4",
-];
+/** Cuántos proyectos y apartamentos hay: los saltos de arriba del bloque. */
+const saltos = { proyectos: fichas.length, apartamentos: fichasInmuebles.length };
 
 /**
- * El orden de la home: el territorio primero (la zona antes que el
- * apartamento), quién te asesora, la cartera, los inmuebles disponibles, el
- * respaldo jurídico, el paso a paso y el contacto.
+ * El orden de la home y el color de cada bloque, azul y blanco alternados
+ * (pedido de Rafael del 25-sep-2026: «café no me gusta, que sea azul y
+ * blanco»). Cada bloque tiene su tono (src/styles/secciones.css).
+ *
+ *  1. Proyectos y apartamentos (blanco): lo que se viene a buscar, justo
+ *     después de la portada, que ya muestra los proyectos.
+ *  2. El territorio (azul): dónde quedan y qué hay alrededor.
+ *  3. Quién te asesora (blanco): la persona detrás de la oferta.
+ *  4. Respaldo jurídico y paso a paso (azul): cómo se compra y con qué
+ *     garantías. Van en un mismo bloque, así que cuando el paso a paso no
+ *     sale (producción, mientras ningún paso esté confirmado) la alternancia
+ *     de colores sigue igual.
+ *  5. Contacto (blanco), antes del pie azul.
  */
-function secciones(): { id: string; nodo: React.ReactNode }[] {
+function secciones(): { id: string; tono: string; nodo: React.ReactNode }[] {
   return [
-    { id: "territorio", nodo: <MapaZona proyectos={fichasZonaNorte} pines={pinesZonaNorte} /> },
-    { id: "asesor", nodo: <QuienTeAsesora /> },
-    { id: "cartera", nodo: <Cartera fichas={fichas} /> },
-    ...(fichasInmuebles.length > 0 ? [{ id: "inmuebles", nodo: <Inmuebles fichas={fichasInmuebles} /> }] : []),
-    { id: "respaldo", nodo: <RespaldoJuridico /> },
-    ...(PASOS.some(seMuestra) ? [{ id: "pasos", nodo: <PasoAPaso /> }] : []),
-    { id: "contacto", nodo: <Contacto /> },
+    {
+      id: "oferta",
+      tono: "tono-claro tono-blanco-1",
+      nodo: (
+        <>
+          <Cartera fichas={fichas} saltos={saltos} />
+          <Inmuebles fichas={fichasInmuebles} saltos={saltos} />
+        </>
+      ),
+    },
+    {
+      id: "territorio",
+      tono: "tono-oscuro tono-azul-1",
+      nodo: <MapaZona proyectos={fichasZonaNorte} pines={pinesZonaNorte} />,
+    },
+    { id: "asesor", tono: "tono-claro tono-blanco-2", nodo: <QuienTeAsesora /> },
+    {
+      id: "respaldo",
+      tono: "tono-oscuro tono-azul-2",
+      nodo: (
+        <>
+          <RespaldoJuridico />
+          {PASOS.some(seMuestra) && <PasoAPaso />}
+        </>
+      ),
+    },
+    { id: "contacto", tono: "tono-claro tono-blanco-3", nodo: <Contacto /> },
   ];
 }
 
 export default function Home() {
   return (
     <>
-      {/* ── Nav: transparente sobre la portada, marfil al bajar ── */}
+      {/* ── Nav: transparente sobre la portada, blanco al bajar ── */}
       <NavInicio whatsapp={WA_LINK} />
 
       <main>
         {/* ── Over the fold ────────────────────── */}
         <Hero fichas={heroFichas} whatsapp={WA_LINK} />
 
-        {/* ── Las secciones, cada una en su color ── */}
-        {secciones().map((x, i) => (
-          <div key={x.id} className={`tono ${TONOS[i % TONOS.length]}`}>
+        {/* ── Los bloques, azul y blanco alternados ── */}
+        {secciones().map((x) => (
+          <div key={x.id} className={`tono ${x.tono} bloque-${x.id}`}>
             {x.nodo}
           </div>
         ))}

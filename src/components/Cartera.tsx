@@ -16,9 +16,14 @@
  * (antes, un panel de botones que empujaba las tarjetas fuera de la primera
  * pantalla): lo primero que se ve de la sección son los proyectos. Las fotos
  * de cada tarjeta rotan, cada una con su desfase.
+ *
+ * 25-sep-2026, tarde: la cartera y los apartamentos disponibles van juntos,
+ * en un mismo bloque (page.tsx). Arriba, a la derecha del título, dos saltos
+ * —«Proyectos» y «Apartamentos»— dicen que hay dos listas (SaltosOferta).
  */
 import { useMemo, useState } from "react";
 import RevealGrupo from "@/components/RevealGrupo";
+import SaltosOferta from "@/components/SaltosOferta";
 import TarjetaGiro from "@/components/TarjetaGiro";
 import type { Ficha } from "@/lib/ficha";
 import "@/styles/cartera.css";
@@ -48,7 +53,14 @@ function unicos<T>(xs: (T | null)[]): T[] {
   return [...new Set(xs.filter((x): x is T => x !== null))];
 }
 
-export default function Cartera({ fichas }: { fichas: Ficha[] }) {
+export default function Cartera({
+  fichas,
+  saltos,
+}: {
+  fichas: Ficha[];
+  /** Cuántos proyectos y apartamentos hay, para los saltos del bloque. */
+  saltos?: { proyectos: number; apartamentos: number };
+}) {
   const [zona, setZona] = useState<string | null>(null);
   const [tipo, setTipo] = useState<string | null>(null);
   const [estado, setEstado] = useState<string | null>(null);
@@ -81,12 +93,17 @@ export default function Cartera({ fichas }: { fichas: Ficha[] }) {
   return (
     <section className="cartera section" id="cartera" aria-labelledby="cartera-titulo">
       <div className="section-shell">
-        <p className="section-kicker">Nuestra cartera</p>
-        <h2 id="cartera-titulo">Proyectos que asesoramos</h2>
-        <p className="section-lede">
-          Cada precio va con la fecha de corte de la hoja del constructor. Pasa
-          el cursor —o toca— para ver lo que hace especial a cada proyecto.
-        </p>
+        <div className="oferta-cabeza">
+          <div>
+            <p className="section-kicker">Nuestra cartera</p>
+            <h2 id="cartera-titulo">Proyectos que asesoramos</h2>
+            <p className="section-lede">
+              Cada precio va con la fecha de corte de la hoja del constructor. Pasa
+              el cursor —o toca— para ver lo que hace especial a cada proyecto.
+            </p>
+          </div>
+          {saltos && <SaltosOferta activo="proyectos" {...saltos} />}
+        </div>
 
         <div className="cartera-barra">
           <div className="cartera-filtros" role="group" aria-label="Filtrar la cartera">

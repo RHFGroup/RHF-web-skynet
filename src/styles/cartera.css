@@ -1,6 +1,8 @@
 /* ─────────────────────────────────────────────────────────────
    Nuestra cartera (Cartera.tsx): filtros y grilla de tarjetas.
-   Las tarjetas son oscuras: van sobre el marfil.
+   Las tarjetas son oscuras: van sobre fondo claro. En la home, desde el
+   25-sep-2026, la cartera y los apartamentos disponibles comparten un bloque
+   blanco (secciones.css) y llevan arriba los saltos entre las dos listas.
    ───────────────────────────────────────────────────────────── */
 
 .cartera {
@@ -9,6 +11,55 @@
   scroll-margin-top: var(--nav-h);
 }
 .cartera h2 { color: var(--marino); }
+
+/* El encabezado de cada lista del bloque: el título a la izquierda y los
+   saltos «Proyectos · Apartamentos» a la derecha (SaltosOferta.tsx). */
+.oferta-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px 40px;
+}
+.oferta-saltos {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #dfe5ee;
+  border-radius: 9999px;
+  background: var(--white);
+  box-shadow: 0 12px 28px -22px rgb(22 30 43 / 0.45);
+}
+.oferta-saltos a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 9999px;
+  color: var(--marino);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+.oferta-saltos a span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 9999px;
+  background: rgb(31 42 61 / 0.08);
+  font-size: 11.5px;
+}
+.oferta-saltos a:hover { background: #f4f7fb; }
+.oferta-saltos a.activo { background: var(--marino); color: var(--white); }
+.oferta-saltos a.activo span { background: rgb(255 255 255 / 0.18); }
+.oferta-saltos a:focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
+@media (max-width: 560px) {
+  .oferta-saltos { width: 100%; }
+  .oferta-saltos a { flex: 1; justify-content: center; }
+}
 
 /* La barra de filtros: una sola línea de listas desplegables y, a la
    derecha, cuántos proyectos se ven. */
@@ -48,7 +99,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--cuero);
+  color: var(--marino-light);
 }
 .cartera-filtro select {
   appearance: none;
@@ -93,7 +144,7 @@
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
-  color: var(--cuero);
+  color: var(--marino-light);
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;

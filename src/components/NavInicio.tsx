@@ -4,9 +4,12 @@
  * El menú de la home.
  *
  * Sobre la portada va transparente —logo claro, enlaces en blanco— para que
- * las imágenes lleguen hasta arriba. Apenas la página baja, se vuelve marfil
- * con desenfoque y el logo oscuro, como era antes. En el borde de abajo, una
- * línea camel se llena a medida que se lee la página.
+ * las imágenes lleguen hasta arriba. Apenas la página baja, se vuelve blanco
+ * con desenfoque y el logo oscuro. En el borde de abajo, una línea camel se
+ * llena a medida que se lee la página.
+ *
+ * Los enlaces siguen el orden de la home (25-sep-2026): proyectos,
+ * apartamentos, el territorio, quién te asesora y contacto.
  *
  * Es fijo en vez de pegajoso (`sticky`): la portada empieza debajo de él, en
  * el borde de la pantalla. La altura no cambia al bajar, así `--nav-h` sigue
@@ -55,10 +58,10 @@ export default function NavInicio({ whatsapp }: { whatsapp: string }) {
           <img className="brand-oscuro" src="/marca/rhf-living-oscuro.svg" alt="RHF Living" width="215" height="48" />
         </a>
         <nav className="nav-links" aria-label="Secciones">
+          <a href="#cartera">Proyectos</a>
+          <a href="#inmuebles">Apartamentos</a>
           <a href="#mapa">El territorio</a>
           <a href="#asesor">Quién te asesora</a>
-          <a href="#cartera">Nuestra cartera</a>
-          <a href="#inmuebles">Inmuebles</a>
           <a href="#contacto">Contacto</a>
         </nav>
         <a className="nav-cta" href={whatsapp} target="_blank" rel="noopener noreferrer">

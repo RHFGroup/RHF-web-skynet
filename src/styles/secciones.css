@@ -1,40 +1,51 @@
 /* ─────────────────────────────────────────────────────────────
-   Secciones por color (pedido de Rafael del 25-sep-2026)
+   Secciones por color: azul y blanco
 
-   «Azul, café, azul, café: que cada sección tenga diferentes colores pero
-   que respete la gama cíclica.» Eligió la versión oscura: fondos marino y
-   café profundos, con el texto claro.
+   El 25-sep-2026 Rafael pidió «azul, café, azul, café» y eligió la versión
+   oscura. Ya publicada, pidió otra cosa: «café no me gusta, que sea azul y
+   blanco; no combina muy bien el fondo café». Desde entonces los bloques de
+   la home alternan azul marino oscuro y blanco, cada uno con su tono
+   (page.tsx):
 
-   Cada sección de la home va dentro de un envoltorio `.tono` con su tono:
-     territorio  → azul 1      quién te asesora → café 1
-     cartera     → azul 2      inmuebles        → café 2
-     respaldo    → azul 3      paso a paso      → café 3
-     contacto    → azul 4
-   La página /asesor usa la misma escala.
+     Proyectos y apartamentos        → blanco 1
+     El territorio                   → azul 1
+     Quién te asesora                → blanco 2
+     Respaldo jurídico y paso a paso → azul 2
+     Contacto                        → blanco 3
 
-   Los tonos son distintos entre sí (ninguna sección repite el de otra) y
-   alternan la familia. El texto claro sobre cualquiera de ellos pasa el
-   contraste AA: marfil ≥ 12:1, camel claro ≥ 7:1, texto secundario al 78 %
-   ≥ 8:1 (medido sobre el tono más claro de cada familia).
+   La página /asesor usa la misma escala (PaginaAsesor.tsx).
 
-   Los componentes conservan sus estilos claros para las páginas internas;
-   aquí solo se ajusta lo que cambia sobre fondo oscuro. Los selectores
-   llevan `.tono` delante para ganar a los de cada componente.
+   Cada envoltorio lleva `.tono`, su familia (`.tono-oscuro` o `.tono-claro`)
+   y su tono. Sobre blanco, los componentes usan sus estilos de siempre, con
+   bordes y fondos fríos en lugar del marfil; sobre azul, aquí se ajusta lo
+   que cambia con el texto claro. Los selectores llevan la familia delante
+   para ganar a los de cada componente.
+
+   Contraste medido en el peor fondo de cada familia (AA): sobre azul, marfil
+   ≥ 10:1, camel claro ≥ 6,3:1 y el texto secundario (marfil al 58 %) ≥ 4,6:1;
+   sobre blanco, marino ≥ 12,8:1, el azul de los antetítulos ≥ 7,9:1 y el gris
+   de apoyo ≥ 4,8:1.
    ───────────────────────────────────────────────────────────── */
 
 .tono {
-  --tono-a: #1d2839;
-  --tono-b: #243249;
+  --tono-a: #ffffff;
+  --tono-b: #ffffff;
+  --frio-borde: #dfe5ee;
+  --frio-suave: #f4f7fb;
   position: relative;
   isolation: isolate;
+  background: linear-gradient(180deg, var(--tono-a), var(--tono-b));
+}
+.tono-claro { color: var(--near-black); }
+.tono-oscuro {
   background:
     radial-gradient(1100px 520px at 88% -8%, rgb(255 255 255 / 0.055), transparent 62%),
-    radial-gradient(900px 480px at -6% 108%, rgb(194 165 120 / 0.06), transparent 60%),
+    radial-gradient(900px 480px at -6% 108%, rgb(120 150 200 / 0.08), transparent 60%),
     linear-gradient(180deg, var(--tono-a), var(--tono-b));
   color: var(--marfil);
 }
-/* La división: una línea camel tenue en el borde de arriba de cada sección. */
-.tono::before {
+/* El borde de arriba de cada bloque azul: una línea camel tenue. */
+.tono-oscuro::before {
   content: "";
   position: absolute;
   top: 0;
@@ -47,104 +58,171 @@
 }
 
 .tono-azul-1 { --tono-a: #1c2738; --tono-b: #233148; }
-.tono-cafe-1 { --tono-a: #3a291d; --tono-b: #463224; }
-.tono-azul-2 { --tono-a: #121b29; --tono-b: #182435; }
-.tono-cafe-2 { --tono-a: #4a3323; --tono-b: #573d2a; }
+.tono-azul-2 { --tono-a: #121b29; --tono-b: #1a2638; }
 .tono-azul-3 { --tono-a: #1f2c42; --tono-b: #283955; }
-.tono-cafe-3 { --tono-a: #2f2117; --tono-b: #3b2a1e; }
-.tono-azul-4 { --tono-a: #172132; --tono-b: #1e2b42; }
+.tono-blanco-1 { --tono-a: #ffffff; --tono-b: #ffffff; }
+.tono-blanco-2 { --tono-a: #f5f8fc; --tono-b: #edf2f8; }
+.tono-blanco-3 { --tono-a: #ffffff; --tono-b: #f5f8fc; }
 
-/* Las secciones ceden su fondo al tono. */
+/* Las secciones ceden su fondo al tono (y sus bordes: el bloque ya separa). */
 .tono > section,
 .tono > .section { background: transparent; border-top: 0; border-bottom: 0; }
 .tono > section.rj { background: transparent; }
+.tono > #cartera { border-top: 0; }
 
-/* ── Texto común ─────────────────────────────── */
-.tono h1,
-.tono h2 { color: var(--marfil); }
-.tono .section h2,
-.tono section h2 { color: var(--marfil); }
-.tono .section-kicker { color: var(--camel-light); }
-.tono .section-lede { color: rgb(243 239 230 / 0.78); }
-.tono .btn-primary { background: var(--camel); color: var(--marino); }
-.tono .btn-primary:hover { background: var(--camel-light); }
+/* ── Bloques que juntan dos secciones ────────── */
+/* Proyectos y apartamentos: la segunda lista sigue a la primera, separada
+   por una línea, sobre el mismo fondo. */
+.bloque-oferta .cartera { padding-bottom: 72px; }
+.bloque-oferta .inmuebles { padding-top: 0; }
+.bloque-oferta .inmuebles > .section-shell {
+  padding-top: 64px;
+  border-top: 1px solid var(--frio-borde);
+}
+/* Respaldo jurídico y paso a paso, igual. */
+.bloque-respaldo .pa { padding-top: 0; }
+.bloque-respaldo .pa > .section-shell {
+  padding-top: 76px;
+  border-top: 1px solid rgb(243 239 230 / 0.12);
+}
+@media (max-width: 560px) {
+  .bloque-oferta .cartera { padding-bottom: 56px; }
+  .bloque-oferta .inmuebles > .section-shell { padding-top: 48px; }
+  .bloque-respaldo .pa > .section-shell { padding-top: 56px; }
+}
 
-/* ── El territorio ───────────────────────────── */
-.tono .tr-chip {
+/* ── Sobre blanco ────────────────────────────── */
+.tono-claro h2,
+.tono-claro .section h2,
+.tono-claro section h2 { color: var(--marino); }
+.tono-claro .section-kicker { color: var(--marino-light); }
+.tono-claro .cartera-barra { border-color: var(--frio-borde); }
+.tono-claro .cartera-filtro { border-color: var(--frio-borde); background: var(--frio-suave); }
+.tono-claro .cartera-filtro:hover { border-color: var(--marino-light); }
+.tono-claro .cartera-filtro.activo { border-color: var(--marino); background: var(--marino); }
+.tono-claro .contacto-form { border-color: var(--frio-borde); box-shadow: 0 30px 70px -44px rgb(22 30 43 / 0.4); }
+/* El formulario es una tarjeta blanca en los dos tonos: campos fríos, sin
+   marfil, y su botón siempre marino. */
+.tono .contacto-form input,
+.tono .contacto-form select,
+.tono .contacto-form textarea { border-color: var(--frio-borde); background: var(--frio-suave); }
+.tono .contacto-form input:focus,
+.tono .contacto-form select:focus,
+.tono .contacto-form textarea:focus {
+  border-color: var(--marino-light);
+  box-shadow: 0 0 0 3px rgb(58 74 102 / 0.14);
+}
+.tono .contacto-form .btn-primary { background: var(--marino); color: var(--white); }
+.tono .contacto-form .btn-primary:hover { background: var(--marino-dark); }
+
+/* ── Sobre azul: texto común ─────────────────── */
+.tono-oscuro h1,
+.tono-oscuro h2 { color: var(--marfil); }
+.tono-oscuro .section h2,
+.tono-oscuro section h2 { color: var(--marfil); }
+.tono-oscuro .section-kicker { color: var(--camel-light); }
+.tono-oscuro .section-lede { color: rgb(243 239 230 / 0.78); }
+.tono-oscuro .btn-primary { background: var(--camel); color: var(--marino); }
+.tono-oscuro .btn-primary:hover { background: var(--camel-light); }
+
+/* ── Sobre azul: el territorio ───────────────── */
+.tono-oscuro .tr-chip {
   border-color: rgb(243 239 230 / 0.22);
   background: rgb(243 239 230 / 0.07);
   color: var(--marfil);
 }
-.tono .tr-chip:hover { border-color: var(--camel-light); }
-.tono .tr-chip[aria-pressed="true"] { border-color: var(--camel); background: var(--camel); color: var(--marino); }
-.tono .tr-mapa { box-shadow: 0 26px 70px rgb(0 0 0 / 0.38); }
-.tono .tr-panel { border-color: transparent; box-shadow: 0 26px 70px rgb(0 0 0 / 0.32); }
-.tono .tr-nota { color: rgb(243 239 230 / 0.62); }
-.tono .tr-cierre {
+.tono-oscuro .tr-chip:hover { border-color: var(--camel-light); }
+.tono-oscuro .tr-chip[aria-pressed="true"] { border-color: var(--camel); background: var(--camel); color: var(--marino); }
+.tono-oscuro .tr-mapa { box-shadow: 0 26px 70px rgb(0 0 0 / 0.38); }
+.tono-oscuro .tr-panel { border-color: transparent; box-shadow: 0 26px 70px rgb(0 0 0 / 0.32); }
+.tono-oscuro .tr-nota { color: rgb(243 239 230 / 0.62); }
+.tono-oscuro .tr-cierre {
   border: 1px solid rgb(194 165 120 / 0.38);
   background: rgb(243 239 230 / 0.06);
 }
 @media (max-width: 900px) {
   /* En el teléfono el panel es transparente: las tarjetas van sobre el tono. */
-  .tono .tr-panel { box-shadow: none; }
+  .tono-oscuro .tr-panel { box-shadow: none; }
 }
 
-/* ── Quién te asesora ────────────────────────── */
-.tono .section-asesor h2 { color: var(--marfil); }
-.tono .asesor-rol { color: var(--camel-light); }
-.tono .asesor-directo { color: rgb(243 239 230 / 0.7); }
-.tono .asesor-directo a { color: var(--marfil); border-color: var(--camel); }
-.tono .asesor-directo a:hover { color: var(--camel-light); border-color: var(--camel-light); }
-.tono .asesor-sep { color: rgb(243 239 230 / 0.35); }
-.tono .asesor-cuerpo p { color: rgb(243 239 230 / 0.84); }
-.tono .asesor-credenciales li { background: linear-gradient(90deg, rgb(194 165 120 / 0.14), transparent 70%); }
-.tono .asesor-credenciales strong { color: var(--marfil); }
-.tono .asesor-credenciales span { color: rgb(243 239 230 / 0.66); }
+/* ── Sobre azul: quién te asesora y /asesor ──── */
+.tono-oscuro .section-asesor h2 { color: var(--marfil); }
+.tono-oscuro .asesor-rol { color: var(--camel-light); }
+.tono-oscuro .asesor-corto-frase { color: rgb(243 239 230 / 0.86); }
+.tono-oscuro .asesor-pilares-corto h3 { color: var(--camel-light); }
+.tono-oscuro .asesor-pilar-corto {
+  border-color: rgb(243 239 230 / 0.14);
+  background: rgb(243 239 230 / 0.05);
+  box-shadow: none;
+}
+.tono-oscuro .asesor-pilar-corto:hover { border-color: rgb(212 188 150 / 0.65); background: rgb(243 239 230 / 0.08); }
+.tono-oscuro .asesor-pilar-corto-icono { background: rgb(194 165 120 / 0.2); color: var(--camel-light); }
+.tono-oscuro .asesor-pilar-corto strong { color: var(--marfil); }
+.tono-oscuro .asesor-pilar-corto span { color: rgb(243 239 230 / 0.74); }
+.tono-oscuro .asesor-directo { color: rgb(243 239 230 / 0.7); }
+.tono-oscuro .asesor-directo a { color: var(--marfil); border-color: var(--camel); }
+.tono-oscuro .asesor-directo a:hover { color: var(--camel-light); border-color: var(--camel-light); }
+.tono-oscuro .asesor-sep { color: rgb(243 239 230 / 0.35); }
+.tono-oscuro .asesor-cuerpo p { color: rgb(243 239 230 / 0.84); }
+.tono-oscuro .asesor-credenciales li { background: linear-gradient(90deg, rgb(194 165 120 / 0.14), transparent 70%); }
+.tono-oscuro .asesor-credenciales strong { color: var(--marfil); }
+.tono-oscuro .asesor-credenciales span { color: rgb(243 239 230 / 0.66); }
+.tono-oscuro .ap-historia-foto figcaption { color: rgb(243 239 230 / 0.58); }
+.tono-oscuro .ap-persona {
+  border-color: rgb(243 239 230 / 0.14);
+  background: rgb(243 239 230 / 0.05);
+  box-shadow: none;
+}
+.tono-oscuro .ap-persona h3 { color: var(--marfil); }
+.tono-oscuro .ap-persona p { color: rgb(243 239 230 / 0.8); }
+.tono-oscuro .ap-persona .ap-persona-rol { color: var(--camel-light); }
+.tono-oscuro .ap-enlace { color: var(--camel-light); border-color: rgb(212 188 150 / 0.45); }
+.tono-oscuro .ap-enlace:hover { color: var(--marfil); border-color: var(--marfil); }
 
-/* ── Cartera e inmuebles ─────────────────────── */
-.tono .cartera h2,
-.tono .inmuebles h2 { color: var(--marfil); }
-.tono .cartera-barra {
+/* ── Sobre azul: cartera e inmuebles ─────────── */
+.tono-oscuro .cartera h2,
+.tono-oscuro .inmuebles h2 { color: var(--marfil); }
+.tono-oscuro .cartera-barra {
   border-color: rgb(243 239 230 / 0.14);
   background: rgb(243 239 230 / 0.06);
   box-shadow: none;
 }
-.tono .cartera-filtro {
+.tono-oscuro .cartera-filtro {
   border-color: rgb(243 239 230 / 0.2);
   background: rgb(243 239 230 / 0.06);
   color: var(--marfil);
 }
-.tono .cartera-filtro span { color: var(--camel-light); }
-.tono .cartera-filtro select {
+.tono-oscuro .cartera-filtro span { color: var(--camel-light); }
+.tono-oscuro .cartera-filtro select {
   color: var(--marfil);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23f3efe6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 /* La lista que abre el navegador es clara: sus opciones van en marino. */
-.tono .cartera-filtro select option { color: var(--marino); }
-.tono .cartera-filtro.activo { border-color: var(--camel); background: var(--camel); }
-.tono .cartera-filtro.activo span { color: var(--marino); }
-.tono .cartera-filtro.activo select {
+.tono-oscuro .cartera-filtro select option { color: var(--marino); }
+.tono-oscuro .cartera-filtro.activo { border-color: var(--camel); background: var(--camel); }
+.tono-oscuro .cartera-filtro.activo span { color: var(--marino); }
+.tono-oscuro .cartera-filtro.activo select {
   color: var(--marino);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231f2a3d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
-.tono .cartera-conteo { color: rgb(243 239 230 / 0.7); }
-.tono .cartera-conteo strong { color: var(--marfil); }
-.tono .cartera-limpiar { color: var(--camel-light); }
-.tono .cartera-nota-precio { color: rgb(243 239 230 / 0.7); }
-/* Las tarjetas son marino: sobre el tono llevan un filo camel que las separa. */
-.tono .tg-cara {
+.tono-oscuro .cartera-conteo { color: rgb(243 239 230 / 0.7); }
+.tono-oscuro .cartera-conteo strong { color: var(--marfil); }
+.tono-oscuro .cartera-limpiar { color: var(--camel-light); }
+.tono-oscuro .cartera-nota-precio { color: rgb(243 239 230 / 0.7); }
+/* Las tarjetas son marino: sobre el azul llevan un filo camel que las separa. */
+.tono-oscuro .tg-cara {
   box-shadow:
     0 0 0 1px rgb(194 165 120 / 0.26),
     0 30px 60px -28px rgb(0 0 0 / 0.7);
 }
 
-/* ── Contacto ────────────────────────────────── */
-.tono .section-contacto h2 { color: var(--marfil); }
-.tono .contacto-chat-hint { color: rgb(243 239 230 / 0.68); }
-.tono .contacto-form { border-color: transparent; box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.6); }
+/* ── Sobre azul: contacto ────────────────────── */
+.tono-oscuro .section-contacto h2 { color: var(--marfil); }
+.tono-oscuro .contacto-chat-hint { color: rgb(243 239 230 / 0.68); }
+.tono-oscuro .contacto-form { border-color: transparent; box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.6); }
 
-/* La marca de propuesta, clara sobre el tono. */
-.tono .propuesta {
+/* La marca de propuesta (solo vistas previas), clara sobre el azul. */
+.tono-oscuro .propuesta {
   border-color: rgb(212 188 150 / 0.7);
   background: rgb(194 165 120 / 0.16);
   color: var(--camel-light);

@@ -27,10 +27,10 @@ export default function PieSitio({
           <img className="footer-brand" src="/marca/rhf-living.svg" alt="RHF Living" width="196" height="44" />
           <div className="footer-links">
             <Link href="/#inicio">Inicio</Link>
+            <Link href="/#cartera">Proyectos</Link>
+            <Link href="/#inmuebles">Apartamentos</Link>
             <Link href="/#mapa">El territorio</Link>
             <Link href="/#asesor">Quién te asesora</Link>
-            <Link href="/#cartera">Nuestra cartera</Link>
-            <Link href="/#inmuebles">Inmuebles disponibles</Link>
             <Link href="/#contacto">Contacto</Link>
           </div>
         </div>
