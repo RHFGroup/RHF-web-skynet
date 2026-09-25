@@ -1,0 +1,21 @@
+# Cabeceras de seguridad de rhfliving.com
+#
+# Cloudflare Workers con assets lee este archivo y aplica las cabeceras a las
+# respuestas estáticas (todas las páginas del sitio). NO se aplica a /api/*,
+# que las genera el Worker en worker/index.ts — pero /api/* devuelve JSON, no
+# HTML, así que estas cabeceras no le hacen falta.
+#
+# Next copia public/ a la raíz del export (out/), y de ahí las lee Cloudflare.
+# Origen: auditoría de seguridad del 23-sep-2026, hallazgo M-4.
+#
+# Estas cinco cabeceras no pueden romper el sitio. Falta una Content-Security-
+# Policy, que sí puede romperlo (Three.js, el widget de chat por WebSocket,
+# estilos en línea de Next) y hay que probarla en un preview antes de fijarla.
+# Ver la descripción del PR.
+
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()

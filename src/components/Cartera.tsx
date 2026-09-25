@@ -1,172 +1,188 @@
 "use client";
 
-import Link from "next/link";
-import MeInteresaButton from "@/components/MeInteresaButton";
-import {
-  capituloActivo,
-  usePrefersReducedMotion,
-  useScrollProgress,
-} from "@/lib/motion";
-
 /**
- * Acto 4 — la cartera como capítulos, no como grilla.
+ * Nuestra cartera — las tarjetas que giran, con filtros.
  *
- * El escenario queda anclado y los proyectos pasan de a uno: la imagen se
- * funde, la ficha cambia. El usuario recorre la cartera en vez de barrerla de
- * un vistazo, que era justamente el diagnóstico del plan («cinco tarjetas
- * iguales, todas visibles al mismo tiempo»).
+ * Reemplaza al recorrido anclado de fichas (una por vez al hacer scroll). El
+ * visitante ve los cinco proyectos, filtra por lo que le importa y cada
+ * tarjeta abre su página propia. Grilla de tres columnas en escritorio, dos
+ * en tableta y carrusel que se desliza con el dedo en el teléfono.
  *
- * Se descartó el scroll horizontal que proponía el plan —rompe teclado y
- * Ctrl+F— pero NO la progresión: eso se logra anclando, sin tocar la rueda.
+ * Los datos llegan armados del servidor (`fichaDe`): esta sección filtra y
+ * ordena, no calcula precios. El filtro de precio usa solo precios
+ * publicables; los proyectos «Consultar» no entran en él, y se dice.
  *
- * ⚠️ Los datos de ficha no son fuente de verdad acá: su cadena es Excel de la
- * constructora con fecha de corte → nota del proyecto en el vault → este
- * componente. El precio de Acacias está en disputa ($161M publicado vs $138M
- * en la fuente) y por eso no se destaca ni se anima.
+ * Desde el 25-sep-2026 los filtros son una sola barra de listas desplegables
+ * (antes, un panel de botones que empujaba las tarjetas fuera de la primera
+ * pantalla): lo primero que se ve de la sección son los proyectos. Las fotos
+ * de cada tarjeta rotan, cada una con su desfase.
  */
+import { useMemo, useState } from "react";
+import RevealGrupo from "@/components/RevealGrupo";
+import TarjetaGiro from "@/components/TarjetaGiro";
+import type { Ficha } from "@/lib/ficha";
+import "@/styles/cartera.css";
 
-type Proyecto = {
-  nombre: string;
-  /** Landing propia del proyecto, o null si todavia no tiene: la ficha queda
-   *  con «Me interesa» y sin enlace, nunca con un enlace roto. */
-  href: string | null;
-  zona: string;
-  precio: string;
-  /** El candado del numeral 2.16.1: si es false, `precio` dice «Consultar». */
-  muestraPrecio: boolean;
-  /** Fecha de corte del precio. Va junto a la cifra, no en letra chica. */
-  corte: string | null;
-  area: string;
-  tipologia: string;
-  descripcion: string;
-  destacado: boolean;
-  /** Render del promotor, o null si todavía no hay material propio del
-   *  proyecto: en ese caso va un panel de marca, nunca una foto ajena. */
-  imagen: string | null;
-  variante: "zoom" | "up" | "left" | "blur";
+type Rango = { id: string; etiqueta: string; min: number; max: number };
+
+/** Tramos de «precio desde». Son cortes para filtrar, no precios de nadie. */
+const RANGOS: Rango[] = [
+  { id: "hasta-350", etiqueta: "Hasta $350 millones", min: 0, max: 350_000_000 },
+  { id: "350-500", etiqueta: "$350 a $500 millones", min: 350_000_000, max: 500_000_000 },
+  { id: "mas-500", etiqueta: "Más de $500 millones", min: 500_000_000, max: Infinity },
+];
+
+const TIPOS: Record<string, string> = {
+  apartamentos: "Apartamentos",
+  casas: "Casas",
+  apartaestudios: "Apartaestudios",
 };
 
-export default function Cartera({ proyectos }: { proyectos: Proyecto[] }) {
-  const reduced = usePrefersReducedMotion();
-  const { ref, progress } = useScrollProgress<HTMLElement>(!reduced);
-  const { indice } = capituloActivo(progress, proyectos.length);
+const ESTADOS: Record<Ficha["estado"], string> = {
+  "en lanzamiento": "En lanzamiento",
+  "en construcción": "En construcción",
+  "entrega inmediata": "Entrega inmediata",
+};
+
+function unicos<T>(xs: (T | null)[]): T[] {
+  return [...new Set(xs.filter((x): x is T => x !== null))];
+}
+
+export default function Cartera({ fichas }: { fichas: Ficha[] }) {
+  const [zona, setZona] = useState<string | null>(null);
+  const [tipo, setTipo] = useState<string | null>(null);
+  const [estado, setEstado] = useState<string | null>(null);
+  const [rango, setRango] = useState<string | null>(null);
+
+  const zonas = unicos(fichas.map((f) => f.zona));
+  const tipos = unicos(fichas.map((f) => f.tipoInmueble ?? null));
+  const estados = unicos(fichas.map((f) => f.estado));
+  const hayPrecios = fichas.some((f) => f.precioDesde !== null);
+
+  const visibles = useMemo(() => {
+    const r = RANGOS.find((x) => x.id === rango);
+    return fichas.filter(
+      (f) =>
+        (!zona || f.zona === zona) &&
+        (!tipo || f.tipoInmueble === tipo) &&
+        (!estado || f.estado === estado) &&
+        (!r || (f.precioDesde !== null && f.precioDesde >= r.min && f.precioDesde < r.max)),
+    );
+  }, [fichas, zona, tipo, estado, rango]);
+
+  const filtrando = zona || tipo || estado || rango;
+  const limpiar = () => {
+    setZona(null);
+    setTipo(null);
+    setEstado(null);
+    setRango(null);
+  };
 
   return (
-    <section
-      className={"scrolly" + (reduced ? " scrolly-plano" : "")}
-      id="cartera"
-      ref={ref}
-      style={{ "--caps": proyectos.length } as React.CSSProperties}
-    >
-      <div className="scrolly-escenario">
-        <div className="section-shell scrolly-grid scrolly-grid-invertida">
-          <div className="scrolly-visual cartera-visual">
-            {proyectos.map((p, i) => (
-              <Visual
-                key={p.nombre}
-                proyecto={p}
-                prioritaria={i === 0}
-                className={reduced || i === indice ? "activo" : ""}
-              />
-            ))}
-            <span
-              className="scrolly-progreso"
-              style={{ transform: `scaleX(${reduced ? 1 : progress.toFixed(3)})` }}
+    <section className="cartera section" id="cartera" aria-labelledby="cartera-titulo">
+      <div className="section-shell">
+        <p className="section-kicker">Nuestra cartera</p>
+        <h2 id="cartera-titulo">Proyectos que asesoramos</h2>
+        <p className="section-lede">
+          Cada precio va con la fecha de corte de la hoja del constructor. Pasa
+          el cursor —o toca— para ver lo que hace especial a cada proyecto.
+        </p>
+
+        <div className="cartera-barra">
+          <div className="cartera-filtros" role="group" aria-label="Filtrar la cartera">
+            <Filtro
+              titulo="Zona"
+              todas="Todas"
+              opciones={zonas.map((z) => ({ id: z, etiqueta: z }))}
+              valor={zona}
+              alCambiar={setZona}
             />
+            <Filtro
+              titulo="Tipo"
+              todas="Todos"
+              opciones={tipos.map((t) => ({ id: t, etiqueta: TIPOS[t] ?? t }))}
+              valor={tipo}
+              alCambiar={setTipo}
+            />
+            <Filtro
+              titulo="Estado"
+              todas="Todos"
+              opciones={estados.map((e) => ({ id: e, etiqueta: ESTADOS[e] }))}
+              valor={estado}
+              alCambiar={setEstado}
+            />
+            {hayPrecios && (
+              <Filtro
+                titulo="Precio desde"
+                todas="Todos"
+                opciones={RANGOS.map((r) => ({ id: r.id, etiqueta: r.etiqueta }))}
+                valor={rango}
+                alCambiar={setRango}
+              />
+            )}
           </div>
-
-          <div className="scrolly-texto">
-            <p className="section-kicker">
-              Nuestra cartera{reduced ? "" : ` · ${indice + 1} de ${proyectos.length}`}
-            </p>
-            <h2>Proyectos que asesoramos</h2>
-
-            <div className="scrolly-capitulos cartera-capitulos">
-              {proyectos.map((p, i) => (
-                <article
-                  key={p.nombre}
-                  className={"scrolly-cap" + (reduced || i === indice ? " activo" : "")}
-                  aria-hidden={reduced ? undefined : i !== indice}
-                  // `aria-hidden` sin `inert` deja el boton y el enlace
-                  // alcanzables con Tab dentro de un bloque oculto al lector.
-                  inert={!reduced && i !== indice}
-                >
-                  {/* Solo se ve en móvil (≤860px), donde el escenario deja de
-                      ser sticky y las fichas van apiladas: cada una con su
-                      imagen, en vez de una sola imagen arriba para las cinco. */}
-                  <div className="scrolly-cap-visual" aria-hidden="true">
-                    <Visual proyecto={p} />
-                  </div>
-                  <p className="proyecto-tipo">
-                    {p.zona} · {p.tipologia}
-                  </p>
-                  <h3>
-                    {p.nombre}
-                    {p.destacado && <span className="cartera-badge">Nuevo</span>}
-                  </h3>
-                  <p className="scrolly-cap-texto">{p.descripcion}</p>
-                  <div className="proyecto-datos">
-                    <span className="dato">
-                      <strong>{p.precio}</strong>{" "}
-                      <em>{p.muestraPrecio ? `corte ${p.corte}` : "desde"}</em>
-                    </span>
-                    <span className="dato-sep" />
-                    <span className="dato">{p.area}</span>
-                  </div>
-                  <div className="proyecto-acciones">
-                    <MeInteresaButton />
-                    {p.href && (
-                      <Link className="proyecto-link" href={p.href}>
-                        Ver el proyecto
-                      </Link>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <ol className="scrolly-rail" aria-hidden="true">
-              {proyectos.map((p, i) => (
-                <li key={p.nombre} className={i <= indice ? "activo" : ""} />
-              ))}
-            </ol>
-          </div>
+          <p className="cartera-conteo" aria-live="polite">
+            <strong>{visibles.length}</strong> {visibles.length === 1 ? "proyecto" : "proyectos"}
+            {filtrando && (
+              <button type="button" className="cartera-limpiar" onClick={limpiar}>
+                Ver toda la cartera
+              </button>
+            )}
+          </p>
         </div>
+        {rango && (
+          <p className="cartera-nota-precio">
+            Los proyectos con precio a consultar no entran en el filtro de precio.
+          </p>
+        )}
+
+        {visibles.length > 0 ? (
+          <RevealGrupo className="cartera-grilla">
+            {visibles.map((f, i) => (
+              <div key={f.slug} className="cartera-celda" style={{ "--i": i % 3 } as React.CSSProperties}>
+                <TarjetaGiro ficha={f} desdeCartera prioritaria={i === 0} retraso={i * 900} />
+              </div>
+            ))}
+          </RevealGrupo>
+        ) : (
+          <div className="cartera-vacia">
+            <p>Con esa combinación no hay proyectos en la cartera hoy.</p>
+            <button type="button" className="btn-primary" onClick={limpiar}>
+              Ver toda la cartera
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
 }
 
-/**
- * La imagen de un proyecto, o el panel de marca cuando todavía no hay
- * material propio. El panel dice el nombre en serif sobre marino: es una
- * decisión de diseño, no un hueco — una foto de archivo de otra ciudad
- * contradice «publicamos lo que podemos sostener».
- */
-function Visual({
-  proyecto,
-  prioritaria = false,
-  className = "",
+/** Una lista desplegable nativa: compacta, accesible y cómoda en el teléfono. */
+function Filtro({
+  titulo,
+  todas,
+  opciones,
+  valor,
+  alCambiar,
 }: {
-  proyecto: Pick<Proyecto, "nombre" | "zona" | "imagen">;
-  prioritaria?: boolean;
-  className?: string;
+  titulo: string;
+  todas: string;
+  opciones: { id: string; etiqueta: string }[];
+  valor: string | null;
+  alCambiar: (v: string | null) => void;
 }) {
-  if (proyecto.imagen) {
-    return (
-      <img
-        src={proyecto.imagen}
-        alt={`${proyecto.nombre} — render del promotor`}
-        loading={prioritaria ? undefined : "lazy"}
-        className={className}
-      />
-    );
-  }
+  if (opciones.length < 2) return null;
   return (
-    <div className={"cartera-panel " + className}>
-      <span className="cartera-panel-zona">{proyecto.zona}</span>
-      <span className="cartera-panel-nombre">{proyecto.nombre}</span>
-      <span className="cartera-panel-nota">Material del promotor en camino</span>
-    </div>
+    <label className={"cartera-filtro" + (valor ? " activo" : "")}>
+      <span>{titulo}</span>
+      <select value={valor ?? ""} onChange={(e) => alCambiar(e.target.value || null)}>
+        <option value="">{todas}</option>
+        {opciones.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.etiqueta}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

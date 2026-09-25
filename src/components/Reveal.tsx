@@ -27,6 +27,7 @@ export default function Reveal({
   return (
     <div
       ref={ref}
+      data-revela=""
       className={[
         armed ? "reveal" : "",
         armed ? `reveal-${variant}` : "",

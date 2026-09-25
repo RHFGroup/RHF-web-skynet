@@ -1,0 +1,575 @@
+/* ─────────────────────────────────────────────────────────────
+   Página propia de cada proyecto (ProyectoLanding.tsx)
+
+   Prefijo `pp-` para no chocar con las clases de la landing anterior,
+   que siguen en globals.css porque otras piezas las usan.
+   Escala de DESIGN.md: titulares en Cormorant, textos en Montserrat,
+   radios 14 / 20 / 28, transiciones de 0,5 a 0,7 s.
+   ───────────────────────────────────────────────────────────── */
+
+.pp { background: var(--marfil); }
+
+/* ── Volver a la cartera ─────────────────────── */
+.pp-migas {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--marfil-dark);
+  background: var(--marfil);
+}
+.pp-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--cuero);
+  transition: color 0.3s ease;
+}
+.pp-volver:hover { color: var(--marino); }
+.pp-volver:focus-visible { outline: 2px solid var(--camel); outline-offset: 4px; border-radius: 4px; }
+
+/* ── 1 · Portada ─────────────────────────────── */
+.pp-portada {
+  position: relative;
+  height: min(78vh, 760px);
+  min-height: 460px;
+  overflow: hidden;
+  background: var(--marino-dark);
+  color: var(--white);
+  animation: pp-entrada 0.6s ease-out both;
+}
+@keyframes pp-entrada {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.pp-portada-fotos img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.7s ease;
+}
+.pp-portada-fotos img.activa { opacity: 1; }
+.pp-portada::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgb(22 30 43 / 0.3) 0%, rgb(22 30 43 / 0) 28%, rgb(22 30 43 / 0.28) 50%, rgb(22 30 43 / 0.9) 100%);
+  pointer-events: none;
+}
+.pp-portada-sin-foto {
+  height: auto;
+  min-height: 0;
+  padding: 120px 0 72px;
+  background: linear-gradient(160deg, var(--marino-light), var(--marino) 55%, var(--marino-dark));
+}
+.pp-portada-sin-foto::after { display: none; }
+.pp-portada-texto {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 64px;
+  transform: translateX(-50%);
+  width: min(1180px, calc(100% - 40px));
+}
+.pp-portada-sin-foto .pp-portada-texto { position: relative; left: auto; bottom: auto; transform: none; margin: 0 auto; }
+.pp-portada .eyebrow { color: var(--camel-light); }
+.pp-portada h1 {
+  margin-top: 16px;
+  max-width: 16ch;
+  font-size: clamp(40px, 6vw, 72px);
+  line-height: 1.02;
+  color: var(--white);
+  text-shadow: 0 2px 24px rgb(22 30 43 / 0.35);
+}
+.pp-portada-linea {
+  margin-top: 14px;
+  font-size: clamp(14px, 1.4vw, 16px);
+  color: rgb(255 255 255 / 0.86);
+}
+.pp-sello {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 8px 14px;
+  border: 1px solid var(--camel);
+  border-radius: 9999px;
+  background: rgb(194 165 120 / 0.18);
+  color: var(--marfil);
+  font-size: 13px;
+  font-weight: 600;
+}
+.pp-sello svg { color: var(--camel); }
+.pp-portada-credito {
+  position: absolute;
+  z-index: 2;
+  right: 20px;
+  bottom: 16px;
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgb(243 239 230 / 0.72);
+}
+.pp-portada-controles {
+  position: absolute;
+  z-index: 2;
+  right: 20px;
+  bottom: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pp-portada-controles button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgb(243 239 230 / 0.4);
+  border-radius: 9999px;
+  background: rgb(22 30 43 / 0.5);
+  color: var(--marfil);
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.pp-portada-controles button:hover { background: rgb(22 30 43 / 0.75); border-color: var(--camel); }
+.pp-portada-controles button:focus-visible { outline: 2px solid var(--camel); outline-offset: 3px; }
+.pp-portada-contador {
+  min-width: 44px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--marfil);
+}
+
+/* ── Cuerpo: contenido + columna de contacto ─── */
+.pp-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 56px;
+  align-items: start;
+  padding: 64px 0 24px;
+}
+.pp-bloque { margin-top: 80px; scroll-margin-top: calc(var(--nav-h) + 16px); }
+.pp-bloque:first-child { margin-top: 0; }
+.pp-bloque h2 {
+  margin-top: 12px;
+  font-size: clamp(28px, 3.2vw, 40px);
+  line-height: 1.1;
+  color: var(--marino);
+}
+.pp-fuente { margin-top: 14px; font-size: 12px; line-height: 1.5; color: var(--text-muted); }
+.pp-fuente-inline { font-size: 12px; color: var(--text-muted); }
+
+/* ── 2 · Datos clave ─────────────────────────── */
+/* Flex y no grid: con cinco o siete datos, la última fila se estira en vez de
+   dejar un hueco. Las líneas entre celdas son sombras hacia afuera que el
+   borde redondeado recorta en los bordes. */
+.pp-franja {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 20px;
+  background: var(--white);
+}
+.pp-franja div {
+  flex: 1 1 170px;
+  padding: 20px 22px;
+  box-shadow: 1px 1px 0 var(--marfil-dark);
+}
+.pp-franja dt {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--camel);
+}
+.pp-franja dd { margin: 6px 0 0; }
+.pp-franja strong {
+  display: block;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--marino);
+}
+.pp-franja span { display: block; margin-top: 4px; font-size: 12px; line-height: 1.45; color: var(--text-muted); }
+.pp-resumen {
+  max-width: 64ch;
+  margin-top: 28px;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--near-black);
+}
+
+/* ── 3 · Tipologías ──────────────────────────── */
+.pp-tipos-lista { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+.pp-tipos-lista button {
+  padding: 10px 18px;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 9999px;
+  background: var(--white);
+  color: var(--marino);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+.pp-tipos-lista button:hover { border-color: var(--camel); }
+.pp-tipos-lista button.activa { border-color: var(--marino); background: var(--marino); color: var(--white); }
+.pp-tipos-lista button:focus-visible { outline: 2px solid var(--camel); outline-offset: 3px; }
+.pp-tipo {
+  display: grid;
+  gap: 28px;
+  margin-top: 20px;
+  padding: 26px;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 20px;
+  background: var(--white);
+}
+.pp-tipo.con-planos { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+.pp-tipo[hidden] { display: none; }
+.pp-tipo-planos { display: grid; gap: 16px; }
+.pp-tipo-planos figure { margin: 0; }
+.pp-tipo-planos img {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 12px;
+  transition: transform 0.5s ease;
+}
+.pp-tipo-planos a:hover img { transform: scale(1.01); }
+.pp-tipo-planos figcaption { margin-top: 8px; font-size: 11.5px; color: var(--text-muted); }
+.pp-tipo-datos h3 { font-size: 24px; color: var(--marino); }
+.pp-tipo-detalle { font-size: 15px; line-height: 1.65; color: var(--near-black); }
+.pp-tipo-datos dl { display: grid; gap: 0; margin: 18px 0 0; }
+.pp-tipo-datos dl div {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--marfil-dark);
+}
+.pp-tipo-datos dt {
+  padding-top: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--camel);
+}
+.pp-tipo-datos dd { margin: 0; }
+.pp-tipo-datos dd strong { display: block; font-size: 16px; font-weight: 600; color: var(--marino); }
+.pp-tipo-datos dd span { display: block; margin-top: 3px; font-size: 12px; line-height: 1.45; color: var(--text-muted); }
+
+.pp-conflictos {
+  margin-top: 22px;
+  padding: 16px 20px;
+  border-left: 3px solid var(--camel);
+  border-radius: 0 14px 14px 0;
+  background: rgb(194 165 120 / 0.1);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--near-black);
+}
+.pp-conflictos p { margin: 0 0 6px; }
+.pp-conflictos ul { display: grid; gap: 6px; margin: 0; padding-left: 18px; }
+.pp-conflictos em { font-style: normal; font-weight: 600; color: var(--marino); }
+
+/* ── 4 · Amenidades ──────────────────────────── */
+.pp-amenidades {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pp-amenidades li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 14px;
+  background: var(--white);
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--marino);
+}
+.pp-amenidades svg { flex-shrink: 0; color: var(--camel); }
+
+/* ── 5 · Ubicación ───────────────────────────── */
+.pp-mapa { margin: 24px 0 0; }
+.pp-mapa-lienzo {
+  position: relative;
+  height: 320px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--marfil-dark);
+}
+.pp-mapa figcaption { margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+.pp-mapa-falla { display: grid; place-items: center; height: 100%; margin: 0; font-size: 13px; color: var(--text-muted); }
+.pp-mapa-pin span {
+  display: block;
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--white);
+  border-radius: 50%;
+  background: var(--camel);
+  box-shadow: 0 0 0 6px rgb(194 165 120 / 0.3), 0 6px 16px rgb(31 42 61 / 0.35);
+}
+.pp-tiempos { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0 0; padding: 0; list-style: none; }
+.pp-tiempos li {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--white);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.pp-tiempos strong { font-family: var(--font-serif), serif; font-size: 26px; color: var(--marino); }
+.pp-tiempos small { margin-top: 4px; font-size: 11px; }
+.pp-enlace-zona { margin-top: 18px; }
+.pp-enlace-zona a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgb(107 74 47 / 0.35);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cuero);
+}
+.pp-enlace-zona a:hover { color: var(--marino); border-color: var(--marino); }
+
+/* ── 6 · La opinión de Rafael ────────────────── */
+.pp-opinion {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 24px;
+  padding: 28px;
+  border-radius: 20px;
+  background: var(--white);
+}
+.pp-opinion-foto { width: 96px; height: 120px; object-fit: cover; border-radius: 14px; }
+.pp-opinion-para { margin-top: 16px; font-size: 16px; line-height: 1.7; }
+.pp-opinion-listas { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 18px; }
+.pp-opinion-listas h3 { font-size: 20px; color: var(--marino); }
+.pp-opinion-listas ul { margin: 8px 0 0; padding-left: 18px; font-size: 15px; line-height: 1.6; }
+
+/* ── 7 · Respaldo ────────────────────────────── */
+.pp-respaldo { display: grid; margin: 24px 0 0; }
+.pp-respaldo div {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--marfil-dark);
+}
+.pp-respaldo dt {
+  padding-top: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--camel);
+}
+.pp-respaldo dd { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--near-black); }
+.pp-respaldo a { color: var(--cuero); text-decoration: underline; text-underline-offset: 3px; }
+.pp-brochure-solo { margin-top: 20px; }
+.pp-brochure-solo a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--camel);
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--cuero);
+}
+.pp-bloque .brochure { margin-top: 40px; }
+
+/* ── 8 · Preguntas frecuentes ────────────────── */
+.pp-faq { margin-top: 20px; border-top: 1px solid var(--marfil-dark); }
+.pp-faq details { border-bottom: 1px solid var(--marfil-dark); }
+.pp-faq summary {
+  padding: 18px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--marino);
+  cursor: pointer;
+}
+.pp-faq p { margin: 0 0 18px; font-size: 15px; line-height: 1.65; color: var(--near-black); }
+
+/* ── Columna de contacto (escritorio) ────────── */
+.pp-lateral { position: sticky; top: calc(var(--nav-h) + 20px); }
+.pp-lateral-caja {
+  display: flex;
+  flex-direction: column;
+  padding: 26px;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 20px;
+  background: var(--white);
+  box-shadow: 0 16px 44px rgb(31 42 61 / 0.08);
+}
+.pp-lateral-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--camel);
+}
+.pp-lateral-precio {
+  margin-top: 6px;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--marino);
+}
+.pp-lateral-corte { margin-top: 6px; font-size: 12px; color: var(--text-muted); }
+.pp-btn {
+  justify-content: center;
+  width: 100%;
+  margin-top: 14px;
+}
+.pp-btn-secundario {
+  display: inline-flex;
+  align-items: center;
+  padding: 13px 20px;
+  border: 1px solid var(--marino);
+  border-radius: 14px;
+  background: var(--white);
+  color: var(--marino);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+.pp-btn-secundario:hover { background: var(--marino); color: var(--white); }
+.pp-lateral-form {
+  margin-top: 14px;
+  font-size: 13px;
+  text-align: center;
+  color: var(--cuero);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── 9 · Otros proyectos ─────────────────────── */
+.pp-otros { background: var(--white); border-top: 1px solid var(--marfil-dark); }
+.pp-otros h2 { color: var(--marino); }
+.pp-otros-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 44px;
+}
+
+/* ── Avisos legales ──────────────────────────── */
+.pp-avisos { padding: 24px 0 72px; background: var(--marfil); color: var(--marino); }
+.pp-sin-precio {
+  margin: 24px 0;
+  padding: 1.5rem 1.75rem;
+  border: 1px solid rgb(31 42 61 / 0.15);
+  border-radius: 12px;
+  background: rgb(31 42 61 / 0.03);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.pp-sin-precio h2 { font-size: 1.0625rem; margin: 0 0 0.5rem; }
+.pp-sin-precio p { margin: 0 0 0.75rem; }
+.pp-sin-precio ul { margin: 0 0 0.75rem; padding-left: 1.1rem; font-size: 0.875rem; }
+.pp-avisos-texto { max-width: 90ch; font-size: 12.5px; line-height: 1.65; color: var(--text-muted); }
+
+/* ── Barra de contacto en el teléfono ────────── */
+.pp-barra-movil { display: none; }
+
+@media (max-width: 960px) {
+  .pp-cuerpo { grid-template-columns: minmax(0, 1fr); gap: 0; padding-top: 48px; }
+  .pp-lateral { display: none; }
+  .pp-tipo.con-planos { grid-template-columns: minmax(0, 1fr); }
+  .pp-otros-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  /* Fija abajo, con espacio a la derecha para el botón del chat (56 px a
+     24 px del borde): los dos quedan a la vista y ninguno tapa al otro. */
+  .pp-barra-movil {
+    position: fixed;
+    z-index: 90;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    gap: 10px;
+    padding: 10px 96px calc(10px + env(safe-area-inset-bottom)) 12px;
+    border-top: 1px solid var(--marfil-dark);
+    background: rgb(243 239 230 / 0.96);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .pp-barra-visita, .pp-barra-interesa {
+    display: inline-flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .pp-barra-visita { background: var(--marino); color: var(--white); }
+  .pp-barra-interesa { border: 1px solid var(--marino); background: var(--white); color: var(--marino); }
+  body:has(.pp-barra-movil) .site-footer { padding-bottom: 110px; }
+}
+
+@media (max-width: 640px) {
+  .pp-portada { height: 72vh; min-height: 420px; }
+  .pp-portada-texto { bottom: 92px; }
+  .pp-portada-controles { left: 14px; right: auto; bottom: 34px; }
+  .pp-portada-credito { right: 14px; bottom: 12px; max-width: 60%; text-align: right; }
+  .pp-bloque { margin-top: 64px; }
+  .pp-franja div { flex-basis: 140px; padding: 16px; }
+  .pp-amenidades { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .pp-amenidades li { padding: 12px; font-size: 13px; }
+  .pp-bloque .brochure-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .pp-franja strong { font-size: 20px; }
+  .pp-tipo { padding: 18px; }
+  .pp-tipo-datos dl div { grid-template-columns: 1fr; gap: 4px; }
+  .pp-respaldo div { grid-template-columns: 1fr; gap: 4px; }
+  .pp-opinion { grid-template-columns: 1fr; }
+  .pp-opinion-listas { grid-template-columns: 1fr; }
+  /* Otros proyectos: carrusel que se desliza con el dedo. */
+  .pp-otros-grid {
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: 86%;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+  }
+  .pp-otros-grid > * { scroll-snap-align: start; }
+  .pp-barra-movil { padding-right: 92px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-portada { animation: none; }
+  .pp-portada-fotos img { transition: none; }
+}

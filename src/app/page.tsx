@@ -9,268 +9,166 @@
  *    corregido contra la research del vault — sin el aeropuerto como hecho
  *    consumado y sin «la mayor valorización predial».
  *  · La barra de navegación es la de la home vieja, con el logo RHF Living.
- *  · El over the fold es el de home-b: imagen de fondo fija, sin partículas.
+ *  · El over the fold es el de home-b —la foto propia del corredor, sin
+ *    partículas—. Desde el 25-sep-2026 es un escaparate (Hero.tsx): abre con
+ *    esa foto y pasa por los proyectos de la cartera a pantalla completa, con
+ *    su precio y su corte, y miniaturas para elegir.
+ *  · El menú es transparente sobre la portada y marfil al bajar (NavInicio).
  *  · El pie de página es el de la home vieja, que trae el bloque legal bueno
  *    (precio de referencia con fecha de corte, etiqueta textual del área,
  *    Ley 675 y numeral 2.16.2) y los enlaces a privacidad y términos.
+ *
+ * 25-sep-2026 (pedido de Rafael, vista previa del PR #31): fuera la sección
+ * Zona Norte con su mapa ilustrado y «El criterio» (los archivos quedan, sin
+ * usar); El territorio sube a primera sección; «Quién te asesora» queda
+ * corto, con botón a /asesor; entra «Inmuebles disponibles» debajo de la
+ * cartera; y cada sección va en su color, alternando azul y café oscuros
+ * (src/styles/secciones.css).
  *
  * Las tarjetas leen de `src/data/proyectos.ts`. El precio aparece solo cuando
  * el proyecto tiene los tres datos del numeral 2.16.1 de la Circular 004; si
  * no, dice «Consultar». Nunca se escribe un precio a mano en esta página: fue
  * así como la home terminó anunciando Doral West $145 millones por debajo.
  */
-import Link from "next/link";
 import ContactForm from "@/components/ContactForm";
-import ZonaNorte from "@/components/ZonaNorte";
 import MapaZona from "@/components/MapaZona";
-import CierreDelCriterio from "@/components/CierreDelCriterio";
 import Cartera from "@/components/Cartera";
+import Inmuebles from "@/components/Inmuebles";
+import Hero, { type FichaHero } from "@/components/Hero";
+import NavInicio from "@/components/NavInicio";
+import Animador from "@/components/Animador";
+import WhatsAppFlotante from "@/components/WhatsAppFlotante";
 import QuienTeAsesora from "@/components/QuienTeAsesora";
 import Reveal from "@/components/Reveal";
 import { enlaceWhatsApp, SALUDO_WHATSAPP } from "@/data/contacto";
-import { puedePublicarPrecio, rangoPrecio, getProyecto } from "@/data/proyectos";
+import PieSitio from "@/components/PieSitio";
+import RespaldoJuridico from "@/components/RespaldoJuridico";
+import PasoAPaso from "@/components/PasoAPaso";
+import { INMUEBLES } from "@/data/inmuebles";
+import { PASOS } from "@/data/proceso";
+import { fichaDe, fichaDeInmueble, pinDelMapa, proyectosEnOrden } from "@/lib/ficha";
+import { seMuestra } from "@/lib/revision";
+import type { PinProyecto } from "@/components/MapaIlustrado";
+import "@/styles/secciones.css";
 
 /**
- * Lo único que se escribe a mano por proyecto: cómo se presenta y a dónde
- * lleva. `href: null` es un proyecto sin landing propia todavía — la ficha
- * queda con «Me interesa» y sin enlace, nunca con un enlace roto.
- * `variante` es la animación de entrada de la ficha en el recorrido.
- *
- * `imagen` es el render del promotor que ya vive en `public/proyectos/<slug>/`,
- * el mismo que abre su landing. `imagen: null` es un proyecto del que todavía
- * tenemos material propio por recibir: la ficha muestra un panel de marca en
- * vez de una foto ajena. Publicamos lo que podemos sostener, también en las
- * imágenes.
+ * Las tarjetas de la cartera salen de `src/data/proyectos.ts`, en el orden de
+ * la cartera, armadas en el build por `fichaDe` (src/lib/ficha.ts): el precio
+ * solo si es publicable y con su corte, el área con su rótulo literal.
  */
-const PRESENTACION: Record<
-  string,
-  {
-    href: string | null;
-    tipologia: string;
-    descripcion: string;
-    destacado?: boolean;
-    imagen: string | null;
-    variante: "zoom" | "up" | "left" | "blur";
-  }
-> = {
-  "doral-country": {
-    href: "/proyectos/doral-country",
-    tipologia: "Apartamentos en torres · 6 torres · ascensor",
-    descripcion: "El lanzamiento más reciente del desarrollo Doral, sobre la Vía al Mar.",
-    destacado: true,
-    imagen: "/proyectos/doral-country/home.jpg",
-    variante: "zoom",
-  },
-  "doral-suite": {
-    href: null,
-    tipologia: "Apartaestudios · aprobados para renta corta",
-    descripcion: "Inventario final: quedan siete de sesenta y seis unidades.",
-    imagen: null,
-    variante: "up",
-  },
-  "doral-west": {
-    href: "/proyectos/doral-west",
-    tipologia: "Casas de 1 y 2 pisos · lote propio · parqueadero privado",
-    descripcion: "Estructura preparada para crecer hasta un tercer nivel. Entregas documentadas por manzana.",
-    imagen: "/proyectos/doral-west/home.jpg",
-    variante: "up",
-  },
-  "acacias-campestre": {
-    href: null,
-    tipologia: "22 torres · 904 apartamentos · 5 etapas",
-    descripcion: "Entrada económica con valorización a mediano plazo. Perfil inversionista.",
-    imagen: null,
-    variante: "left",
-  },
-  "blue-garden": {
-    href: "/proyectos/blue-garden",
-    tipologia: "Casas ampliables · 3 habitaciones · jardín",
-    descripcion: "Casa familiar con lote generoso y posibilidad de ampliación.",
-    imagen: "/proyectos/blue-garden/home.jpg",
-    variante: "blur",
-  },
-};
+const fichas = proyectosEnOrden().map(fichaDe);
 
-const ORDEN = ["doral-country", "doral-suite", "doral-west", "acacias-campestre", "blue-garden"];
+/** Las mismas fichas para la franja del hero, con su pin si está verificado. */
+const heroFichas: FichaHero[] = proyectosEnOrden().map((p) => ({
+  ...fichaDe(p),
+  pin: p.heroPin ?? null,
+}));
 
-const proyectos = ORDEN.map((slug) => {
-  const d = getProyecto(slug)!;
-  const pres = PRESENTACION[slug];
-  const areas = [...new Set(d.tipologias.map((t) => t.area.valor))].join(" · ");
-  return {
-    nombre: d.nombre,
-    href: pres.href,
-    zona: d.zona,
-    precio: puedePublicarPrecio(d) && d.precio ? rangoPrecio(d.precio.desde, d.precio.hasta) : "Consultar",
-    muestraPrecio: puedePublicarPrecio(d) && d.precio !== null,
-    corte: d.precio?.corte ?? null,
-    area: areas,
-    tipologia: pres.tipologia,
-    descripcion: pres.descripcion,
-    destacado: pres.destacado ?? false,
-    imagen: pres.imagen,
-    variante: pres.variante,
-  };
-});
+/** Los inmuebles disponibles, con la misma tarjeta de la cartera. */
+const fichasInmuebles = INMUEBLES.map(fichaDeInmueble);
+
+/**
+ * El territorio muestra los proyectos de la Zona Norte: todos en su lista y,
+ * en el mapa, solo los que tienen coordenada verificada en proyectos.ts (hoy
+ * ninguno). Blue Garden y Acacias no van: no están en la Zona Norte.
+ */
+const proyectosZonaNorte = proyectosEnOrden().filter((p) => p.zona === "Zona Norte");
+const fichasZonaNorte = proyectosZonaNorte.map(fichaDe);
+const pinesZonaNorte = proyectosZonaNorte.map(pinDelMapa).filter((p): p is PinProyecto => p !== null);
 
 const WA_LINK = enlaceWhatsApp(SALUDO_WHATSAPP);
+
+/**
+ * Los colores de las secciones, en orden: azul, café, azul, café… con un tono
+ * distinto para cada una. Se asignan sobre las secciones que de verdad se
+ * publican, para que la alternancia no se rompa cuando una se oculta (el paso
+ * a paso no sale en producción mientras ningún paso esté confirmado).
+ */
+const TONOS = [
+  "tono-azul-1",
+  "tono-cafe-1",
+  "tono-azul-2",
+  "tono-cafe-2",
+  "tono-azul-3",
+  "tono-cafe-3",
+  "tono-azul-4",
+];
+
+/**
+ * El orden de la home: el territorio primero (la zona antes que el
+ * apartamento), quién te asesora, la cartera, los inmuebles disponibles, el
+ * respaldo jurídico, el paso a paso y el contacto.
+ */
+function secciones(): { id: string; nodo: React.ReactNode }[] {
+  return [
+    { id: "territorio", nodo: <MapaZona proyectos={fichasZonaNorte} pines={pinesZonaNorte} /> },
+    { id: "asesor", nodo: <QuienTeAsesora /> },
+    { id: "cartera", nodo: <Cartera fichas={fichas} /> },
+    ...(fichasInmuebles.length > 0 ? [{ id: "inmuebles", nodo: <Inmuebles fichas={fichasInmuebles} /> }] : []),
+    { id: "respaldo", nodo: <RespaldoJuridico /> },
+    ...(PASOS.some(seMuestra) ? [{ id: "pasos", nodo: <PasoAPaso /> }] : []),
+    { id: "contacto", nodo: <Contacto /> },
+  ];
+}
 
 export default function Home() {
   return (
     <>
-      {/* ── Nav ─────────────────────────────── */}
-      <header className="nav">
-        <div className="nav-inner">
-          <a className="brand" href="#inicio" aria-label="RHF Living — inicio">
-            <img src="/marca/rhf-living-oscuro.svg" alt="RHF Living" width="215" height="48" />
-          </a>
-          <nav className="nav-links">
-            <a href="#cartera">Nuestra cartera</a>
-            <a href="#zonanorte">Zona Norte</a>
-            <a href="#asesor">Quién te asesora</a>
-            <a href="#contacto">Contacto</a>
-          </nav>
-          <a className="nav-cta" href={WA_LINK} target="_blank" rel="noopener noreferrer">
-            Escríbenos
-          </a>
-        </div>
-      </header>
+      {/* ── Nav: transparente sobre la portada, marfil al bajar ── */}
+      <NavInicio whatsapp={WA_LINK} />
 
       <main>
         {/* ── Over the fold ────────────────────── */}
-        <section className="hero-wrap" id="inicio">
-          <div className="hero-bg" />
-          <div className="hero-content">
-            <p className="eyebrow">Asesoría inmobiliaria · Cartagena</p>
-            <h1>Tu próximo proyecto,<br />en la mejor ubicación.</h1>
-            <p className="hero-sub">
-              Asesoría inmobiliaria premium en Cartagena y la Zona Norte.
-              Te acompañamos en cada paso para encontrar el proyecto
-              que se ajusta a lo que buscas.
-            </p>
-            <div className="hero-ctas">
-              <a className="btn-primary" href="#cartera">
-                Ver nuestra cartera
-              </a>
-              <a className="btn-ghost" href={WA_LINK} target="_blank" rel="noopener noreferrer">
-                <WhatsAppIcon /> Contactar
-              </a>
-            </div>
+        <Hero fichas={heroFichas} whatsapp={WA_LINK} />
+
+        {/* ── Las secciones, cada una en su color ── */}
+        {secciones().map((x, i) => (
+          <div key={x.id} className={`tono ${TONOS[i % TONOS.length]}`}>
+            {x.nodo}
           </div>
-          <p className="hero-credito">
-            Corredor de la Zona Norte, Cartagena · marzo de 2026 · foto propia
-          </p>
-        </section>
-
-        {/* ── Zona Norte (antes que la cartera) ── */}
-        <ZonaNorte />
-
-        {/* ── El territorio · mapa interactivo ─── */}
-        <MapaZona />
-
-        {/* ── El cierre del criterio ────────────
-            Remata los tres tramos de territorio —capítulos, mapa, este— y
-            entrega al bloque de Rafael. Estaba antes del mapa y el remate
-            llegaba con el tema todavía abierto. */}
-        <CierreDelCriterio />
-
-        {/* ── Quién te asesora ──────────────────
-            Va antes de la cartera a propósito: el visitante sabe por qué
-            escucharnos antes de que le mostremos qué tenemos. Es el orden
-            del plan de la home. */}
-        <QuienTeAsesora />
-
-        {/* ── La cartera ───────────────────────── */}
-        <Cartera proyectos={proyectos} />
-
-        {/* ── Contacto ─────────────────────────── */}
-        <section className="section section-contacto" id="contacto">
-          <div className="section-shell contacto-shell">
-            <Reveal className="contacto-texto" variant="up">
-              <p className="section-kicker">Contacto</p>
-              <h2>Hablemos de tu próximo proyecto</h2>
-              <p className="section-lede">
-                Te asesoramos sin compromiso. Cuéntanos qué buscas
-                y te guiamos al proyecto que mejor se ajuste a tus planes.
-              </p>
-              <div className="contacto-canales">
-                <a
-                  className="btn-whatsapp"
-                  href={WA_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <WhatsAppIcon /> Escríbenos por WhatsApp
-                </a>
-                <p className="contacto-chat-hint">
-                  ¿Prefieres chatear directo en la página? Usa el ícono
-                  de chat abajo a la derecha — nuestro agente te responde
-                  al instante sobre disponibilidad, plazos y condiciones.
-                </p>
-              </div>
-            </Reveal>
-            <Reveal variant="up" delay={140}>
-              <ContactForm />
-            </Reveal>
-          </div>
-        </section>
+        ))}
       </main>
 
-      {/* ── Footer ─────────────────────── */}
-      <footer className="site-footer">
-        <div className="footer-inner">
-          <div className="footer-top">
-            <img className="footer-brand" src="/marca/rhf-living.svg" alt="RHF Living" width="196" height="44" />
-            <div className="footer-links">
-              <a href="#inicio">Inicio</a>
-              <a href="#cartera">Nuestra cartera</a>
-              <a href="#zonanorte">Zona Norte</a>
-              <a href="#asesor">Quién te asesora</a>
-              <a href="#contacto">Contacto</a>
-            </div>
-          </div>
-          <div className="footer-legal">
-            <p>
-              <strong>Rafael Hernández Franco</strong> — Asesor inmobiliario independiente.
-              La fotografía de portada es propia. Las imágenes de los proyectos son renders
-              y material del promotor. Los precios,
-              áreas y condiciones aquí publicados corresponden a la fecha
-              indicada en cada proyecto y pueden variar sin previo aviso.
-              Para información actualizada, contáctanos directamente.
-            </p>
-            <p className="footer-circular">
-              Los precios aquí publicados son de referencia, en pesos
-              colombianos, a la fecha de corte que acompaña a cada cifra, y
-              están sujetos a disponibilidad. Cada proyecto publica su área
-              con la etiqueta textual de la fuente del promotor y declara si
-              su equivalencia con el área privada construida del artículo 3 de
-              la Ley 675 de 2001 está pendiente de certificación. La
-              información precontractual del numeral 2.16.2 de la Circular 004
-              de la SIC —estrato, cuota de administración, fecha de entrega,
-              valor de desistimiento y plan de etapas— se entrega por escrito
-              antes de cualquier separación.
-            </p>
-            <p className="footer-legal-links">
-              <Link href="/privacidad">Política de tratamiento de datos</Link>
-              {" · "}
-              <Link href="/terminos">Términos de uso</Link>
-            </p>
-            <p className="footer-copy">© {new Date().getFullYear()} RHF Living. Todos los derechos reservados.</p>
-          </div>
-        </div>
-      </footer>
+      {/* Las entradas al hacer scroll de toda la página (titulares, eyebrows,
+          párrafos, botones e imágenes). No pinta nada. */}
+      <Animador />
 
-      {/* ── WhatsApp flotante ───────────────── */}
-      <a
-        className="whatsapp-float"
-        href={WA_LINK}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Chat por WhatsApp"
-      >
-        <WhatsAppIcon />
-      </a>
+      {/* ── Footer ─────────────────────── */}
+      <PieSitio />
+
+      {/* ── WhatsApp flotante, con la foto de Rafael ──
+          Aparece cuando la portada sale de la pantalla. */}
+      <WhatsAppFlotante trasDe="#inicio" />
     </>
+  );
+}
+
+function Contacto() {
+  return (
+    <section className="section section-contacto" id="contacto">
+      <div className="section-shell contacto-shell">
+        <Reveal className="contacto-texto" variant="up">
+          <p className="section-kicker">Contacto</p>
+          <h2>Hablemos de tu próximo proyecto</h2>
+          <p className="section-lede">
+            Te asesoramos sin compromiso. Cuéntanos qué buscas y te guiamos al proyecto que mejor se ajuste a tus
+            planes.
+          </p>
+          <div className="contacto-canales">
+            <a className="btn-whatsapp" href={WA_LINK} target="_blank" rel="noopener noreferrer">
+              <WhatsAppIcon /> Escríbenos por WhatsApp
+            </a>
+            <p className="contacto-chat-hint">
+              ¿Prefieres chatear directo en la página? Usa el ícono de chat abajo a la derecha — nuestro agente te
+              responde al instante sobre disponibilidad, plazos y condiciones.
+            </p>
+          </div>
+        </Reveal>
+        <Reveal variant="up" delay={140}>
+          <ContactForm />
+        </Reveal>
+      </div>
+    </section>
   );
 }
 

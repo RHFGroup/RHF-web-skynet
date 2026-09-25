@@ -1,0 +1,95 @@
+/* ─────────────────────────────────────────────────────────────
+   Botón flotante de WhatsApp con la foto de Rafael (WhatsAppFlotante.tsx)
+
+   Misma posición que el botón verde de antes: encima del botón del chat del
+   agente, sin chocar con él.
+   ───────────────────────────────────────────────────────────── */
+
+.wa-flotante {
+  position: fixed;
+  right: 26px;
+  bottom: 112px;
+  z-index: 100;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  opacity: 0;
+  transform: translateY(18px) scale(0.8);
+  pointer-events: none;
+  transition:
+    opacity 0.5s ease,
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.wa-flotante.visible { opacity: 1; transform: none; pointer-events: auto; }
+.wa-flotante img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border: 3px solid var(--white);
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 12px 30px rgb(22 30 43 / 0.38);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.wa-flotante:hover img { transform: scale(1.06); }
+/* Un anillo verde que late despacio: dice «estoy disponible». */
+.wa-flotante::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border: 2px solid var(--green-wa);
+  border-radius: 50%;
+  opacity: 0;
+  animation: wa-pulso 2.8s ease-out infinite;
+}
+@keyframes wa-pulso {
+  0% { opacity: 0.75; transform: scale(0.92); }
+  80%, 100% { opacity: 0; transform: scale(1.28); }
+}
+.wa-flotante-insignia {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--white);
+  border-radius: 50%;
+  background: var(--green-wa);
+  color: var(--white);
+}
+.wa-flotante-globo {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 12px);
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: var(--marino);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px -10px rgb(22 30 43 / 0.6);
+  opacity: 0;
+  transform: translate(8px, -50%);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.wa-flotante:hover .wa-flotante-globo,
+.wa-flotante:focus-visible .wa-flotante-globo { opacity: 1; transform: translate(0, -50%); }
+.wa-flotante:focus-visible { outline: 2px solid var(--camel); outline-offset: 4px; }
+
+@media (max-width: 960px) {
+  .wa-flotante.solo-escritorio { display: none; }
+}
+@media (max-width: 560px) {
+  .wa-flotante { right: 20px; bottom: 100px; width: 54px; height: 54px; }
+  .wa-flotante-globo { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wa-flotante, .wa-flotante img { transition: none; }
+  .wa-flotante::before { animation: none; }
+}

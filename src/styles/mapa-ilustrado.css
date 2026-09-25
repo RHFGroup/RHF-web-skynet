@@ -1,0 +1,389 @@
+/* ─────────────────────────────────────────────────────────────
+   Mapa ilustrado de la Zona Norte (MapaIlustrado.tsx)
+
+   Estilo de mapa turístico: mar turquesa con olas lentas, arena clara,
+   manglar en verde, íconos de trazo cálido. Los tamaños que deben medir lo
+   mismo en pantalla a cualquier zoom los pone el componente (atributos
+   multiplicados por `u`); aquí van colores, letras dentro de los grupos ya
+   escalados y el movimiento. Un atributo de presentación pierde contra
+   cualquier regla CSS: por eso aquí no se toca `font-size` ni `stroke-width`
+   de lo que el componente ya dimensiona.
+   ───────────────────────────────────────────────────────────── */
+
+.mi { position: relative; }
+
+/* ── Pestañas ─────────────────────────────────── */
+.mi-pestanas {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 4px;
+  border-radius: 9999px;
+  background: #efe7d6;
+}
+.mi-pestanas button {
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--marino-light);
+  font: 600 12.5px/1.2 var(--font-sans), "Montserrat", sans-serif;
+  cursor: pointer;
+  transition: background 0.5s ease, color 0.5s ease;
+}
+.mi-pestanas button[aria-selected="true"] { background: var(--marino); color: var(--marfil); }
+.mi-pestanas button:focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
+
+/* ── El lienzo ────────────────────────────────── */
+.mi-lienzo {
+  position: relative;
+  height: var(--mi-alto, 600px);
+  overflow: hidden;
+  border-radius: 22px;
+  background: #7fc6c3;
+  box-shadow: 0 20px 60px rgb(31 42 61 / 0.14);
+}
+.mi-lienzo > svg { display: block; width: 100%; height: 100%; }
+.mi-compacto .mi-lienzo { height: auto; aspect-ratio: 4 / 5; }
+
+/* Mar y olas */
+.mi-olas path {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.6);
+  stroke-linecap: round;
+  animation: mi-ola 7s ease-in-out infinite;
+}
+@keyframes mi-ola {
+  0%, 100% { transform: translateX(0); opacity: 0.3; }
+  50% { transform: translateX(5px); opacity: 0.85; }
+}
+
+/* Tierra, playa, agua */
+.mi-tierra { stroke: none; }
+.mi-playa { fill: none; stroke: #f6e2b0; stroke-linejoin: round; stroke-linecap: round; }
+.mi-espuma { fill: none; stroke: rgb(255 255 255 / 0.75); stroke-linejoin: round; }
+.mi-agua { fill: #86c9c4; stroke: none; }
+.mi-tierra-isla { stroke: #e0cfaa; }
+.mi-cienaga { fill: #92cdbf; stroke: none; }
+.mi-manglar-textura { opacity: 0.75; }
+.mi-manglar { fill: none; stroke: #5f9870; stroke-linecap: round; opacity: 0.85; }
+
+/* Vías */
+.mi-via-borde { fill: none; stroke: #fffaf0; stroke-linecap: round; stroke-linejoin: round; }
+.mi-via { fill: none; stroke: #c89f63; stroke-linecap: round; stroke-linejoin: round; }
+.mi-viaducto { fill: none; stroke: #8a6a4b; stroke-linecap: butt; }
+
+/* ── Lo que viene: el malecón se dibuja por la costa ── */
+.mi-malecon-halo {
+  fill: none;
+  stroke: rgb(194 165 120 / 0.38);
+  stroke-linecap: round;
+  transition: opacity 0.6s ease 0.6s;
+}
+.mi-malecon {
+  fill: none;
+  stroke: #a9773c;
+  stroke-linecap: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1.8s cubic-bezier(0.45, 0, 0.2, 1) 0.15s;
+}
+.mi-malecon-toque { fill: none; stroke: transparent; pointer-events: stroke; cursor: pointer; }
+.mi-malecon-etiqueta { transition: opacity 0.6s ease 1.2s; }
+.mi-etiqueta-titulo,
+.mi-etiqueta-fecha {
+  paint-order: stroke;
+  stroke: #fbf7ee;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  font-family: var(--font-sans), "Montserrat", sans-serif;
+}
+.mi-etiqueta-titulo { fill: var(--cuero); font-size: 11px; font-weight: 700; }
+.mi-etiqueta-fecha { fill: var(--cuero); font-size: 10px; font-weight: 500; }
+.mi-trazado-oculto { pointer-events: none; }
+.mi-trazado-oculto .mi-malecon { stroke-dashoffset: 1; transition: stroke-dashoffset 0.4s ease; }
+.mi-trazado-oculto .mi-malecon-halo,
+.mi-trazado-oculto .mi-malecon-etiqueta { opacity: 0; transition: opacity 0.3s ease; }
+
+/* ── Velero y canoa ───────────────────────────── */
+.mi-vela { fill: #fffdf7; stroke: #d9cdb4; stroke-width: 1; }
+.mi-vela-2 { fill: #f1e4cb; }
+.mi-casco { fill: var(--cuero); }
+.mi-remo { fill: none; stroke: var(--cuero); stroke-width: 1.6; stroke-linecap: round; }
+.mi-velero {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: mi-velero 9s ease-in-out infinite;
+}
+@keyframes mi-velero {
+  0%, 100% { transform: translate(0, 0) rotate(-2deg); }
+  50% { transform: translate(8px, -2px) rotate(2deg); }
+}
+.mi-canoa {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: mi-canoa 6s ease-in-out infinite;
+}
+@keyframes mi-canoa {
+  0%, 100% { transform: translate(0, 0) rotate(-3deg); }
+  50% { transform: translate(-4px, 1px) rotate(3deg); }
+}
+
+/* ── Rótulos ──────────────────────────────────── */
+.mi-rotulos text { pointer-events: none; }
+.mi-rotulo-mar {
+  fill: rgb(255 255 255 / 0.85);
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-anchor: middle;
+}
+.mi-rotulo-agua {
+  paint-order: stroke;
+  stroke: rgb(251 247 238 / 0.75);
+  fill: #2c6c67;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  font-weight: 600;
+  text-anchor: middle;
+}
+.mi-rotulo-lugar { transition: opacity 0.2s linear; }
+.mi-rotulo-lugar.mi-cede { transition: opacity 0.4s ease; }
+.mi-rotulo-lugar circle { fill: var(--cuero); }
+.mi-rotulo-lugar text {
+  paint-order: stroke;
+  stroke: #fbf7ee;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  font-family: var(--font-sans), "Montserrat", sans-serif;
+  font-size: 10.5px;
+}
+.mi-rotulo-barrio text {
+  fill: var(--cuero);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.mi-rotulo-pueblo text { fill: var(--marino-light); font-style: italic; font-weight: 600; }
+.mi-rotulo-via {
+  fill: #8a6a4b;
+  font-family: var(--font-sans), "Montserrat", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-anchor: middle;
+}
+.mi-rotulo-viaducto {
+  paint-order: stroke;
+  stroke: rgb(251 247 238 / 0.9);
+  stroke-linejoin: round;
+  fill: #2c6c67;
+  font-family: var(--font-sans), "Montserrat", sans-serif;
+  font-style: italic;
+  font-weight: 600;
+  text-anchor: middle;
+  transition: opacity 0.4s ease;
+}
+.mi-cede { opacity: 0; }
+
+/* ── Puntos: entran escalonados, al aparecer el mapa y al cambiar de capa ── */
+.mi-punto { cursor: pointer; outline: none; }
+.mi-puntos:not(.mi-capa-oculta) .mi-punto-cuerpo {
+  animation: mi-entra 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 110ms + 120ms);
+}
+@keyframes mi-entra {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.mi-capa-oculta { pointer-events: none; }
+.mi-capa-oculta .mi-punto-cuerpo { opacity: 0; transition: opacity 0.35s ease; }
+.mi-oculto .mi-punto-cuerpo { animation: none !important; opacity: 0; }
+
+.mi-punto-sombra { fill: rgb(22 30 43 / 0.2); }
+.mi-punto-fondo { fill: #fffaf0; stroke: var(--camel); stroke-width: 2; transition: fill 0.5s ease, stroke 0.5s ease; }
+.mi-punto-glifo { color: var(--cuero); transition: color 0.5s ease; }
+.mi-punto-obra .mi-punto-fondo { stroke: #a9773c; stroke-dasharray: 4 3; }
+.mi-punto:hover .mi-punto-fondo { stroke-width: 3; }
+.mi-punto:focus-visible .mi-punto-fondo { stroke: var(--marino); stroke-width: 3; }
+.mi-punto.activo .mi-punto-fondo { fill: var(--camel); stroke: #fff; stroke-dasharray: none; }
+.mi-punto.activo .mi-punto-glifo { color: #fff; }
+.mi-punto-nombre {
+  paint-order: stroke;
+  stroke: #fbf7ee;
+  stroke-width: 3.2px;
+  stroke-linejoin: round;
+  fill: var(--marino);
+  font-family: var(--font-sans), "Montserrat", sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+/* ── Proyectos (en las dos capas) ─────────────── */
+.mi-proyecto { cursor: pointer; outline: none; }
+.mi-proyecto-halo {
+  fill: rgb(194 165 120 / 0.38);
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: mi-pulso 2.8s ease-out infinite;
+}
+@keyframes mi-pulso {
+  from { transform: scale(0.55); opacity: 0.95; }
+  to { transform: scale(1.5); opacity: 0; }
+}
+.mi-proyecto-punto { fill: var(--camel); stroke: #fff; stroke-width: 3; }
+.mi-proyecto.activo .mi-proyecto-punto,
+.mi-proyecto:focus-visible .mi-proyecto-punto { fill: var(--marino); }
+.mi-proyecto-nombre {
+  paint-order: stroke;
+  stroke: #fbf7ee;
+  stroke-width: 3.2px;
+  stroke-linejoin: round;
+  fill: var(--marino);
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+/* Tiempos de trayecto (solo con tiempos reales en proyectos.ts) */
+.mi-trayectos line { stroke: var(--cuero); }
+.mi-trayectos text {
+  paint-order: stroke;
+  stroke: #fbf7ee;
+  fill: var(--cuero);
+  font-family: var(--font-sans), "Montserrat", sans-serif;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+/* ── Indicadores del borde y rosa de los vientos ── */
+.mi-direccion {
+  position: absolute;
+  z-index: 1;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: rgb(251 247 238 / 0.82);
+  color: var(--marino-light);
+  font: italic 600 10.5px/1.3 var(--font-sans), "Montserrat", sans-serif;
+  pointer-events: none;
+}
+.mi-direccion-norte { top: 14px; right: 58px; }
+.mi-direccion-sur { bottom: 14px; left: 14px; transition: opacity 0.4s ease; }
+.mi-rosa {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 36px;
+  padding: 4px 0 5px;
+  border-radius: 9999px;
+  background: rgb(251 247 238 / 0.85);
+  color: var(--marino);
+  font: 700 10px/1 var(--font-sans), "Montserrat", sans-serif;
+  pointer-events: none;
+}
+
+/* ── El panel: la lista de la capa o la tarjeta del punto elegido ── */
+.mi-panel {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 12px;
+  width: min(236px, 46%);
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid rgb(194 165 120 / 0.45);
+  border-radius: 16px;
+  background: rgb(251 247 238 / 0.94);
+  box-shadow: 0 12px 30px rgb(22 30 43 / 0.14);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.mi-compacto .mi-panel {
+  position: static;
+  width: auto;
+  max-height: none;
+  margin-top: 12px;
+  background: #fffaf0;
+  box-shadow: none;
+}
+.mi-panel-titulo {
+  margin: 0 0 8px;
+  color: var(--cuero);
+  font: 700 10.5px/1.3 var(--font-sans), "Montserrat", sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.mi-lista { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.mi-compacto .mi-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+.mi-lista button {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--marino);
+  font: 600 12.5px/1.25 var(--font-sans), "Montserrat", sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.5s ease;
+}
+.mi-lista button:hover { background: rgb(194 165 120 / 0.18); }
+.mi-lista button:focus-visible { outline: 2px solid var(--camel); outline-offset: 1px; }
+.mi-lista-icono { flex-shrink: 0; color: var(--cuero); }
+.mi-lista-texto { display: flex; flex: 1; flex-wrap: wrap; align-items: center; gap: 3px 8px; min-width: 0; }
+.mi-lista-nombre { min-width: 0; }
+
+.mi-estado {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  font: 700 9.5px/1.3 var(--font-sans), "Montserrat", sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.mi-estado-entregado { background: var(--marino); color: var(--marfil); }
+.mi-estado-obra { border: 1px dashed #a9773c; color: var(--cuero); }
+.mi-estado-estudio { border: 1px dashed #8a8a8a; color: #5a5a5a; }
+
+.mi-tarjeta { display: flex; flex-direction: column; gap: 6px; color: var(--marino); font-size: 12.5px; }
+.mi-tarjeta .mi-estado { align-self: flex-start; }
+.mi-tarjeta strong { font-family: var(--font-serif), "Cormorant Garamond", serif; font-size: 21px; line-height: 1.1; }
+.mi-tarjeta p { margin: 0; color: var(--marino-light); line-height: 1.45; }
+.mi-tarjeta small { color: var(--text-muted); font-size: 10.5px; line-height: 1.45; }
+.mi-tarjeta-nota { font-style: italic; }
+.mi-tarjeta-volver {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cuero);
+  font: 600 11.5px/1.3 var(--font-sans), "Montserrat", sans-serif;
+  cursor: pointer;
+}
+.mi-tarjeta-volver:focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
+.mi-tarjeta-proyecto img { width: 100%; height: 110px; border-radius: 10px; object-fit: cover; }
+.mi-tarjeta-precio { color: var(--cuero) !important; font-weight: 700; }
+.mi-tarjeta a { color: var(--marino); font-weight: 700; }
+
+.mi-leyenda { margin: 8px 2px 0; color: var(--text-muted); font-size: 10.5px; line-height: 1.45; }
+
+/* ── Menos movimiento: nada se mueve, todo se ve ── */
+@media (prefers-reduced-motion: reduce) {
+  .mi-olas path, .mi-velero, .mi-canoa, .mi-proyecto-halo { animation: none; }
+  .mi-puntos .mi-punto-cuerpo { animation: none !important; opacity: 1; }
+  .mi-capa-oculta .mi-punto-cuerpo { opacity: 0; transition: none; }
+  .mi-malecon, .mi-malecon-halo, .mi-malecon-etiqueta, .mi-rotulo-lugar, .mi-rotulo-viaducto,
+  .mi-direccion-sur, .mi-pestanas button { transition: none; }
+}

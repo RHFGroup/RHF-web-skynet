@@ -53,6 +53,30 @@ export type Area = {
   certificadaComoPrivadaConstruida: boolean;
 };
 
+/**
+ * Una imagen publicada, siempre con su crédito y su tamaño real.
+ *
+ * El crédito no es decorativo: dice si la imagen es material del promotor o
+ * foto propia. Una foto afirma igual que una frase.
+ */
+export type Foto = {
+  src: string;
+  alt: string;
+  /** «Material del promotor», «Foto propia»… */
+  credito: string;
+  ancho: number;
+  alto: number;
+  /**
+   * La misma imagen en 1200 px, cuando la original es más grande. La usan la
+   * tarjeta de la cartera y las pantallas angostas: no descargan 2400 px para
+   * mostrar 400.
+   */
+  src1200?: string;
+};
+
+/** Un plano tal como lo publica la fuente, con la página de donde sale. */
+export type Plano = Foto & { fuente: string };
+
 export type Tipologia = {
   titulo: string;
   detalle: string;
@@ -63,6 +87,17 @@ export type Tipologia = {
     hasta: number;
     unidades: number;
   } | null;
+  /**
+   * Habitaciones y baños tal como los dice `detalle`, con la misma fuente.
+   * Texto y no número a propósito: la fuente a veces dice «2 o 3».
+   * Si la fuente no lo dice, el campo no existe y la pieza no lo muestra.
+   */
+  alcobas?: string;
+  banos?: string;
+  /** Balcón, terraza, patio o lote, como lo dice `detalle`. */
+  exterior?: string;
+  /** Los planos que publica la fuente para esta tipología. */
+  planos?: Plano[];
 };
 
 export type Precontractual = {
@@ -102,6 +137,82 @@ export type Proyecto = {
   precontractual: Precontractual;
   /** Unidades que la fuente registra pero que NO se ofrecen, y por qué. */
   reservas: string[];
+
+  // ── Campos opcionales de la página propia y la tarjeta ──────────────────
+  // Regla de todos: si el campo no existe, el bloque que lo usa NO aparece.
+  // Nunca se reemplaza por un marcador ni por texto de relleno.
+
+  /** Qué se vende, en plural: arma el título para buscadores y el filtro. */
+  tipoInmueble?: "apartamentos" | "casas" | "apartaestudios";
+  /**
+   * Dónde queda el proyecto DENTRO de la foto del hero de la home
+   * (public/zona-norte/corredor-2400.jpg), en porcentaje del ancho y el alto
+   * de la foto: `{ top: "42%", left: "63%", fuente: "…" }`. Solo con la
+   * posición verificada sobre esa toma. Los proyectos que no están en la
+   * foto —Blue Garden, Acacias— nunca llevan pin: el hero los ignora.
+   */
+  heroPin?: { top: string; left: string; fuente: string };
+
+  /**
+   * Cómo se presenta en la cartera: una línea de producto y una frase corta.
+   * Antes vivía en un arreglo aparte dentro de `src/app/page.tsx`.
+   */
+  presentacion?: {
+    linea: string;
+    frase: string;
+    /** La etiqueta «Nuevo» de la tarjeta. */
+    nuevo?: boolean;
+  };
+  /** La frase del reverso de la tarjeta. Si falta, se usa `resumen`. */
+  fraseDestacada?: string;
+  /**
+   * Las imágenes del proyecto: la de la tarjeta, la galería de la portada (la
+   * primera es la que abre) y la imagen para compartir en WhatsApp y redes.
+   */
+  fotos?: {
+    tarjeta: Foto;
+    galeria: Foto[];
+    compartir: string;
+    /**
+     * La imagen del proyecto en la portada de la home, a pantalla completa,
+     * con su versión de 1200 px. `enfoque` es el `object-position` del recorte
+     * («50% 60%»): qué parte de la imagen se conserva cuando la pantalla la
+     * corta. `mini` es la miniatura de 168 × 120 px para elegirla en la
+     * portada. Si falta el escaparate, la portada usa la primera de la galería.
+     */
+    escaparate?: Foto & { enfoque?: string; mini?: string };
+  };
+  /**
+   * ¿El estudio jurídico de RHF Living ya revisó este proyecto? Lo confirma
+   * Rafael, proyecto por proyecto. Mientras no lo haga, no existe o es false,
+   * y el sello «Revisado por nuestro estudio jurídico» no aparece.
+   */
+  revisionJuridica?: boolean;
+  /**
+   * Coordenada del PROYECTO, solo si se verificó en fuente. Nunca una posición
+   * aproximada: un pin mal puesto es un dato falso con mejor diseño.
+   */
+  coordenada?: { lat: number; lon: number; fuente: string };
+  /** Tiempos reales de trayecto, medidos y entregados por Rafael. */
+  tiempos?: {
+    destino: "playa" | "aeropuerto" | "hospital" | "centro";
+    minutos: number;
+    fuente: string;
+  }[];
+  /**
+   * «Lo que debes saber antes de separar», en primera persona. Solo con el
+   * texto que Rafael entregue, con su fecha.
+   */
+  opinionRafael?: {
+    paraQuien: string;
+    fuertes: string[];
+    tenerEnCuenta: string[];
+    fecha: string;
+  };
+  /** Preguntas frecuentes con respuestas validadas por Rafael. */
+  faq?: { pregunta: string; respuesta: string }[];
+  /** La página de avance de obra de la constructora, si existe. */
+  avanceObra?: { url: string; fuente: string };
 };
 
 const SIN_PRECONTRACTUAL: Precontractual = {
@@ -120,6 +231,8 @@ const LISTA_DORAL =
   "«Disponibilidad y precios Doral Cartagena.xlsx», archivo original del constructor, modificado el 25 de junio de 2026";
 const HOJA_COUNTRY_SEP =
   "Hoja «Disponibilidad y precios Doral Cartagena — Doral Country» del constructor, exportada el 23 de septiembre de 2026, con su tabla de precios por piso «TORRE 1-5»";
+/** Crédito de renders y fotos que entrega el promotor o la constructora. */
+const DEL_PROMOTOR = "Material del promotor";
 const DIRECCION_DORAL = "Vía al mar 90A, Cartagena de Indias";
 const FUENTE_DIRECCION_DORAL =
   "Brochure oficial Doral Cartagena y doralcartagena.com/country, verificados el 7-sep-2026";
@@ -147,6 +260,19 @@ export const PROYECTOS: Proyecto[] = [
           certificadaComoPrivadaConstruida: false,
         },
         precio: { desde: 403_000_000, hasta: 486_000_000, unidades: 83 },
+        alcobas: "3",
+        banos: "2",
+        exterior: "Lote de 250 m²; terraza en la opción de ampliación a segundo piso",
+        planos: [
+          {
+            src: "/proyectos/blue-garden/brochure/p12.jpg",
+            alt: "Plano de la casa de una planta de Blue Garden, con lote de 250 m² y área construida de 75 m²",
+            credito: DEL_PROMOTOR,
+            ancho: 1200,
+            alto: 960,
+            fuente: "Brochure oficial Blue Garden 2026, pág. 12",
+          },
+        ],
       },
     ],
     amenidades: [
@@ -185,6 +311,43 @@ export const PROYECTOS: Proyecto[] = [
       acabados: "Ver brochure oficial, págs. 13 a 24",
     },
     reservas: [],
+    tipoInmueble: "casas",
+    // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
+    revisionJuridica: false,
+    presentacion: {
+      linea: "Casas ampliables · 3 habitaciones · jardín",
+      frase: "Casa familiar con lote generoso y posibilidad de ampliación.",
+    },
+    fotos: {
+      tarjeta: {
+        src: "/proyectos/blue-garden/home.jpg",
+        alt: "Blue Garden — terraza de una casa del condominio",
+        credito: DEL_PROMOTOR,
+        ancho: 1200,
+        alto: 1200,
+      },
+      galeria: [
+        { src: "/proyectos/blue-garden/escaparate-2400.jpg", src1200: "/proyectos/blue-garden/escaparate-1200.jpg", alt: "Blue Garden — casas del condominio con su jardín y parqueadero", credito: DEL_PROMOTOR + " · brochure oficial, pág. 20", ancho: 2400, alto: 1350 },
+        { src: "/proyectos/blue-garden/home.jpg", alt: "Blue Garden — terraza de una casa del condominio", credito: DEL_PROMOTOR, ancho: 1200, alto: 1200 },
+        { src: "/proyectos/blue-garden/brochure/p05.jpg", alt: "Blue Garden — vista aérea del club campestre", credito: DEL_PROMOTOR + " · brochure oficial, pág. 5", ancho: 1200, alto: 960 },
+        { src: "/proyectos/blue-garden/brochure/p06.jpg", alt: "Blue Garden — lago del club campestre", credito: DEL_PROMOTOR + " · brochure oficial, pág. 6", ancho: 1200, alto: 960 },
+        { src: "/proyectos/blue-garden/brochure/p09.jpg", alt: "Blue Garden — piscina del club", credito: DEL_PROMOTOR + " · brochure oficial, pág. 9", ancho: 1200, alto: 960 },
+        { src: "/proyectos/blue-garden/brochure/p08.jpg", alt: "Blue Garden — parque infantil del club", credito: DEL_PROMOTOR + " · brochure oficial, pág. 8", ancho: 1200, alto: 960 },
+        { src: "/proyectos/blue-garden/brochure/p14.jpg", alt: "Blue Garden — sala de la casa modelo", credito: DEL_PROMOTOR + " · brochure oficial, pág. 14", ancho: 1200, alto: 960 },
+        { src: "/proyectos/blue-garden/brochure/p16.jpg", alt: "Blue Garden — cocina y comedor de la casa modelo", credito: DEL_PROMOTOR + " · brochure oficial, pág. 16", ancho: 1200, alto: 960 },
+      ],
+      compartir: "/proyectos/blue-garden/og.jpg",
+      escaparate: {
+        src: "/proyectos/blue-garden/escaparate-2400.jpg",
+        mini: "/proyectos/blue-garden/mini.jpg",
+        src1200: "/proyectos/blue-garden/escaparate-1200.jpg",
+        alt: "Blue Garden — casas del condominio con su jardín y parqueadero",
+        credito: DEL_PROMOTOR + " · brochure oficial, pág. 20",
+        ancho: 2400,
+        alto: 1350,
+        enfoque: "58% 60%",
+      },
+    },
   },
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -208,6 +371,18 @@ export const PROYECTOS: Proyecto[] = [
           certificadaComoPrivadaConstruida: false,
         },
         precio: { desde: 172_270_000, hasta: 186_180_000, unidades: 14 },
+        alcobas: "1",
+        banos: "1",
+        planos: [
+          {
+            src: "/proyectos/acacias-campestre/brochure/p13.jpg",
+            alt: "Plano del apartamento de 1 alcoba de Acacias Campestre",
+            credito: DEL_PROMOTOR,
+            ancho: 1200,
+            alto: 705,
+            fuente: "Brochure oficial Acacias 2026, pág. 13",
+          },
+        ],
       },
       {
         titulo: "2 y 3 alcobas",
@@ -220,6 +395,27 @@ export const PROYECTOS: Proyecto[] = [
           certificadaComoPrivadaConstruida: false,
         },
         precio: { desde: 229_000_000, hasta: 376_640_000, unidades: 97 },
+        alcobas: "2 o 3",
+        banos: "2",
+        exterior: "Balcón · área externa de 4,7 m²",
+        planos: [
+          {
+            src: "/proyectos/acacias-campestre/brochure/p14.jpg",
+            alt: "Plano del apartamento de 2 alcobas de Acacias Campestre",
+            credito: DEL_PROMOTOR,
+            ancho: 1200,
+            alto: 705,
+            fuente: "Brochure oficial Acacias 2026, pág. 14",
+          },
+          {
+            src: "/proyectos/acacias-campestre/brochure/p15.jpg",
+            alt: "Plano del apartamento de 3 alcobas de Acacias Campestre",
+            credito: DEL_PROMOTOR,
+            ancho: 1200,
+            alto: 705,
+            fuente: "Brochure oficial Acacias 2026, pág. 15",
+          },
+        ],
       },
     ],
     amenidades: [
@@ -260,8 +456,11 @@ export const PROYECTOS: Proyecto[] = [
         ],
       },
     ],
-    brochurePaginas: 30,
-    brochurePdf: null,
+    // El PDF del sitio es el brochure oficial sin la página de precios (la 29
+    // del original, con cifras que ya no corresponden a la lista): por eso
+    // tiene 29 páginas y no 30. Autorizado por Rafael el 23-sep-2026 (#21).
+    brochurePaginas: 29,
+    brochurePdf: "/proyectos/acacias-campestre/brochure.pdf",
     precio: {
       desde: 172_270_000,
       hasta: 376_640_000,
@@ -279,6 +478,44 @@ export const PROYECTOS: Proyecto[] = [
       "El listado registra un apartamento 503 de 35 m² a un precio muy por debajo del resto de su tipología. Es una duplicidad de numeración sin resolver: esa unidad no se cotiza hasta que el promotor la confirme.",
       "El brochure anuncia un precio de arranque inferior al mínimo disponible hoy. No se usa el brochure como fuente de precio.",
     ],
+    tipoInmueble: "apartamentos",
+    // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
+    revisionJuridica: false,
+    presentacion: {
+      linea: "22 torres · 904 apartamentos · 5 etapas",
+      // Hasta el 24-sep-2026 decía «Entrada económica con valorización a
+      // mediano plazo». La valorización es una promesa sin fuente; lo que sí
+      // dice el promotor es que lo plantea como proyecto de inversión.
+      frase: "Apartamentos de 1, 2 y 3 alcobas. El promotor lo plantea como proyecto de inversión.",
+    },
+    fotos: {
+      tarjeta: {
+        src: "/proyectos/acacias-campestre/home.jpg",
+        alt: "Acacias Campestre — piscina y solárium frente a las torres",
+        credito: DEL_PROMOTOR,
+        ancho: 1600,
+        alto: 799,
+      },
+      galeria: [
+        { src: "/proyectos/acacias-campestre/home.jpg", src1200: "/proyectos/acacias-campestre/escaparate-1200.jpg", alt: "Acacias Campestre — piscina y solárium frente a las torres", credito: DEL_PROMOTOR + " · brochure oficial, pág. 10", ancho: 1600, alto: 799 },
+        { src: "/proyectos/acacias-campestre/galeria-1.jpg", alt: "Acacias Campestre — vista aérea de la piscina y las torres", credito: DEL_PROMOTOR + " · brochure oficial, pág. 9", ancho: 1600, alto: 799 },
+        { src: "/proyectos/acacias-campestre/galeria-2.jpg", alt: "Acacias Campestre — cancha múltiple y parque infantil", credito: DEL_PROMOTOR + " · brochure oficial, pág. 11", ancho: 1600, alto: 799 },
+        { src: "/proyectos/acacias-campestre/galeria-3.jpg", alt: "Acacias Campestre — parqueaderos junto a las torres", credito: DEL_PROMOTOR + " · brochure oficial, pág. 12", ancho: 1600, alto: 799 },
+        { src: "/proyectos/acacias-campestre/galeria-4.jpg", alt: "Acacias Campestre — sala, cocina y comedor del apartamento modelo de 70 m²", credito: DEL_PROMOTOR + " · brochure oficial, pág. 17", ancho: 1600, alto: 771 },
+        { src: "/proyectos/acacias-campestre/galeria-5.jpg", alt: "Acacias Campestre — habitación principal del apartamento modelo de 70 m²", credito: DEL_PROMOTOR + " · brochure oficial, pág. 20", ancho: 1600, alto: 771 },
+      ],
+      compartir: "/proyectos/acacias-campestre/og.jpg",
+      escaparate: {
+        src: "/proyectos/acacias-campestre/home.jpg",
+        mini: "/proyectos/acacias-campestre/mini.jpg",
+        src1200: "/proyectos/acacias-campestre/escaparate-1200.jpg",
+        alt: "Acacias Campestre — piscina y solárium frente a las torres",
+        credito: DEL_PROMOTOR + " · brochure oficial, pág. 10",
+        ancho: 1600,
+        alto: 799,
+        enfoque: "55% 50%",
+      },
+    },
   },
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -303,6 +540,9 @@ export const PROYECTOS: Proyecto[] = [
           certificadaComoPrivadaConstruida: false,
         },
         precio: { desde: 525_000_000, hasta: 525_000_000, unidades: 25 },
+        alcobas: "2",
+        banos: "2",
+        exterior: "Patio interno · lote de 150 m²",
       },
       {
         titulo: "Casa de un piso — lote de 160 m²",
@@ -315,6 +555,10 @@ export const PROYECTOS: Proyecto[] = [
           certificadaComoPrivadaConstruida: false,
         },
         precio: { desde: 605_000_000, hasta: 605_000_000, unidades: 2 },
+        // «Misma distribución» que la casa de 150 m²: 2 y 2, con patio.
+        alcobas: "2",
+        banos: "2",
+        exterior: "Patio interno · lote de 160 m²",
       },
       {
         titulo: "Casa de dos pisos — lote de 128 m²",
@@ -328,6 +572,8 @@ export const PROYECTOS: Proyecto[] = [
           certificadaComoPrivadaConstruida: false,
         },
         precio: { desde: 630_000_000, hasta: 700_000_000, unidades: 21 },
+        // La fuente no dice cuántas habitaciones ni baños: no se publican.
+        exterior: "Lote de 128 m²",
       },
       {
         titulo: "Casa de dos pisos — lote de 288 m²",
@@ -340,6 +586,7 @@ export const PROYECTOS: Proyecto[] = [
           certificadaComoPrivadaConstruida: false,
         },
         precio: { desde: 835_000_000, hasta: 835_000_000, unidades: 1 },
+        exterior: "Lote esquinero de 288 m²",
       },
     ],
     amenidades: [
@@ -347,6 +594,11 @@ export const PROYECTOS: Proyecto[] = [
       "Parqueadero privado por casa",
       "Estructura preparada para ampliación",
       "Zonas verdes",
+      // Zonas comunes del brochure oficial «Doral West — Casas y Lotes» (2026).
+      "Cancha de pádel",
+      "Cancha múltiple y de tenis",
+      "Piscina de adultos y niños",
+      "Gimnasio",
     ],
     datos: [
       { label: "Casas disponibles", valor: "49", fuente: LISTA_DORAL },
@@ -382,6 +634,46 @@ export const PROYECTOS: Proyecto[] = [
       planEtapas: "Etapas 1 y 2; zonas comunes sin detallar",
     },
     reservas: [],
+    tipoInmueble: "casas",
+    // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
+    revisionJuridica: false,
+    presentacion: {
+      // «Bifamiliares»: pedido de Rafael, asesor del proyecto (25-sep-2026). El
+      // brochure del constructor llama «casas individuales» a las de un piso y
+      // «casas adosadas» a las de dos; su render de fachada muestra las de un
+      // piso en pareja. Nota en el vault: publico/doral-west.
+      linea: "Casas bifamiliares de 1 y 2 pisos · lote propio",
+      frase: "Estructura preparada para crecer hasta un tercer nivel. Entregas documentadas por manzana.",
+    },
+    fotos: {
+      tarjeta: {
+        src: "/proyectos/doral-west/home.jpg",
+        alt: "Doral West — vista aérea del condominio de casas",
+        credito: DEL_PROMOTOR,
+        ancho: 1400,
+        alto: 888,
+      },
+      galeria: [
+        { src: "/proyectos/doral-west/hero.jpg", src1200: "/proyectos/doral-west/escaparate-1200.jpg", alt: "Doral West — vista aérea del condominio de casas junto a la Vía al Mar", credito: DEL_PROMOTOR, ancho: 1920, alto: 1218 },
+        { src: "/proyectos/doral-west/fotos/01.jpg", alt: "Doral West — vista aérea del condominio y la zona de piscina", credito: DEL_PROMOTOR, ancho: 1600, alto: 1015 },
+        { src: "/proyectos/doral-west/fotos/02.jpg", alt: "Doral West — canchas y casas del condominio", credito: DEL_PROMOTOR, ancho: 1600, alto: 1015 },
+        { src: "/proyectos/doral-west/galeria-3.jpg", alt: "Doral West — senderos y zonas verdes del condominio", credito: DEL_PROMOTOR, ancho: 1100, alto: 698 },
+        { src: "/proyectos/doral-west/fotos/03.jpg", alt: "Doral West — fachada de casa de un piso con parqueadero privado", credito: DEL_PROMOTOR, ancho: 1600, alto: 739 },
+        { src: "/proyectos/doral-west/fotos/04.jpg", alt: "Doral West — cocina de la casa modelo", credito: DEL_PROMOTOR, ancho: 960, alto: 1280 },
+        { src: "/proyectos/doral-west/fotos/05.jpg", alt: "Doral West — habitación de la casa modelo", credito: DEL_PROMOTOR, ancho: 960, alto: 1280 },
+      ],
+      compartir: "/proyectos/doral-west/og.jpg",
+      escaparate: {
+        src: "/proyectos/doral-west/hero.jpg",
+        mini: "/proyectos/doral-west/mini.jpg",
+        src1200: "/proyectos/doral-west/escaparate-1200.jpg",
+        alt: "Doral West — vista aérea del condominio de casas junto a la Vía al Mar",
+        credito: DEL_PROMOTOR,
+        ancho: 1920,
+        alto: 1218,
+        enfoque: "55% 45%",
+      },
+    },
   },
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -405,6 +697,19 @@ export const PROYECTOS: Proyecto[] = [
           certificadaComoPrivadaConstruida: false,
         },
         precio: { desde: 311_500_000, hasta: 341_500_000, unidades: 37 },
+        alcobas: "2",
+        banos: "2",
+        exterior: "Terraza en el piso 1 · balcón en los pisos 2 a 5",
+        planos: [
+          {
+            src: "/proyectos/doral-country/brochure/p09.jpg",
+            alt: "Plano del apartamento de 2 habitaciones de Doral Country; el brochure lo rotula 40 m²",
+            credito: DEL_PROMOTOR,
+            ancho: 1200,
+            alto: 900,
+            fuente: "Brochure del constructor, pág. 9 (rotula 40 m²)",
+          },
+        ],
       },
       {
         titulo: "Apartamento de 3 alcobas",
@@ -417,15 +722,32 @@ export const PROYECTOS: Proyecto[] = [
           certificadaComoPrivadaConstruida: false,
         },
         precio: { desde: 464_000_000, hasta: 494_000_000, unidades: 23 },
+        alcobas: "3",
+        banos: "2",
+        exterior: "Terraza en el piso 1 · balcón en los pisos 2 a 5",
+        planos: [
+          {
+            src: "/proyectos/doral-country/brochure/p10.jpg",
+            alt: "Plano del apartamento de 3 habitaciones de Doral Country; el brochure lo rotula 62 m²",
+            credito: DEL_PROMOTOR,
+            ancho: 1200,
+            alto: 900,
+            fuente: "Brochure del constructor, pág. 10 (rotula 62 m²)",
+          },
+        ],
       },
     ],
+    // Las siete del brochure del constructor, pág. 13. Hasta el 24-sep-2026
+    // esta lista traía «Gimnasio», que no aparece en ninguna fuente (ya lo
+    // advertía la landing anterior), y le faltaban cancha, parque y salón.
     amenidades: [
-      "Conjunto residencial cerrado",
-      "Seis torres",
-      "Ascensor por torre",
-      "Piscina",
-      "Gimnasio",
+      "Ascensor",
       "Parqueadero comunal",
+      "Piscina",
+      "Cancha múltiple",
+      "Parque infantil",
+      "Salón social",
+      "Condominio cerrado",
     ],
     datos: [
       { label: "Torres", valor: "6", fuente: "doralcartagena.com/country" },
@@ -462,6 +784,41 @@ export const PROYECTOS: Proyecto[] = [
       planEtapas: "Seis torres; las torres 1 a 5 en venta, sin fechas de entrega publicadas",
     },
     reservas: [],
+    tipoInmueble: "apartamentos",
+    // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
+    revisionJuridica: false,
+    presentacion: {
+      linea: "Apartamentos en torres · 6 torres · ascensor",
+      frase: "El lanzamiento más reciente del desarrollo Doral, sobre la Vía al Mar.",
+      nuevo: true,
+    },
+    fotos: {
+      tarjeta: {
+        src: "/proyectos/doral-country/home.jpg",
+        alt: "Doral Country — torres y zona de piscina del condominio",
+        credito: DEL_PROMOTOR,
+        ancho: 1600,
+        alto: 738,
+      },
+      galeria: [
+        { src: "/proyectos/doral-country/hero.jpg", src1200: "/proyectos/doral-country/escaparate-1200.jpg", alt: "Doral Country — torres, piscina y parqueadero del condominio", credito: DEL_PROMOTOR, ancho: 1920, alto: 886 },
+        { src: "/proyectos/doral-country/galeria-1.jpg", alt: "Doral Country — vista aérea del condominio con la piscina y el parque infantil", credito: DEL_PROMOTOR, ancho: 1100, alto: 506 },
+        { src: "/proyectos/doral-country/galeria-2.jpg", alt: "Doral Country — parque infantil y zonas verdes entre las torres", credito: DEL_PROMOTOR, ancho: 1100, alto: 507 },
+        { src: "/proyectos/doral-country/galeria-3.jpg", alt: "Doral Country — fachada de las torres con la piscina y la zona social", credito: DEL_PROMOTOR, ancho: 1100, alto: 506 },
+        { src: "/proyectos/doral-country/galeria-4.jpg", alt: "Doral Country — fachada de las torres desde el acceso al condominio", credito: DEL_PROMOTOR, ancho: 1100, alto: 506 },
+      ],
+      compartir: "/proyectos/doral-country/og.jpg",
+      escaparate: {
+        src: "/proyectos/doral-country/hero.jpg",
+        mini: "/proyectos/doral-country/mini.jpg",
+        src1200: "/proyectos/doral-country/escaparate-1200.jpg",
+        alt: "Doral Country — torres, piscina y parqueadero del condominio",
+        credito: DEL_PROMOTOR,
+        ancho: 1920,
+        alto: 886,
+        enfoque: "50% 55%",
+      },
+    },
   },
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -472,7 +829,7 @@ export const PROYECTOS: Proyecto[] = [
     promotor: "Doral Suites S.A.S. · NIT 901.602.295-8",
     estado: "entrega inmediata",
     resumen:
-      "Apartaestudios aprobados para renta corta dentro del desarrollo Doral. Quedan siete unidades de sesenta y seis: es inventario final.",
+      "Apartaestudios aprobados para renta corta dentro del desarrollo Doral. Al corte del 25 de junio de 2026 quedaban siete unidades de sesenta y seis: es inventario final.",
     tipologias: [
       {
         titulo: "Apartaestudio — piso 3",
@@ -486,6 +843,9 @@ export const PROYECTOS: Proyecto[] = [
           certificadaComoPrivadaConstruida: false,
         },
         precio: { desde: 295_000_000, hasta: 327_000_000, unidades: 3 },
+        alcobas: "1",
+        banos: "1",
+        exterior: "Balcón de 6,92 m²",
       },
       {
         titulo: "Apartaestudio — piso 4",
@@ -499,6 +859,9 @@ export const PROYECTOS: Proyecto[] = [
           certificadaComoPrivadaConstruida: false,
         },
         precio: { desde: 395_000_000, hasta: 429_000_000, unidades: 4 },
+        alcobas: "1",
+        banos: "1",
+        exterior: "Terraza de 30,92 m²",
       },
     ],
     amenidades: [
@@ -531,6 +894,45 @@ export const PROYECTOS: Proyecto[] = [
       acabados: "Acabados premium, según doralcartagena.com/doral-suites",
     },
     reservas: ["No hay fotos ni video de la tipología del piso 4."],
+    tipoInmueble: "apartaestudios",
+    // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
+    revisionJuridica: false,
+    presentacion: {
+      linea: "Apartaestudios · aprobados para renta corta",
+      // Las cifras y la fecha salen de la misma hoja que `precio`: si cambia
+      // la hoja, se cambian aquí también. La escasez va siempre con su corte.
+      frase: "Inventario final: 7 de 66 unidades disponibles al corte del 25 de junio de 2026.",
+    },
+    fotos: {
+      tarjeta: {
+        src: "/proyectos/doral-suite/escaparate-1200.jpg",
+        alt: "Doral Suite — vista aérea del edificio entregado, con los condominios vecinos",
+        credito: DEL_PROMOTOR + " · doralcartagena.com",
+        ancho: 1200,
+        alto: 544,
+      },
+      galeria: [
+        { src: "/proyectos/doral-suite/escaparate-2400.jpg", src1200: "/proyectos/doral-suite/escaparate-1200.jpg", alt: "Doral Suite — vista aérea del edificio entregado, con los condominios vecinos", credito: DEL_PROMOTOR + " · doralcartagena.com", ancho: 2400, alto: 1088 },
+        { src: "/proyectos/doral-suite/piscina-2400.jpg", src1200: "/proyectos/doral-suite/piscina-1200.jpg", alt: "Doral Suite — vista aérea del edificio y su piscina junto a la Vía al Mar", credito: DEL_PROMOTOR + " · doralcartagena.com", ancho: 2400, alto: 847 },
+        { src: "/proyectos/doral-suite/home.jpg", alt: "Doral Suite — vista aérea del edificio sobre la Vía al Mar", credito: DEL_PROMOTOR + " · brochure Doral Cartagena, pág. 4", ancho: 912, alto: 518 },
+        { src: "/proyectos/doral-suite/fotos/01.jpg", alt: "Doral Suite — cocina de un apartaestudio", credito: DEL_PROMOTOR, ancho: 1200, alto: 1600 },
+        { src: "/proyectos/doral-suite/fotos/04.jpg", alt: "Doral Suite — espacio principal de un apartaestudio con ventana", credito: DEL_PROMOTOR, ancho: 1200, alto: 1600 },
+        { src: "/proyectos/doral-suite/fotos/03.jpg", alt: "Doral Suite — balcón de un apartaestudio con vista a la vía", credito: DEL_PROMOTOR, ancho: 1200, alto: 1600 },
+        { src: "/proyectos/doral-suite/fotos/05.jpg", alt: "Doral Suite — alcoba con clóset", credito: DEL_PROMOTOR, ancho: 1600, alto: 900 },
+        { src: "/proyectos/doral-suite/fotos/06.jpg", alt: "Doral Suite — baño", credito: DEL_PROMOTOR, ancho: 1600, alto: 900 },
+      ],
+      compartir: "/proyectos/doral-suite/og.jpg",
+      escaparate: {
+        src: "/proyectos/doral-suite/escaparate-2400.jpg",
+        mini: "/proyectos/doral-suite/mini.jpg",
+        src1200: "/proyectos/doral-suite/escaparate-1200.jpg",
+        alt: "Doral Suite — vista aérea del edificio entregado, con los condominios vecinos",
+        credito: DEL_PROMOTOR + " · doralcartagena.com",
+        ancho: 2400,
+        alto: 1088,
+        enfoque: "48% 55%",
+      },
+    },
   },
 ];
 
@@ -583,8 +985,33 @@ export function faltaPrecontractual(p: Proyecto): string[] {
     .map((k) => ETIQUETAS[k]);
 }
 
+/**
+ * «$403.000.000». Agrupa a mano, sin `toLocaleString`: el ICU de Node (que
+ * arma el HTML en el build) y el del navegador pueden no coincidir, y un
+ * precio que cambia al hidratar rompe React (error #418). Mismo resultado
+ * que es-CO para enteros.
+ */
 export function formatoPesos(n: number): string {
-  return "$" + n.toLocaleString("es-CO");
+  const entero = String(Math.round(n));
+  return "$" + entero.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+const MESES = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+];
+
+/**
+ * «12 de agosto de 2026» → «2026-08-12». Para los datos estructurados, que
+ * piden la fecha en ISO. Si el texto no tiene esa forma, devuelve null y el
+ * dato no se publica: una fecha mal leída es una fecha inventada.
+ */
+export function fechaISO(texto: string): string | null {
+  const m = texto.trim().match(/^(\d{1,2}) de ([a-záéíóú]+) de (\d{4})$/i);
+  if (!m) return null;
+  const mes = MESES.indexOf(m[2].toLowerCase());
+  if (mes < 0) return null;
+  return `${m[3]}-${String(mes + 1).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
 }
 
 /** «desde $403.000.000» o «$525.000.000» si no hay rango. */

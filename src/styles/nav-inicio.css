@@ -1,0 +1,73 @@
+/* ─────────────────────────────────────────────────────────────
+   Menú de la home (NavInicio.tsx)
+
+   Transparente sobre la portada y marfil al bajar. Hereda .nav, .nav-inner,
+   .nav-links y .nav-cta de globals.css; aquí solo cambia lo que depende de
+   estar sobre la foto o sobre el marfil.
+   ───────────────────────────────────────────────────────────── */
+
+.nav.nav-inicio {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: transparent;
+  border-bottom-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition:
+    background 0.45s ease,
+    border-color 0.45s ease,
+    box-shadow 0.45s ease,
+    backdrop-filter 0.45s ease;
+}
+.nav.nav-inicio.nav-solida {
+  background: rgb(243 239 230 / 0.9);
+  border-bottom-color: var(--marfil-dark);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 12px 30px -20px rgb(22 30 43 / 0.4);
+}
+
+/* El logo: claro sobre la foto, oscuro sobre el marfil. */
+.nav-inicio .brand-oscuro { display: none; }
+.nav-inicio.nav-solida .brand-claro { display: none; }
+.nav-inicio.nav-solida .brand-oscuro { display: block; }
+
+/* Enlaces: blancos sobre la foto; subrayado camel que se dibuja al pasar. */
+.nav-inicio .nav-links a { position: relative; }
+.nav-inicio:not(.nav-solida) .nav-links a { color: rgb(255 255 255 / 0.84); }
+.nav-inicio:not(.nav-solida) .nav-links a:hover { color: var(--white); }
+.nav-inicio .nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 1px;
+  background: var(--camel);
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.nav-inicio .nav-links a:hover::after { transform: scaleX(1); transform-origin: left center; }
+
+.nav-inicio:not(.nav-solida) .nav-cta { color: var(--white); border-color: rgb(255 255 255 / 0.6); }
+.nav-inicio:not(.nav-solida) .nav-cta:hover { background: var(--white); color: var(--marino); }
+
+/* Lo que va leído de la página. */
+.nav-avance {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--camel), var(--camel-light));
+  transform: scaleX(var(--avance, 0));
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav.nav-inicio { transition: none; }
+}

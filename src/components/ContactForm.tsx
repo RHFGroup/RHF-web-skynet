@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Script from "next/script";
 import { PROYECTOS } from "@/data/proyectos";
+import { INMUEBLES } from "@/data/inmuebles";
 import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
 
 /**
@@ -47,7 +48,7 @@ import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
  */
 
 /** Versión del texto de autorización de abajo. Cambiarla al cambiar el texto. */
-const AVISO_VERSION = "2026-09-18";
+export const AVISO_VERSION = "2026-09-18";
 
 /**
  * Turnstile — la verificación antibot de Cloudflare.
@@ -68,17 +69,22 @@ const AVISO_VERSION = "2026-09-18";
  * verificación está apagada y solo operan la trampa para bots, el tope por
  * IP y la validación de origen. Se activa con `wrangler secret put`.
  */
-const TURNSTILE_SITE_KEY = "0x4AAAAAAE8W_1D4uDCgIB5S";
+export const TURNSTILE_SITE_KEY = "0x4AAAAAAE8W_1D4uDCgIB5S";
 
 declare global {
   interface Window {
     turnstile?: { reset: (contenedor?: HTMLElement) => void };
   }
 }
-export default function ContactForm() {
+export default function ContactForm({
+  proyectoInicial = "",
+}: {
+  /** En la página de un proyecto, el formulario llega con ese proyecto elegido. */
+  proyectoInicial?: string;
+} = {}) {
   const [nombre, setNombre] = useState("");
   const [contacto, setContacto] = useState("");
-  const [proyecto, setProyecto] = useState("");
+  const [proyecto, setProyecto] = useState(proyectoInicial);
   const [mensaje, setMensaje] = useState("");
   const [autoriza, setAutoriza] = useState(false);
   const [error, setError] = useState("");
@@ -216,11 +222,20 @@ export default function ContactForm() {
           onChange={(e) => setProyecto(e.target.value)}
         >
           <option value="">Selecciona un proyecto</option>
-          {PROYECTOS.map((p) => (
-            <option key={p.slug} value={p.nombre}>
-              {p.nombre}
-            </option>
-          ))}
+          <optgroup label="Proyectos de la cartera">
+            {PROYECTOS.map((p) => (
+              <option key={p.slug} value={p.nombre}>
+                {p.nombre}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Inmuebles disponibles">
+            {INMUEBLES.map((i) => (
+              <option key={i.slug} value={i.nombre}>
+                {i.nombre}
+              </option>
+            ))}
+          </optgroup>
           <option value="Otro / No estoy seguro">Otro / No estoy seguro</option>
         </select>
       </label>

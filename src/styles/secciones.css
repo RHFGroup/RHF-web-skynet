@@ -1,0 +1,151 @@
+/* ─────────────────────────────────────────────────────────────
+   Secciones por color (pedido de Rafael del 25-sep-2026)
+
+   «Azul, café, azul, café: que cada sección tenga diferentes colores pero
+   que respete la gama cíclica.» Eligió la versión oscura: fondos marino y
+   café profundos, con el texto claro.
+
+   Cada sección de la home va dentro de un envoltorio `.tono` con su tono:
+     territorio  → azul 1      quién te asesora → café 1
+     cartera     → azul 2      inmuebles        → café 2
+     respaldo    → azul 3      paso a paso      → café 3
+     contacto    → azul 4
+   La página /asesor usa la misma escala.
+
+   Los tonos son distintos entre sí (ninguna sección repite el de otra) y
+   alternan la familia. El texto claro sobre cualquiera de ellos pasa el
+   contraste AA: marfil ≥ 12:1, camel claro ≥ 7:1, texto secundario al 78 %
+   ≥ 8:1 (medido sobre el tono más claro de cada familia).
+
+   Los componentes conservan sus estilos claros para las páginas internas;
+   aquí solo se ajusta lo que cambia sobre fondo oscuro. Los selectores
+   llevan `.tono` delante para ganar a los de cada componente.
+   ───────────────────────────────────────────────────────────── */
+
+.tono {
+  --tono-a: #1d2839;
+  --tono-b: #243249;
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(1100px 520px at 88% -8%, rgb(255 255 255 / 0.055), transparent 62%),
+    radial-gradient(900px 480px at -6% 108%, rgb(194 165 120 / 0.06), transparent 60%),
+    linear-gradient(180deg, var(--tono-a), var(--tono-b));
+  color: var(--marfil);
+}
+/* La división: una línea camel tenue en el borde de arriba de cada sección. */
+.tono::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(194 165 120 / 0.45) 50%, transparent);
+  pointer-events: none;
+}
+
+.tono-azul-1 { --tono-a: #1c2738; --tono-b: #233148; }
+.tono-cafe-1 { --tono-a: #3a291d; --tono-b: #463224; }
+.tono-azul-2 { --tono-a: #121b29; --tono-b: #182435; }
+.tono-cafe-2 { --tono-a: #4a3323; --tono-b: #573d2a; }
+.tono-azul-3 { --tono-a: #1f2c42; --tono-b: #283955; }
+.tono-cafe-3 { --tono-a: #2f2117; --tono-b: #3b2a1e; }
+.tono-azul-4 { --tono-a: #172132; --tono-b: #1e2b42; }
+
+/* Las secciones ceden su fondo al tono. */
+.tono > section,
+.tono > .section { background: transparent; border-top: 0; border-bottom: 0; }
+.tono > section.rj { background: transparent; }
+
+/* ── Texto común ─────────────────────────────── */
+.tono h1,
+.tono h2 { color: var(--marfil); }
+.tono .section h2,
+.tono section h2 { color: var(--marfil); }
+.tono .section-kicker { color: var(--camel-light); }
+.tono .section-lede { color: rgb(243 239 230 / 0.78); }
+.tono .btn-primary { background: var(--camel); color: var(--marino); }
+.tono .btn-primary:hover { background: var(--camel-light); }
+
+/* ── El territorio ───────────────────────────── */
+.tono .tr-chip {
+  border-color: rgb(243 239 230 / 0.22);
+  background: rgb(243 239 230 / 0.07);
+  color: var(--marfil);
+}
+.tono .tr-chip:hover { border-color: var(--camel-light); }
+.tono .tr-chip[aria-pressed="true"] { border-color: var(--camel); background: var(--camel); color: var(--marino); }
+.tono .tr-mapa { box-shadow: 0 26px 70px rgb(0 0 0 / 0.38); }
+.tono .tr-panel { border-color: transparent; box-shadow: 0 26px 70px rgb(0 0 0 / 0.32); }
+.tono .tr-nota { color: rgb(243 239 230 / 0.62); }
+.tono .tr-cierre {
+  border: 1px solid rgb(194 165 120 / 0.38);
+  background: rgb(243 239 230 / 0.06);
+}
+@media (max-width: 900px) {
+  /* En el teléfono el panel es transparente: las tarjetas van sobre el tono. */
+  .tono .tr-panel { box-shadow: none; }
+}
+
+/* ── Quién te asesora ────────────────────────── */
+.tono .section-asesor h2 { color: var(--marfil); }
+.tono .asesor-rol { color: var(--camel-light); }
+.tono .asesor-directo { color: rgb(243 239 230 / 0.7); }
+.tono .asesor-directo a { color: var(--marfil); border-color: var(--camel); }
+.tono .asesor-directo a:hover { color: var(--camel-light); border-color: var(--camel-light); }
+.tono .asesor-sep { color: rgb(243 239 230 / 0.35); }
+.tono .asesor-cuerpo p { color: rgb(243 239 230 / 0.84); }
+.tono .asesor-credenciales li { background: linear-gradient(90deg, rgb(194 165 120 / 0.14), transparent 70%); }
+.tono .asesor-credenciales strong { color: var(--marfil); }
+.tono .asesor-credenciales span { color: rgb(243 239 230 / 0.66); }
+
+/* ── Cartera e inmuebles ─────────────────────── */
+.tono .cartera h2,
+.tono .inmuebles h2 { color: var(--marfil); }
+.tono .cartera-barra {
+  border-color: rgb(243 239 230 / 0.14);
+  background: rgb(243 239 230 / 0.06);
+  box-shadow: none;
+}
+.tono .cartera-filtro {
+  border-color: rgb(243 239 230 / 0.2);
+  background: rgb(243 239 230 / 0.06);
+  color: var(--marfil);
+}
+.tono .cartera-filtro span { color: var(--camel-light); }
+.tono .cartera-filtro select {
+  color: var(--marfil);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23f3efe6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+/* La lista que abre el navegador es clara: sus opciones van en marino. */
+.tono .cartera-filtro select option { color: var(--marino); }
+.tono .cartera-filtro.activo { border-color: var(--camel); background: var(--camel); }
+.tono .cartera-filtro.activo span { color: var(--marino); }
+.tono .cartera-filtro.activo select {
+  color: var(--marino);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231f2a3d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.tono .cartera-conteo { color: rgb(243 239 230 / 0.7); }
+.tono .cartera-conteo strong { color: var(--marfil); }
+.tono .cartera-limpiar { color: var(--camel-light); }
+.tono .cartera-nota-precio { color: rgb(243 239 230 / 0.7); }
+/* Las tarjetas son marino: sobre el tono llevan un filo camel que las separa. */
+.tono .tg-cara {
+  box-shadow:
+    0 0 0 1px rgb(194 165 120 / 0.26),
+    0 30px 60px -28px rgb(0 0 0 / 0.7);
+}
+
+/* ── Contacto ────────────────────────────────── */
+.tono .section-contacto h2 { color: var(--marfil); }
+.tono .contacto-chat-hint { color: rgb(243 239 230 / 0.68); }
+.tono .contacto-form { border-color: transparent; box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.6); }
+
+/* La marca de propuesta, clara sobre el tono. */
+.tono .propuesta {
+  border-color: rgb(212 188 150 / 0.7);
+  background: rgb(194 165 120 / 0.16);
+  color: var(--camel-light);
+}
