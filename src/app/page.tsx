@@ -50,8 +50,8 @@ const heroFichas: FichaHero[] = proyectosEnOrden().map((p) => ({
 }));
 
 /**
- * La sección Zona Norte muestra los proyectos de la Zona Norte: todos en la
- * fila de debajo del mapa y, en el mapa, solo los que tienen coordenada
+ * Las secciones Zona Norte y El territorio muestran los proyectos de la Zona
+ * Norte: todos en sus listas y, en los mapas, solo los que tienen coordenada
  * verificada en proyectos.ts (hoy ninguno). Blue Garden y Acacias no van:
  * no están en la Zona Norte.
  */
@@ -90,7 +90,7 @@ export default function Home() {
         <ZonaNorte proyectos={fichasZonaNorte} pines={pinesZonaNorte} />
 
         {/* ── El territorio · mapa interactivo ─── */}
-        <MapaZona />
+        <MapaZona proyectos={fichasZonaNorte} pines={pinesZonaNorte} />
 
         {/* ── El cierre del criterio ────────────
             Remata los tres tramos de territorio —capítulos, mapa, este— y

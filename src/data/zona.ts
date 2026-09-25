@@ -26,6 +26,15 @@ export type Categoria = "turismo" | "salud" | "educacion" | "comercio" | "conect
 
 export type Icono = "playa" | "canoa" | "avion" | "hospital" | "convenciones" | "obra" | "centro";
 
+/** Los filtros del mapa del territorio, en el orden en que se muestran. */
+export const CATEGORIAS: { id: Exclude<Categoria, "obras">; nombre: string }[] = [
+  { id: "turismo", nombre: "Playas y turismo" },
+  { id: "salud", nombre: "Salud" },
+  { id: "educacion", nombre: "Educación" },
+  { id: "comercio", nombre: "Comercio" },
+  { id: "conectividad", nombre: "Conectividad" },
+];
+
 export type Coordenada = {
   lat: number;
   lon: number;
@@ -300,3 +309,16 @@ export const NOTA_FUENTES =
 /** Las fuentes del mapa y del bloque de Cartagena, para el pie de la sección. */
 export const NOTA_MAPA =
   "Patrimonio de la Humanidad: UNESCO, Lista del Patrimonio Mundial. Lugares del mapa: OpenStreetMap, verificados el 24 de septiembre de 2026. Gran Malecón del Mar: Alcaldía de Cartagena y El Universal, julio de 2026.";
+
+/**
+ * Tiempos de trayecto desde la Zona Norte, medidos y entregados por Rafael,
+ * con su fuente y fecha. Vacío: la franja de datos rápidos del mapa del
+ * territorio no se muestra. Nunca se estiman ni se copian de un portal.
+ */
+export const TIEMPOS_ZONA: {
+  destino: string;
+  minutos: number;
+  desde: string;
+  fuente: string;
+  fecha: string;
+}[] = [];

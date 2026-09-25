@@ -23,6 +23,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { LUGARES, ROTULOS, type Icono, type Lugar } from "@/data/zona";
+import { GLIFOS } from "@/lib/glifos";
 import { useReveal } from "@/lib/motion";
 import "@/styles/mapa-ilustrado.css";
 
@@ -643,61 +644,18 @@ function PuntoMapa({
   );
 }
 
-/** Los glifos de los puntos, en trazo cálido (24 × 24). */
+/** Los glifos de los puntos, en trazo cálido (24 × 24): src/lib/glifos.ts. */
 function GlifoLugar({ icono }: { icono: Icono }) {
-  const trazo = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 2,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-  };
-  switch (icono) {
-    case "playa":
-      return (
-        <g {...trazo}>
-          <path d="M4 20h16M12 20V9M4 9a8 5 0 0 1 16 0z" />
-          <circle cx="19" cy="4" r="2" />
-        </g>
-      );
-    case "canoa":
-      return (
-        <g {...trazo}>
-          <path d="M2 14q10 6 20 0M5 16q7 3 14 0M9 13l7-9" />
-        </g>
-      );
-    case "avion":
-      return (
-        <g {...trazo}>
-          <path d="M3 13l18-7-5 14-3-6zM13 14l-4 5" />
-        </g>
-      );
-    case "hospital":
-      return (
-        <g {...trazo}>
-          <rect x="4" y="4" width="16" height="16" rx="3" />
-          <path d="M12 8v8M8 12h8" />
-        </g>
-      );
-    case "convenciones":
-      return (
-        <g {...trazo}>
-          <path d="M3 9l9-5 9 5M5 9v9M9.5 9v9M14.5 9v9M19 9v9M3 19h18" />
-        </g>
-      );
-    case "centro":
-      return (
-        <g {...trazo}>
-          <path d="M6 8h12l-1 12H7zM9 8a3 3 0 0 1 6 0" />
-        </g>
-      );
-    default:
-      return (
-        <g {...trazo}>
-          <path d="M3 20h18M6 20l3-12h6l3 12M10 12h4M9 16h6" />
-        </g>
-      );
-  }
+  return (
+    <g
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      dangerouslySetInnerHTML={{ __html: GLIFOS[icono] }}
+    />
+  );
 }
 
 function IconoLugar({ icono }: { icono: Icono }) {

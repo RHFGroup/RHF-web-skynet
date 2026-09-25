@@ -1,283 +1,614 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { usePrefersReducedMotion } from "@/lib/motion";
-
 /**
- * Mapa interactivo de la Zona Norte.
+ * «El territorio» — el mapa real de la zona (prompt 3, rama feat/territorio-mapa).
  *
- * ⛔ **Cada pin es una afirmación.** Aquí sólo entran puntos cuya coordenada
- * se verificó en fuente; el resto del territorio lo dibuja OpenStreetMap con
- * sus propios datos —la Ciénaga de la Virgen, la Vía al Mar, Tierra Baja,
- * Manzanillo— que es cartografía real y no una ilustración nuestra.
+ * El mapa ilustrado de la sección Zona Norte cuenta la historia; este es la
+ * herramienta para explorar con precisión: proyectos, servicios, lo que viene
+ * y el contacto. Filtros por categoría, tarjetas a la derecha, vuelo suave al
+ * punto elegido y, al final, «Agendar recorrido».
  *
- * Se descartó un tercer pin para el Centro Histórico: la coordenada que
- * devuelve la búsqueda (10,5074 / −75,4543) es el centroide del municipio,
- * que se extiende al norte, y habría puesto «el Centro» a 10 km de donde
- * está. Un pin mal puesto es un dato falso con mejor diseño.
+ * ⛔ **Cada pin es una afirmación.** Solo entran puntos con coordenada
+ * verificada, y cada tarjeta dice «Coordenada verificada» con su fuente. Los
+ * lugares salen de src/data/zona.ts (los mismos del mapa ilustrado) y los
+ * proyectos de src/data/proyectos.ts: un proyecto sin coordenada verificada
+ * está en la lista, con sus botones, pero no en el mapa. El resto del
+ * territorio —la Ciénaga de la Virgen, la Vía al Mar— lo dibuja el mapa base
+ * con sus propios datos: encuadrar no es afirmar.
  *
- * Leaflet se descarga sólo cuando la sección entra en pantalla: quien nunca
- * baja hasta acá no paga sus 42 KB. Y si la descarga falla, la lista de la
- * derecha se lee igual — el mapa realza el contenido, no lo reemplaza.
+ * Leaflet se descarga cuando la sección está por entrar en pantalla, y si la
+ * descarga falla la lista cuenta lo mismo. Las teselas y su atribución vienen
+ * de src/lib/leaflet.ts (CARTO Voyager con llave; OpenStreetMap mientras no
+ * exista la llave).
+ *
+ * Móvil: el mapa a todo el ancho y a un 70 % de la pantalla, los filtros en
+ * una fila que se desliza, la tarjeta del punto tocado en una hoja inferior
+ * con los botones siempre a la vista y la lista en carrusel debajo.
  */
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import FormularioGuia from "@/components/FormularioGuia";
+import { IconoWhatsApp } from "@/components/Iconos";
+import RevealGrupo from "@/components/RevealGrupo";
+import type { PinProyecto } from "@/components/MapaIlustrado";
+import { enlaceWhatsApp } from "@/data/contacto";
+import { GUIAS } from "@/data/proceso";
+import { CATEGORIAS, LUGARES, TIEMPOS_ZONA, type Categoria, type Lugar } from "@/data/zona";
+import type { Ficha } from "@/lib/ficha";
+import { svgGlifo } from "@/lib/glifos";
+import { cargarLeaflet, TESELAS } from "@/lib/leaflet";
+import { usePrefersReducedMotion } from "@/lib/motion";
+import "@/styles/territorio.css";
 
-type Punto = {
-  nombre: string;
-  lat: number;
-  lon: number;
-  detalle: string;
-  fuente: string;
+type Filtro = "todo" | "proyectos" | Exclude<Categoria, "obras"> | "viene";
+
+type Item =
+  | { tipo: "proyecto"; id: string; ficha: Ficha; pin: PinProyecto | null }
+  | { tipo: "lugar"; id: string; lugar: Lugar };
+
+type Caja = [[number, number], [number, number]];
+
+/** Arranca en Cartagena —el Centro, Bocagrande, Manga— y vuela a la Zona Norte. */
+const CIUDAD: Caja = [
+  [10.385, -75.565],
+  [10.465, -75.49],
+];
+/** Del aeropuerto a Punta Canoa, con Serena del Mar y Tierra Baja. */
+const ZONA_NORTE: Caja = [
+  [10.435, -75.53],
+  [10.565, -75.452],
+];
+
+const ESTADO: Record<Ficha["estado"], string> = {
+  "en lanzamiento": "En lanzamiento",
+  "en construcción": "En construcción",
+  "entrega inmediata": "Entrega inmediata",
+};
+const TIPO: Record<NonNullable<Ficha["tipoInmueble"]>, string> = {
+  apartamentos: "Apartamentos",
+  casas: "Casas",
+  apartaestudios: "Apartaestudios",
 };
 
-const PUNTOS: Punto[] = [
-  {
-    nombre: "La Boquilla",
-    lat: 10.47604,
-    lon: -75.49471,
-    detalle:
-      "Puerta de entrada a la Zona Norte, sobre la Vía al Mar y frente a la Ciénaga de la Virgen.",
-    fuente: "Coordenada verificada · OpenStreetMap",
-  },
-  {
-    nombre: "Serena del Mar",
-    lat: 10.50637,
-    lon: -75.47068,
-    detalle:
-      "Aquí funcionan el hospital y el campus de Uniandes desde 2018, a 12 km del Centro.",
-    fuente: "Coordenada verificada · OpenStreetMap",
-  },
-];
+const claseEstado = (e: NonNullable<Lugar["estado"]>) =>
+  e === "Entregado" ? "entregado" : e === "En obra" ? "obra" : "estudio";
 
-/**
- * Encuadre, no centro fijo.
- *
- * Un `center` + `zoom` en duro se rompe con el ancho de la pantalla: el mismo
- * zoom 12 que encuadra bien en escritorio deja los dos pines fuera del lienzo
- * en un teléfono. `fitBounds` calcula el zoom a partir del tamaño real del
- * contenedor, así que el corredor siempre cabe.
- *
- * La caja va desde la altura del Centro Histórico hasta pasando Serena del
- * Mar. Encuadrar no es afirmar: no ponemos un pin en el Centro —su coordenada
- * de búsqueda es el centroide del municipio, 10 km al norte de donde está—,
- * pero sí dejamos que OpenStreetMap muestre la ciudad con su propio rótulo,
- * que es lo que le da escala a la distancia.
- */
-const ENCUADRE: [[number, number], [number, number]] = [
-  [10.418, -75.552],
-  [10.525, -75.445],
-];
-
-const LEAFLET_CSS = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css";
-const LEAFLET_JS = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js";
-
-/** Carga Leaflet una sola vez, cuando de verdad hace falta. */
-function cargarLeaflet(): Promise<unknown> {
-  const w = window as unknown as { L?: unknown; __leafletPromesa?: Promise<unknown> };
-  if (w.L) return Promise.resolve(w.L);
-  if (w.__leafletPromesa) return w.__leafletPromesa;
-
-  w.__leafletPromesa = new Promise((resolve, reject) => {
-    const css = document.createElement("link");
-    css.rel = "stylesheet";
-    css.href = LEAFLET_CSS;
-    document.head.appendChild(css);
-
-    const js = document.createElement("script");
-    js.src = LEAFLET_JS;
-    js.async = true;
-    js.onload = () => resolve(w.L);
-    js.onerror = () => reject(new Error("Leaflet quedó fuera de alcance"));
-    document.body.appendChild(js);
-  });
-
-  return w.__leafletPromesa;
+function coincide(it: Item, f: Filtro): boolean {
+  if (f === "todo") return true;
+  if (f === "proyectos") return it.tipo === "proyecto";
+  if (it.tipo === "proyecto") return false;
+  if (f === "viene") return it.lugar.capa === "viene";
+  // Las categorías muestran lo que funciona hoy; lo que viene tiene su filtro.
+  return it.lugar.capa === "hoy" && it.lugar.categorias.includes(f);
 }
 
-export default function MapaZona() {
-  const reduced = usePrefersReducedMotion();
-  const seccionRef = useRef<HTMLElement | null>(null);
+function coordenadaDe(it: Item): { lat: number; lon: number } | null {
+  if (it.tipo === "lugar") return it.lugar.coordenada;
+  return it.pin ? { lat: it.pin.lat, lon: it.pin.lon } : null;
+}
+
+const nombreDe = (it: Item) => (it.tipo === "proyecto" ? it.ficha.nombre : it.lugar.nombre);
+const agendarVisita = (nombre: string) => enlaceWhatsApp(`Hola Rafael, quiero agendar una visita a ${nombre}.`);
+
+/* eslint-disable @typescript-eslint/no-explicit-any -- Leaflet llega de la CDN, sin tipos */
+export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pines: PinProyecto[] }) {
+  const reducido = usePrefersReducedMotion();
+  const seccion = useRef<HTMLElement | null>(null);
   const contenedor = useRef<HTMLDivElement | null>(null);
+  const lista = useRef<HTMLUListElement | null>(null);
+  const mapaRef = useRef<any>(null);
+  const leafletRef = useRef<any>(null);
+  const marcadores = useRef<Map<string, any>>(new Map());
+  const trayectos = useRef<any>(null);
+
   const [cerca, setCerca] = useState(false);
+  const [enPantalla, setEnPantalla] = useState(false);
   const [listo, setListo] = useState(false);
   const [falló, setFalló] = useState(false);
-  const [activo, setActivo] = useState(0);
-  const mapaRef = useRef<{
-    setView: (c: [number, number], z: number) => void;
-    fitBounds: (b: [[number, number], [number, number]], o?: object) => void;
-    invalidateSize: () => void;
-  } | null>(null);
+  const [yaVoló, setYaVoló] = useState(false);
+  const [rueda, setRueda] = useState(false);
+  const [movil, setMovil] = useState(false);
+  const [filtro, setFiltro] = useState<Filtro>("todo");
+  const [cambióFiltro, setCambióFiltro] = useState(false);
+  const [elegido, setElegido] = useState<{ id: string; desde: "mapa" | "lista" } | null>(null);
+  const [guia, setGuia] = useState(false);
 
-  // Pestillo de una sola vía: pasa a `true` cuando la sección se acerca y se
-  // queda ahí.
-  //
-  // Dos decisiones aprendidas a golpes en esta misma página:
-  //
-  // 1. **Una sola vía.** Una bandera que va y vuelve reejecuta el efecto, y su
-  //    limpieza cancela la descarga de Leaflet a mitad de camino.
-  // 2. **Medición síncrona en el evento de scroll, sin IntersectionObserver.**
-  //    Sus callbacks se entregan en los pasos de renderizado, que el navegador
-  //    suspende en pestañas ocultas y estrangula bajo carga. Si nunca llegan,
-  //    el usuario se queda mirando «Preparando el mapa…» para siempre. Un
-  //    `getBoundingClientRect` por evento es barato y siempre corre.
+  const items: Item[] = useMemo(
+    () => [
+      ...proyectos.map((f) => ({
+        tipo: "proyecto" as const,
+        id: f.slug,
+        ficha: f,
+        pin: pines.find((p) => p.slug === f.slug) ?? null,
+      })),
+      ...LUGARES.filter((l) => l.capa === "hoy").map((l) => ({ tipo: "lugar" as const, id: l.id, lugar: l })),
+      ...LUGARES.filter((l) => l.capa === "viene").map((l) => ({ tipo: "lugar" as const, id: l.id, lugar: l })),
+    ],
+    [proyectos, pines],
+  );
+  const filtros: { id: Filtro; nombre: string }[] = [
+    { id: "todo", nombre: "Todo" },
+    { id: "proyectos", nombre: "Proyectos" },
+    ...CATEGORIAS,
+    { id: "viene", nombre: "Lo que viene" },
+  ].filter((f) => items.some((it) => coincide(it, f.id as Filtro))) as { id: Filtro; nombre: string }[];
+  const visibles = items.filter((it) => coincide(it, filtro));
+  const itemElegido = elegido ? items.find((it) => it.id === elegido.id) ?? null : null;
+
   useEffect(() => {
-    const el = seccionRef.current;
-    if (!el) return;
+    const mq = window.matchMedia("(max-width: 900px)");
+    const actualizar = () => setMovil(mq.matches);
+    actualizar();
+    mq.addEventListener("change", actualizar);
+    return () => mq.removeEventListener("change", actualizar);
+  }, []);
 
+  // Dos pestillos de una sola vía, medidos en el propio scroll (sin
+  // IntersectionObserver: sus avisos se congelan en pestañas de fondo):
+  // `cerca` descarga Leaflet con margen; `enPantalla` dispara el vuelo.
+  useEffect(() => {
+    const el = seccion.current;
+    if (!el) return;
     let ultimo = 0;
     const revisar = () => {
       const r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight + 300 && r.bottom > -300) {
-        setCerca(true);
-        window.removeEventListener("scroll", alHacerScroll);
-        window.removeEventListener("resize", alHacerScroll);
+      const vh = window.innerHeight;
+      if (r.top < vh + 400 && r.bottom > -400) setCerca(true);
+      const lienzo = contenedor.current?.getBoundingClientRect();
+      if (lienzo && lienzo.top < vh * 0.72 && lienzo.bottom > vh * 0.2) {
+        setEnPantalla(true);
+        window.removeEventListener("scroll", alMover);
+        window.removeEventListener("resize", alMover);
       }
     };
-    const alHacerScroll = () => {
+    const alMover = () => {
       const ahora = performance.now();
-      if (ahora - ultimo < 100) return;
+      if (ahora - ultimo < 80) return;
       ultimo = ahora;
       revisar();
     };
-
     revisar();
-    window.addEventListener("scroll", alHacerScroll, { passive: true });
-    window.addEventListener("resize", alHacerScroll, { passive: true });
+    window.addEventListener("scroll", alMover, { passive: true });
+    window.addEventListener("resize", alMover, { passive: true });
     return () => {
-      window.removeEventListener("scroll", alHacerScroll);
-      window.removeEventListener("resize", alHacerScroll);
+      window.removeEventListener("scroll", alMover);
+      window.removeEventListener("resize", alMover);
     };
   }, []);
 
+  // El mapa se arma una vez. El clic de un pin usa la forma funcional de
+  // setElegido: así lee la selección vigente, no la del momento en que el
+  // pin se creó.
   useEffect(() => {
-    if (!cerca || listo || !contenedor.current) return;
+    if (!cerca || mapaRef.current || !contenedor.current) return;
     let cancelado = false;
-
     cargarLeaflet()
-      .then((L) => {
+      .then((L: any) => {
         if (cancelado || !contenedor.current) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const leaflet = L as any;
-
-        const mapa = leaflet.map(contenedor.current, {
-          scrollWheelZoom: false, // la rueda sigue siendo del usuario, no del mapa
-          zoomAnimation: !reduced,
-          fadeAnimation: !reduced,
-          attributionControl: true,
+        const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const mapa = L.map(contenedor.current, {
+          zoomControl: false,
+          scrollWheelZoom: false, // la rueda es del usuario hasta que haga clic en el mapa
+          keyboard: false,
+          zoomSnap: 0.25,
+          zoomAnimation: !quieto,
+          fadeAnimation: !quieto,
+          markerZoomAnimation: !quieto,
         });
-        mapa.fitBounds(ENCUADRE, { padding: [24, 24], animate: false });
+        mapa.fitBounds(quieto ? ZONA_NORTE : CIUDAD, { padding: [28, 28], animate: false });
+        L.tileLayer(TESELAS.url, {
+          subdomains: TESELAS.subdominios,
+          maxZoom: TESELAS.maxZoom,
+          attribution: TESELAS.atribucion,
+        }).addTo(mapa);
 
-        leaflet
-          .tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 18,
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-          })
-          .addTo(mapa);
-
-        PUNTOS.forEach((p, i) => {
-          const icono = leaflet.divIcon({
-            className: "mapa-pin",
-            html: `<span>${i + 1}</span>`,
-            iconSize: [30, 30],
-            iconAnchor: [15, 15],
+        items.forEach((it, i) => {
+          const c = coordenadaDe(it);
+          if (!c) return;
+          const html =
+            it.tipo === "proyecto"
+              ? `<span class="tr-pin-cuerpo" style="--i:${i}"><span class="tr-pin-halo"></span><span class="tr-pin-punto"></span></span>`
+              : `<span class="tr-pin-cuerpo" style="--i:${i}"><span class="tr-pin-icono">${svgGlifo(it.lugar.icono, 15)}</span></span>`;
+          const clase =
+            "tr-pin " +
+            (it.tipo === "proyecto" ? "tr-pin-proyecto" : "tr-pin-lugar") +
+            (it.tipo === "lugar" && it.lugar.capa === "viene" ? " tr-pin-viene" : "");
+          const tam = it.tipo === "proyecto" ? 34 : 30;
+          const marcador = L.marker([c.lat, c.lon], {
+            icon: L.divIcon({ className: clase, html, iconSize: [tam, tam], iconAnchor: [tam / 2, tam / 2] }),
+            title: nombreDe(it),
+            keyboard: false,
+            riseOnHover: true,
           });
-          leaflet
-            .marker([p.lat, p.lon], { icon: icono, title: p.nombre })
-            .addTo(mapa)
-            .bindPopup(`<strong>${p.nombre}</strong><br>${p.detalle}`)
-            .on("click", () => setActivo(i));
+          marcador.on("click", () =>
+            setElegido((actual) => (actual?.id === it.id ? null : { id: it.id, desde: "mapa" })),
+          );
+          marcadores.current.set(it.id, marcador);
         });
 
+        mapa.on("click", () => {
+          mapa.scrollWheelZoom.enable();
+          setRueda(true);
+        });
+        mapa.on("mouseout", () => {
+          mapa.scrollWheelZoom.disable();
+          setRueda(false);
+        });
+        trayectos.current = L.layerGroup().addTo(mapa);
         mapaRef.current = mapa;
+        leafletRef.current = L;
         setListo(true);
       })
       .catch(() => {
-        // La lista de la derecha cuenta la historia igual; sólo lo decimos.
         if (!cancelado) setFalló(true);
       });
-
     return () => {
       cancelado = true;
     };
-  }, [cerca, listo, reduced]);
+  }, [cerca, items]);
 
-  // Si el lienzo cambia de tamaño (girar el teléfono, abrir el inspector),
-  // Leaflet sigue creyendo el tamaño viejo y deja franjas grises donde
-  // deberían ir baldosas. Le avisamos y volvemos a encuadrar.
+  // Los pines que corresponden al filtro, y solo esos.
+  useEffect(() => {
+    const mapa = mapaRef.current;
+    if (!listo || !mapa) return;
+    items.forEach((it) => {
+      const m = marcadores.current.get(it.id);
+      if (!m) return;
+      if (coincide(it, filtro)) {
+        if (!mapa.hasLayer(m)) m.addTo(mapa);
+      } else if (mapa.hasLayer(m)) {
+        m.remove();
+      }
+    });
+  }, [listo, filtro, items]);
+
+  // Al entrar en pantalla: de Cartagena a la Zona Norte, y los pines caen.
+  useEffect(() => {
+    const mapa = mapaRef.current;
+    if (!listo || !mapa || yaVoló) return;
+    if (reducido) {
+      setYaVoló(true);
+      return;
+    }
+    if (!enPantalla) return;
+    mapa.once("moveend", () => setYaVoló(true));
+    mapa.flyToBounds(ZONA_NORTE, { padding: [28, 28], duration: 2.2, easeLinearity: 0.2 });
+    // Respaldo: si el vuelo no avisa que terminó, los pines igual aparecen.
+    const respaldo = setTimeout(() => setYaVoló(true), 3200);
+    return () => clearTimeout(respaldo);
+  }, [listo, enPantalla, reducido, yaVoló]);
+
+  // Si el lienzo cambia de tamaño (girar el teléfono), Leaflet se entera.
   useEffect(() => {
     if (!listo) return;
     let t: ReturnType<typeof setTimeout>;
-    const alCambiarTamaño = () => {
+    const alCambiar = () => {
       clearTimeout(t);
-      t = setTimeout(() => {
-        mapaRef.current?.invalidateSize();
-        mapaRef.current?.fitBounds(ENCUADRE, { padding: [24, 24], animate: false });
-      }, 180);
+      t = setTimeout(() => mapaRef.current?.invalidateSize(), 180);
     };
-    window.addEventListener("resize", alCambiarTamaño);
+    window.addEventListener("resize", alCambiar);
     return () => {
       clearTimeout(t);
-      window.removeEventListener("resize", alCambiarTamaño);
+      window.removeEventListener("resize", alCambiar);
     };
   }, [listo]);
 
-  const irA = (i: number) => {
-    setActivo(i);
-    mapaRef.current?.setView([PUNTOS[i].lat, PUNTOS[i].lon], 14);
+  // El punto elegido: su pin se resalta, el mapa vuela hasta él, su tarjeta se
+  // ve en la lista y, si es un proyecto con tiempos reales, salen las líneas.
+  useEffect(() => {
+    const mapa = mapaRef.current;
+    const L = leafletRef.current;
+    marcadores.current.forEach((m, id) => m.getElement()?.classList.toggle("activo", id === elegido?.id));
+    trayectos.current?.clearLayers();
+    if (!elegido) return;
+    const it = items.find((x) => x.id === elegido.id);
+    if (!it) return;
+
+    const c = coordenadaDe(it);
+    if (mapa && c) {
+      mapa.flyTo([c.lat, c.lon], Math.max(mapa.getZoom(), 14.5), { duration: reducido ? 0 : 1.1 });
+    }
+    if (mapa && L && it.tipo === "proyecto" && it.pin) {
+      it.pin.tiempos.forEach((tr) => {
+        const destino = LUGARES.find((l) => l.id === tr.lugar)?.coordenada;
+        if (!destino) return;
+        L.polyline(
+          [
+            [it.pin!.lat, it.pin!.lon],
+            [destino.lat, destino.lon],
+          ],
+          { className: "tr-trayecto", dashArray: "6 7", weight: 2 },
+        )
+          .bindTooltip(`${tr.minutos} min`, { permanent: true, direction: "center", className: "tr-trayecto-tiempo" })
+          .addTo(trayectos.current);
+      });
+    }
+
+    // La tarjeta a la vista dentro de la lista, sin mover la página.
+    const ul = lista.current;
+    const tarjeta = ul?.querySelector<HTMLElement>(`[data-id="${elegido.id}"]`);
+    if (ul && tarjeta) {
+      if (ul.scrollWidth > ul.clientWidth + 4) {
+        ul.scrollTo({ left: tarjeta.offsetLeft - ul.offsetLeft - 16, behavior: reducido ? "auto" : "smooth" });
+      } else {
+        ul.scrollTo({ top: tarjeta.offsetTop - ul.offsetTop - 12, behavior: reducido ? "auto" : "smooth" });
+      }
+    }
+  }, [elegido, items, reducido]);
+
+  useEffect(() => {
+    if (!elegido) return;
+    const cerrar = (e: KeyboardEvent) => e.key === "Escape" && setElegido(null);
+    window.addEventListener("keydown", cerrar);
+    return () => window.removeEventListener("keydown", cerrar);
+  }, [elegido]);
+
+  const cambiarFiltro = (f: Filtro) => {
+    setFiltro(f);
+    setCambióFiltro(true);
+    if (elegido && !coincide(items.find((it) => it.id === elegido.id)!, f)) setElegido(null);
+  };
+  const verTodo = () => {
+    setElegido(null);
+    mapaRef.current?.flyToBounds(ZONA_NORTE, { padding: [28, 28], duration: reducido ? 0 : 1 });
   };
 
-  const verTodo = () => {
-    mapaRef.current?.fitBounds(ENCUADRE, { padding: [24, 24] });
-  };
+  const hoja = movil && elegido?.desde === "mapa" && itemElegido;
 
   return (
-    <section className="section section-mapa" id="mapa" ref={seccionRef}>
+    <section className="section section-mapa tr" id="mapa" ref={seccion}>
       <div className="section-shell">
         <p className="section-kicker">El territorio</p>
         <h2>Mira la zona antes de mirar el apartamento</h2>
         <p className="section-lede">
-          Mueve el mapa y reconoce el terreno: la Ciénaga de la Virgen, la Vía
-          al Mar y los servicios que ya funcionan.
+          Mueve el mapa y reconoce el terreno: la Ciénaga de la Virgen, la Vía al Mar y los servicios que ya
+          funcionan.
         </p>
 
-        <div className="mapa-grid">
-          <div className="mapa-lienzo">
-            <div ref={contenedor} className="mapa-canvas" aria-hidden="true" />
-            {listo ? null : (
-              <p className="mapa-cargando">
+        <div className="tr-filtros" role="group" aria-label="Qué mostrar en el mapa">
+          {filtros.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              className="tr-chip"
+              aria-pressed={filtro === f.id}
+              onClick={() => cambiarFiltro(filtro === f.id && f.id !== "todo" ? "todo" : f.id)}
+            >
+              {f.nombre}
+            </button>
+          ))}
+        </div>
+
+        {/* Datos rápidos: solo con tiempos reales que entregue Rafael (hoy no hay). */}
+        {TIEMPOS_ZONA.length > 0 && (
+          <div className="tr-tiempos">
+            <ul>
+              {TIEMPOS_ZONA.map((t) => (
+                <li key={t.destino}>
+                  <strong>{t.minutos} min</strong>
+                  <span>{t.destino}</span>
+                </li>
+              ))}
+            </ul>
+            <p>
+              Desde {TIEMPOS_ZONA[0].desde} · {TIEMPOS_ZONA[0].fuente} · {TIEMPOS_ZONA[0].fecha}
+            </p>
+          </div>
+        )}
+
+        <div className="tr-grid">
+          <div
+            className={
+              "tr-mapa" +
+              (listo && !yaVoló && !reducido ? " tr-armado" : "") +
+              (yaVoló ? " tr-caen" : "") +
+              (rueda ? " tr-rueda" : "")
+            }
+          >
+            <div ref={contenedor} className="tr-lienzo" aria-hidden="true" />
+            {!listo && (
+              <p className="tr-cargando">
                 {falló
-                  ? "El mapa quedó fuera de alcance. La lista de al lado tiene los mismos puntos."
+                  ? "El mapa quedó fuera de alcance. La lista tiene los mismos puntos."
                   : "Preparando el mapa de la zona…"}
               </p>
             )}
+            {listo && (
+              <>
+                <div className="tr-controles">
+                  <button type="button" aria-label="Acercar el mapa" onClick={() => mapaRef.current?.zoomIn()}>
+                    +
+                  </button>
+                  <button type="button" aria-label="Alejar el mapa" onClick={() => mapaRef.current?.zoomOut()}>
+                    −
+                  </button>
+                  <button type="button" aria-label="Ver toda la zona" className="tr-control-todo" onClick={verTodo}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                      <path
+                        d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <p className="tr-pista" aria-hidden="true">
+                  Haz clic en el mapa para acercar con la rueda
+                </p>
+              </>
+            )}
+
+            {/* Teléfono: la tarjeta del punto tocado sube desde abajo. */}
+            {hoja && (
+              <div className="tr-hoja" role="dialog" aria-label={nombreDe(itemElegido)}>
+                <button type="button" className="tr-hoja-cerrar" onClick={() => setElegido(null)} aria-label="Cerrar">
+                  ×
+                </button>
+                <Detalle it={itemElegido} enHoja />
+              </div>
+            )}
           </div>
 
-          <ol className="mapa-lista">
-            {PUNTOS.map((p, i) => (
-              <li key={p.nombre} className={i === activo ? "activo" : ""}>
-                <button type="button" onClick={() => irA(i)}>
-                  <span className="mapa-num">{i + 1}</span>
-                  <span>
-                    <strong>{p.nombre}</strong>
-                    <em>{p.detalle}</em>
-                    <small>{p.fuente}</small>
-                  </span>
-                </button>
-              </li>
-            ))}
-            {listo ? (
-              <li className="mapa-volver">
-                <button type="button" onClick={verTodo}>
-                  Ver toda la zona
-                </button>
-              </li>
-            ) : null}
-            <li className="mapa-nota">
-              El resto del territorio lo dibuja OpenStreetMap con sus propios
-              datos. Aquí marcamos sólo los puntos cuya coordenada verificamos.
-            </li>
-          </ol>
+          <div className="tr-panel">
+            <RevealGrupo>
+              <ul
+                ref={lista}
+                key={filtro}
+                className={"tr-lista" + (cambióFiltro ? " tr-lista-nueva" : "")}
+                aria-label="Puntos del mapa"
+              >
+                {visibles.map((it, i) => (
+                  <li
+                    key={it.id}
+                    data-id={it.id}
+                    className={
+                      "tr-item tr-item-" + it.tipo + (elegido?.id === it.id ? " activo" : "")
+                    }
+                    style={{ "--i": i } as React.CSSProperties}
+                  >
+                    <button
+                      type="button"
+                      className="tr-item-elegir"
+                      aria-pressed={elegido?.id === it.id}
+                      onClick={() =>
+                        setElegido(elegido?.id === it.id ? null : { id: it.id, desde: "lista" })
+                      }
+                    >
+                      <Cabeza it={it} />
+                    </button>
+                    <Detalle it={it} />
+                  </li>
+                ))}
+              </ul>
+            </RevealGrupo>
+          </div>
+        </div>
+
+        <p className="tr-nota">
+          El mapa base dibuja el resto del territorio con datos de OpenStreetMap. Aquí marcamos solo los puntos cuya
+          coordenada verificamos; cada tarjeta dice su fuente.
+        </p>
+
+        {/* ── El cierre: recorrer la zona con un asesor ── */}
+        <div className="tr-cierre">
+          <div>
+            <h3>¿Quieres recorrer la zona con un asesor?</h3>
+            <p>Recorre la Zona Norte con nosotros: los proyectos, las vías y lo que ya funciona, en una sola visita.</p>
+          </div>
+          <div className="tr-cierre-acciones">
+            <a
+              className="tr-boton tr-boton-camel"
+              href={enlaceWhatsApp("Hola Rafael, quiero agendar un recorrido por la Zona Norte.")}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <IconoWhatsApp size={18} /> Agendar recorrido
+            </a>
+            {GUIAS.zona.pdf && (
+              <button type="button" className="tr-boton tr-boton-borde" onClick={() => setGuia(true)}>
+                Recibir la guía de la zona
+              </button>
+            )}
+          </div>
+          {guia && GUIAS.zona.pdf && (
+            <div className="tr-guia">
+              <FormularioGuia
+                titulo={GUIAS.zona.titulo}
+                pdf={GUIAS.zona.pdf}
+                origen={GUIAS.zona.origen}
+                alCerrar={() => setGuia(false)}
+              />
+            </div>
+          )}
         </div>
       </div>
     </section>
+  );
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/** La parte de la tarjeta que se toca para elegir el punto. */
+function Cabeza({ it }: { it: Item }) {
+  if (it.tipo === "proyecto") {
+    const f = it.ficha;
+    return (
+      <span className="tr-cabeza">
+        {f.foto ? (
+          <img className="tr-foto" src={f.foto.src} alt="" loading="lazy" decoding="async" width={64} height={64} />
+        ) : (
+          <span className="tr-foto tr-foto-vacia" aria-hidden="true" />
+        )}
+        <span className="tr-cabeza-texto">
+          <span className="tr-eyebrow">
+            {f.tipoInmueble ? TIPO[f.tipoInmueble] : "Proyecto"} · {ESTADO[f.estado]}
+          </span>
+          <strong>{f.nombre}</strong>
+          <span className="tr-precio">
+            {f.precio}
+            {f.corte && <small> · corte {f.corte}</small>}
+          </span>
+        </span>
+      </span>
+    );
+  }
+  const l = it.lugar;
+  return (
+    <span className="tr-cabeza">
+      <span
+        className={"tr-icono" + (l.capa === "viene" ? " tr-icono-viene" : "")}
+        dangerouslySetInnerHTML={{ __html: svgGlifo(l.icono, 18) }}
+      />
+      <span className="tr-cabeza-texto">
+        {l.estado && <span className={"tr-estado tr-estado-" + claseEstado(l.estado)}>{l.estado}</span>}
+        <strong>{l.nombre}</strong>
+        <span className="tr-frase">{l.frase}</span>
+      </span>
+    </span>
+  );
+}
+
+/** Lo que acompaña a la tarjeta: fuente, coordenada y, en proyectos, los botones. */
+function Detalle({ it, enHoja = false }: { it: Item; enHoja?: boolean }) {
+  if (it.tipo === "proyecto") {
+    const f = it.ficha;
+    return (
+      <div className="tr-detalle">
+        {enHoja && <Cabeza it={it} />}
+        {f.entrega && <p className="tr-dato">Entrega: {f.entrega}</p>}
+        {it.pin && <p className="tr-fuente">Coordenada verificada · {it.pin.fuente}</p>}
+        <div className="tr-acciones">
+          <Link className="tr-boton tr-boton-marino" href={f.href}>
+            Ver proyecto
+          </Link>
+          <a className="tr-boton tr-boton-wa" href={agendarVisita(f.nombre)} target="_blank" rel="noopener noreferrer">
+            <IconoWhatsApp size={16} /> Agendar visita
+          </a>
+        </div>
+      </div>
+    );
+  }
+  const l = it.lugar;
+  return (
+    <div className="tr-detalle">
+      {enHoja && <Cabeza it={it} />}
+      {l.coordenada && <p className="tr-fuente">Coordenada verificada · {l.coordenada.fuente}</p>}
+      <p className="tr-fuente">
+        Fuente: {l.fuente} · {l.fecha}
+      </p>
+      {enHoja && (
+        <div className="tr-acciones">
+          <a
+            className="tr-boton tr-boton-wa"
+            href={enlaceWhatsApp(`Hola Rafael, quiero conocer la Zona Norte cerca de ${l.nombre}.`)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <IconoWhatsApp size={16} /> Agendar recorrido
+          </a>
+        </div>
+      )}
+    </div>
   );
 }

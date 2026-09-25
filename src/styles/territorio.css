@@ -1,0 +1,412 @@
+/* ─────────────────────────────────────────────────────────────
+   El territorio (MapaZona.tsx)
+
+   Mapa real (Leaflet) de unos dos tercios del ancho, con bordes redondeados
+   y sombra suave; a la derecha, un panel blanco con las tarjetas. Filtros
+   en chips encima, controles de zoom propios y, debajo, el cierre en marino
+   para agendar un recorrido. En el teléfono: el mapa a todo el ancho y a un
+   70 % de la pantalla, la tarjeta del punto tocado en una hoja inferior y
+   la lista en carrusel.
+
+   Leaflet trae su propia hoja de estilos desde la CDN y llega después que
+   esta: por eso lo suyo se sobrescribe con selectores anidados en .tr-mapa.
+   ───────────────────────────────────────────────────────────── */
+
+.tr .section-lede { max-width: 560px; }
+
+/* ── Filtros ─────────────────────────────────── */
+.tr-filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 30px; }
+.tr-chip {
+  padding: 9px 16px;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 9999px;
+  background: var(--white);
+  color: var(--marino);
+  font: 600 13px/1.2 var(--font-sans), "Montserrat", sans-serif;
+  cursor: pointer;
+  transition: background 0.5s ease, color 0.5s ease, border-color 0.5s ease;
+}
+.tr-chip:hover { border-color: var(--camel); }
+.tr-chip[aria-pressed="true"] { border-color: var(--marino); background: var(--marino); color: var(--marfil); }
+.tr-chip:focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
+
+/* ── Datos rápidos (solo con tiempos reales) ─── */
+.tr-tiempos { margin-top: 24px; }
+.tr-tiempos ul { display: flex; flex-wrap: wrap; gap: 14px 36px; margin: 0; padding: 0; list-style: none; }
+.tr-tiempos li { display: flex; flex-direction: column; gap: 2px; }
+.tr-tiempos strong {
+  color: var(--marino);
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: clamp(34px, 3.6vw, 46px);
+  font-weight: 600;
+  line-height: 1;
+}
+.tr-tiempos span { color: var(--text-muted); font-size: 12.5px; }
+.tr-tiempos p { margin: 8px 0 0; color: var(--text-muted); font-size: 11px; }
+
+/* ── Mapa y panel ─────────────────────────────── */
+.tr-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 22px;
+  margin-top: 20px;
+  --tr-alto: clamp(460px, 68vh, 640px);
+}
+.tr-mapa {
+  position: relative;
+  height: var(--tr-alto);
+  overflow: hidden;
+  border-radius: 24px;
+  background: #ebe7dd;
+  box-shadow: 0 22px 60px rgb(31 42 61 / 0.14);
+}
+/* `isolation` encierra los z-index de Leaflet: los controles propios quedan encima. */
+.tr-lienzo { position: absolute; inset: 0; isolation: isolate; }
+.tr-cargando {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+.tr-mapa .leaflet-container { background: #ebe7dd; font-family: var(--font-sans), "Montserrat", sans-serif; }
+.tr-mapa .leaflet-control-attribution {
+  margin: 0;
+  padding: 2px 9px;
+  border-radius: 10px 0 0 0;
+  background: rgb(255 255 255 / 0.85);
+  color: var(--text-muted);
+  font-size: 10px;
+}
+.tr-mapa .leaflet-control-attribution a { color: var(--marino-light); }
+
+/* ── Pines ────────────────────────────────────── */
+.tr-mapa .tr-pin { border: 0; background: none; }
+.tr-pin-cuerpo { position: relative; display: grid; place-items: center; width: 100%; height: 100%; }
+.tr-armado .tr-pin-cuerpo { opacity: 0; }
+.tr-caen .tr-pin-cuerpo {
+  animation: tr-cae 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(min(var(--i, 0), 10) * 110ms);
+}
+@keyframes tr-cae {
+  from { opacity: 0; transform: translateY(-18px); }
+  to { opacity: 1; transform: none; }
+}
+.tr-pin-icono {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--marino);
+  color: var(--marfil);
+  box-shadow: 0 6px 14px rgb(22 30 43 / 0.3);
+  transition: transform 0.4s ease, background 0.4s ease, color 0.4s ease;
+}
+.tr-pin-viene .tr-pin-icono { border: 2px dashed #a9773c; background: #fff; color: var(--cuero); }
+.tr-pin:hover .tr-pin-icono,
+.tr-pin.activo .tr-pin-icono { background: var(--camel); color: #fff; transform: scale(1.14); }
+.tr-pin-punto {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--camel);
+  box-shadow: 0 6px 16px rgb(22 30 43 / 0.35);
+}
+.tr-pin-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgb(194 165 120 / 0.42);
+  animation: tr-pulso 2.6s ease-out infinite;
+}
+@keyframes tr-pulso {
+  from { transform: scale(0.5); opacity: 0.95; }
+  to { transform: scale(1.6); opacity: 0; }
+}
+.tr-pin-proyecto.activo .tr-pin-punto { background: var(--marino); }
+
+/* Trayectos con tiempo real (solo si proyectos.ts los trae) */
+.tr-mapa .tr-trayecto { stroke: var(--cuero); }
+.tr-mapa .tr-trayecto-tiempo {
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 9999px;
+  background: var(--white);
+  color: var(--cuero);
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgb(22 30 43 / 0.15);
+}
+
+/* ── Controles propios ────────────────────────── */
+.tr-controles {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tr-controles button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.95);
+  color: var(--marino);
+  font: 600 20px/1 var(--font-sans), "Montserrat", sans-serif;
+  box-shadow: 0 6px 16px rgb(22 30 43 / 0.16);
+  cursor: pointer;
+  transition: background 0.4s ease;
+}
+.tr-controles button:hover { background: var(--marfil); }
+.tr-controles button:focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
+.tr-pista {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 18px;
+  margin: 0;
+  padding: 6px 13px;
+  border-radius: 9999px;
+  background: rgb(22 30 43 / 0.8);
+  color: var(--marfil);
+  font-size: 11.5px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: opacity 0.4s ease;
+}
+.tr-mapa:hover .tr-pista { opacity: 1; }
+.tr-rueda .tr-pista { opacity: 0 !important; }
+@media (hover: none) { .tr-pista { display: none; } }
+
+/* ── El panel de tarjetas ─────────────────────── */
+.tr-panel {
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--marfil-dark);
+  border-radius: 24px;
+  background: var(--white);
+  box-shadow: 0 16px 44px rgb(31 42 61 / 0.08);
+}
+.tr-lista {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  height: var(--tr-alto);
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  list-style: none;
+}
+.tr-lista-nueva > li {
+  animation: tr-entra 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+@keyframes tr-entra {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.tr-item {
+  border: 1px solid var(--marfil-dark);
+  border-radius: 16px;
+  background: #fffdf8;
+  transition: border-color 0.5s ease, box-shadow 0.5s ease;
+}
+.tr-item:hover { border-color: rgb(194 165 120 / 0.7); }
+.tr-item.activo { border-color: var(--camel); box-shadow: 0 10px 26px rgb(194 165 120 / 0.24); }
+.tr-item-elegir {
+  display: block;
+  width: 100%;
+  padding: 14px 14px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tr-item-elegir:focus-visible { border-radius: 16px; outline: 2px solid var(--camel); outline-offset: -2px; }
+.tr-cabeza { display: flex; align-items: flex-start; gap: 12px; }
+.tr-foto {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: var(--marfil-dark);
+  object-fit: cover;
+}
+.tr-icono {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--marino);
+  color: var(--marfil);
+}
+.tr-icono-viene { border: 1.5px dashed #a9773c; background: #fff; color: var(--cuero); }
+.tr-cabeza-texto { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tr-cabeza-texto strong {
+  color: var(--marino);
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+.tr-eyebrow {
+  color: var(--cuero);
+  font: 700 10px/1.3 var(--font-sans), "Montserrat", sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.tr-precio { color: var(--cuero); font-size: 12.5px; font-weight: 700; line-height: 1.35; }
+.tr-precio small { color: var(--text-muted); font-size: 11px; font-weight: 400; }
+.tr-frase { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.tr-estado {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font: 700 9.5px/1.3 var(--font-sans), "Montserrat", sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tr-estado-entregado { background: var(--marino); color: var(--marfil); }
+.tr-estado-obra { border: 1px dashed #a9773c; color: var(--cuero); }
+.tr-estado-estudio { border: 1px dashed #8a8a8a; color: #5a5a5a; }
+.tr-detalle { padding: 8px 14px 14px; }
+.tr-dato { margin: 0 0 4px; color: var(--marino-light); font-size: 12.5px; }
+.tr-fuente { margin: 0; color: var(--text-muted); font-size: 10.5px; line-height: 1.45; }
+.tr-fuente + .tr-fuente { margin-top: 2px; }
+
+/* ── Botones ──────────────────────────────────── */
+.tr-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tr-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border: 0;
+  border-radius: 9999px;
+  font: 600 12.5px/1.2 var(--font-sans), "Montserrat", sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.5s ease, background 0.5s ease, box-shadow 0.5s ease;
+}
+.tr-boton:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgb(22 30 43 / 0.14); }
+.tr-boton:focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
+.tr-boton-marino { background: var(--marino); color: var(--marfil); }
+.tr-boton-wa { background: var(--green-wa); color: #fff; }
+.tr-boton-camel { padding: 14px 24px; background: var(--camel); color: var(--marino); font-size: 14px; }
+.tr-boton-borde { padding: 14px 24px; border: 1px solid rgb(243 239 230 / 0.5); background: transparent; color: var(--marfil); font-size: 14px; }
+
+.tr-nota { margin: 14px 2px 0; color: var(--text-muted); font-size: 11.5px; line-height: 1.5; }
+
+/* ── El cierre ────────────────────────────────── */
+.tr-cierre {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px 40px;
+  margin-top: 44px;
+  padding: 38px 44px;
+  border-radius: 26px;
+  background: var(--marino);
+  color: var(--marfil);
+}
+.tr-cierre h3 { color: var(--marfil); font-size: clamp(26px, 2.8vw, 36px); line-height: 1.12; }
+.tr-cierre p { max-width: 52ch; margin: 10px 0 0; color: rgb(243 239 230 / 0.78); font-size: 15px; line-height: 1.6; }
+.tr-cierre-acciones { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; }
+.tr-guia { grid-column: 1 / -1; }
+
+/* ── Hoja inferior (teléfono) ─────────────────── */
+.tr-hoja {
+  position: absolute;
+  z-index: 3;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  max-height: 64%;
+  overflow: auto;
+  padding: 16px 16px 12px;
+  border-radius: 20px;
+  background: var(--white);
+  box-shadow: 0 -10px 40px rgb(22 30 43 / 0.25);
+  animation: tr-sube 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes tr-sube {
+  from { transform: translateY(110%); }
+  to { transform: none; }
+}
+.tr-hoja-cerrar {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--marfil);
+  color: var(--marino);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.tr-hoja .tr-detalle { padding: 0; }
+.tr-hoja .tr-cabeza { padding-right: 36px; }
+.tr-hoja .tr-dato, .tr-hoja .tr-fuente:first-of-type { margin-top: 10px; }
+/* Los botones de la hoja quedan siempre a la vista. */
+.tr-hoja .tr-acciones { position: sticky; bottom: -12px; padding: 10px 0 4px; background: var(--white); }
+
+/* ── Teléfono y tableta ───────────────────────── */
+@media (max-width: 900px) {
+  .tr-filtros {
+    flex-wrap: nowrap;
+    margin-right: -14px;
+    margin-left: -14px;
+    padding: 0 14px 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tr-filtros::-webkit-scrollbar { display: none; }
+  .tr-chip { flex-shrink: 0; }
+  .tr-grid { grid-template-columns: minmax(0, 1fr); --tr-alto: 70vh; }
+  .tr-mapa { min-height: 420px; border-radius: 20px; }
+  .tr-panel { overflow: visible; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .tr-lista {
+    display: flex;
+    gap: 12px;
+    height: auto;
+    padding: 4px 2px 10px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .tr-lista::-webkit-scrollbar { display: none; }
+  .tr-lista > li { flex: 0 0 84%; scroll-snap-align: start; }
+  .tr-cierre { grid-template-columns: minmax(0, 1fr); padding: 28px 22px; }
+  .tr-cierre-acciones { justify-content: flex-start; }
+  /* El botón del chat vive abajo a la derecha: la fila de la hoja le deja espacio. */
+  .tr-hoja .tr-acciones { padding-right: 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tr-caen .tr-pin-cuerpo, .tr-lista-nueva > li, .tr-hoja, .tr-pin-halo { animation: none; }
+  .tr-armado .tr-pin-cuerpo { opacity: 1; }
+  .tr-chip, .tr-item, .tr-boton, .tr-pin-icono, .tr-controles button { transition: none; }
+  .tr-boton:hover { transform: none; }
+}

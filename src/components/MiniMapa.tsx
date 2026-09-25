@@ -59,7 +59,11 @@ export default function MiniMapa({
           fadeAnimation: !reduced,
         });
         leaflet
-          .tileLayer(TESELAS.url, { maxZoom: TESELAS.maxZoom, attribution: TESELAS.atribucion })
+          .tileLayer(TESELAS.url, {
+            subdomains: TESELAS.subdominios,
+            maxZoom: TESELAS.maxZoom,
+            attribution: TESELAS.atribucion,
+          })
           .addTo(mapa);
         const icono = leaflet.divIcon({
           className: "pp-mapa-pin",
