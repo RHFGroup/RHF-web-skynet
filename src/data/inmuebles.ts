@@ -6,9 +6,10 @@
  * cartera, cada uno con su ficha y su página, sin decir de quién son.
  *
  * REGLAS (las mismas de la cartera)
- *  · El precio sale solo donde está escrito, con su fecha de corte. Hoy solo
- *    Doral Suites 320 tiene precio (confirmado el 25 de septiembre de 2026;
- *    reemplaza el de la ficha de venta del 6 de marzo de 2026).
+ *  · El precio sale solo donde está escrito, con su fecha de corte. Hoy lo
+ *    tienen Doral Suites 320 (confirmado el 25 de septiembre de 2026;
+ *    reemplaza el de la ficha de venta del 6 de marzo de 2026) y Cavana 303
+ *    (confirmado el 26 de septiembre de 2026).
  *  · Cada área lleva la etiqueta literal de su fuente: la escritura pública,
  *    el plano oficial o la presentación de venta. Nunca una cifra de la
  *    publicidad cuando el documento dice otra: la ficha de venta de Cavana
@@ -203,7 +204,11 @@ export const INMUEBLES: Inmueble[] = [
       fuente: "Escritura pública del apartamento",
     },
     conjunto: null,
-    precio: null,
+    precio: {
+      valor: 1_280_000_000,
+      corte: "26 de septiembre de 2026",
+      fuente: "Precio de venta confirmado el 26 de septiembre de 2026",
+    },
     fotos: serie("cavana-303-torre-10", FOTO_PROPIA_FEB, [
       { alt: "Cavana 303 — balcón con vista al lago" },
       { alt: "Cavana 303 — sala con el ventanal hacia el lago" },
@@ -217,6 +222,7 @@ export const INMUEBLES: Inmueble[] = [
     plano: null,
     fuentes: [
       "Piso, torre, dependencias y áreas: escritura pública del apartamento.",
+      "Precio: vigente al 26 de septiembre de 2026.",
       "Vista al lago y aire acondicionado: fotos del apartamento del 28 de febrero de 2026.",
     ],
     compartir: "/inmuebles/cavana-303-torre-10/01.jpg",
