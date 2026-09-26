@@ -21,7 +21,13 @@
   align-items: center;
 }
 
-/* La foto, con un marco camel desplazado detrás. */
+/* La foto, con un marco camel desplazado detrás. Cuando la foto entra con el
+   scroll, el marco sale de detrás de ella hasta su lugar (25-sep-2026, «más
+   animaciones»). */
+.asesor-foto picture::before,
+.ap-portada-foto picture::before { transition: inset 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.45s; }
+.asesor-foto.reveal:not(.is-visible) picture::before,
+.ap-portada-foto.reveal:not(.is-visible) picture::before { inset: 0; }
 .asesor-foto figure { position: relative; margin: 0; }
 .asesor-foto picture,
 .ap-portada-foto picture { position: relative; z-index: 0; display: block; }
@@ -273,7 +279,8 @@
   .ap-portada { padding: 56px 0 80px; }
 }
 @media (max-width: 560px) {
-  .asesor-foto { max-width: 84%; }
+  /* La foto más chica en el teléfono: el nombre asoma en la primera pantalla. */
+  .asesor-foto { max-width: 72%; }
   .asesor-corto-acciones > * { width: 100%; justify-content: center; }
   .ap-persona { grid-template-columns: minmax(0, 1fr); }
   .ap-persona img, .ap-persona-icono { width: 100%; height: 260px; }
@@ -281,6 +288,7 @@
   .asesor-sep { display: block; height: 0; margin: 4px 0; overflow: hidden; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .asesor-foto picture::before, .ap-portada-foto picture::before { transition: none; }
   .asesor-pilar-corto, .ap-pilar, .asesor-btn-detalle svg { transition: none; }
   .asesor-pilar-corto:hover, .ap-pilar:hover { transform: none; }
 }

@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { IconoInstagram } from "@/components/Iconos";
+import { SECCIONES_HOME } from "@/data/navegacion";
+import { REDES } from "@/data/redes";
 
 /**
  * El pie de página de todo el sitio, con los avisos legales.
@@ -27,12 +30,20 @@ export default function PieSitio({
           <img className="footer-brand" src="/marca/rhf-living.svg" alt="RHF Living" width="196" height="44" />
           <div className="footer-links">
             <Link href="/#inicio">Inicio</Link>
-            <Link href="/#cartera">Proyectos</Link>
-            <Link href="/#inmuebles">Apartamentos</Link>
-            <Link href="/#mapa">El territorio</Link>
-            <Link href="/#asesor">Quién te asesora</Link>
-            <Link href="/#contacto">Contacto</Link>
+            {SECCIONES_HOME.filter((s) => !s.soloMovil).map((s) => (
+              <Link key={s.ancla} href={`/#${s.ancla}`}>
+                {s.texto}
+              </Link>
+            ))}
           </div>
+        </div>
+        {/* Las redes (src/data/redes.ts), con su usuario a la vista. */}
+        <div className="footer-redes">
+          {REDES.map((r) => (
+            <a key={r.id} href={r.url} target="_blank" rel="noopener noreferrer">
+              <IconoInstagram size={18} /> {r.nombre} · {r.usuario}
+            </a>
+          ))}
         </div>
         <div className="footer-legal">
           <p>

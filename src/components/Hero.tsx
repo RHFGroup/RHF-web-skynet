@@ -81,7 +81,22 @@ function cajaDeLaFoto(ancho: number, alto: number) {
 
 const dos = (n: number) => String(n).padStart(2, "0");
 
-export default function Hero({ fichas, whatsapp }: { fichas: FichaHero[]; whatsapp: string }) {
+/**
+ * Los accesos de la portada: «En lanzamiento · En construcción · Entrega
+ * inmediata», cada uno con cuántos hay y llevando a la cartera ya filtrada
+ * (25-sep-2026, como los buscadores de arriba de las inmobiliarias grandes).
+ */
+export type AccesoHero = { href: string; texto: string; n: number };
+
+export default function Hero({
+  fichas,
+  whatsapp,
+  accesos = [],
+}: {
+  fichas: FichaHero[];
+  whatsapp: string;
+  accesos?: AccesoHero[];
+}) {
   const reducido = usePrefersReducedMotion();
 
   const diapositivas = useMemo<Diapositiva[]>(
@@ -308,6 +323,15 @@ export default function Hero({ fichas, whatsapp }: { fichas: FichaHero[]; whatsa
               <IconoWhatsApp /> Contactar
             </a>
           </div>
+          {accesos.length > 0 && (
+            <nav className="hero-accesos" aria-label="Ver la cartera por estado">
+              {accesos.map((a, i) => (
+                <a key={a.href} href={a.href} style={{ "--i": i } as React.CSSProperties}>
+                  {a.texto} <span>{a.n}</span>
+                </a>
+              ))}
+            </nav>
+          )}
         </div>
 
         <div

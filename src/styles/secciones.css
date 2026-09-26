@@ -7,11 +7,12 @@
    la home alternan azul marino oscuro y blanco, cada uno con su tono
    (page.tsx):
 
-     Proyectos y apartamentos        → blanco 1
-     El territorio                   → azul 1
-     Quién te asesora                → blanco 2
-     Respaldo jurídico y paso a paso → azul 2
-     Contacto                        → blanco 3
+     Confianza y cartera             → blanco 1
+     Quién te asesora                → azul 1
+     El territorio                   → blanco 2
+     Cómo comprar y respaldo         → azul 2
+     Nuestras redes                  → blanco 3
+     Contacto                        → azul 3
 
    La página /asesor usa la misma escala (PaginaAsesor.tsx).
 
@@ -70,25 +71,22 @@
 .tono > section.rj { background: transparent; }
 .tono > #cartera { border-top: 0; }
 
-/* ── Bloques que juntan dos secciones ────────── */
-/* Proyectos y apartamentos: la segunda lista sigue a la primera, separada
-   por una línea, sobre el mismo fondo. */
-.bloque-oferta .cartera { padding-bottom: 72px; }
-.bloque-oferta .inmuebles { padding-top: 0; }
-.bloque-oferta .inmuebles > .section-shell {
-  padding-top: 64px;
-  border-top: 1px solid var(--frio-borde);
-}
-/* Respaldo jurídico y paso a paso, igual. */
-.bloque-respaldo .pa { padding-top: 0; }
-.bloque-respaldo .pa > .section-shell {
-  padding-top: 76px;
+/* ── Bloques que juntan dos piezas ───────────── */
+/* La barra de confianza y la cartera, sobre el mismo blanco. */
+.bloque-oferta .cartera { padding-top: 64px; }
+/* Cómo comprar y el respaldo jurídico: el segundo sigue al primero,
+   separado por una línea. Si el paso a paso no sale, el respaldo queda solo
+   con su espacio de siempre. */
+.bloque-compra .pa { padding-bottom: 88px; }
+.bloque-compra .pa + .rj { padding-top: 0; }
+.bloque-compra .pa + .rj > .rj-shell {
+  padding-top: 80px;
   border-top: 1px solid rgb(243 239 230 / 0.12);
 }
 @media (max-width: 560px) {
-  .bloque-oferta .cartera { padding-bottom: 56px; }
-  .bloque-oferta .inmuebles > .section-shell { padding-top: 48px; }
-  .bloque-respaldo .pa > .section-shell { padding-top: 56px; }
+  .bloque-oferta .cartera { padding-top: 44px; }
+  .bloque-compra .pa { padding-bottom: 64px; }
+  .bloque-compra .pa + .rj > .rj-shell { padding-top: 56px; }
 }
 
 /* ── Sobre blanco ────────────────────────────── */
@@ -97,6 +95,12 @@
 .tono-claro section h2 { color: var(--marino); }
 .tono-claro .section-kicker { color: var(--marino-light); }
 .tono-claro .cartera-barra { border-color: var(--frio-borde); }
+.tono-claro .tr-chip { border-color: var(--frio-borde); }
+.tono-claro .tr-chip[aria-pressed="true"] { border-color: var(--marino); }
+.tono-claro .tr-panel { border-color: var(--frio-borde); box-shadow: 0 24px 60px -36px rgb(22 30 43 / 0.4); }
+.tono-claro .tr-item { border-color: var(--frio-borde); background: #fbfcfe; }
+.tono-claro .tr-item.activo { border-color: var(--camel); }
+.tono-claro .tr-mapa { box-shadow: 0 24px 60px -36px rgb(22 30 43 / 0.45); }
 .tono-claro .cartera-filtro { border-color: var(--frio-borde); background: var(--frio-suave); }
 .tono-claro .cartera-filtro:hover { border-color: var(--marino-light); }
 .tono-claro .cartera-filtro.activo { border-color: var(--marino); background: var(--marino); }

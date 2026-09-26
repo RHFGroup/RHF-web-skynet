@@ -31,6 +31,12 @@
  * → quién te asesora → con qué respaldo → hablemos); y el café sale: las
  * secciones alternan azul y blanco.
  *
+ * 25-sep-2026, noche (Rafael, sobre la vista previa): los apartamentos van
+ * DENTRO de la cartera; fuera las marcas «Propuesta · por confirmar»; foto más
+ * seria; más animaciones y el teléfono más ordenado; el orden, según el de
+ * las inmobiliarias que más venden; y una sección de redes. El orden y el
+ * porqué están abajo, en `secciones()`.
+ *
  * Las tarjetas leen de `src/data/proyectos.ts`. El precio aparece solo cuando
  * el proyecto tiene los tres datos del numeral 2.16.1 de la Circular 004; si
  * no, dice «Consultar». Nunca se escribe un precio a mano en esta página: fue
@@ -39,8 +45,9 @@
 import ContactForm from "@/components/ContactForm";
 import MapaZona from "@/components/MapaZona";
 import Cartera from "@/components/Cartera";
-import Inmuebles from "@/components/Inmuebles";
-import Hero, { type FichaHero } from "@/components/Hero";
+import BarraConfianza from "@/components/BarraConfianza";
+import NuestrasRedes from "@/components/NuestrasRedes";
+import Hero, { type AccesoHero, type FichaHero } from "@/components/Hero";
 import NavInicio from "@/components/NavInicio";
 import Animador from "@/components/Animador";
 import WhatsAppFlotante from "@/components/WhatsAppFlotante";
@@ -73,6 +80,21 @@ const heroFichas: FichaHero[] = proyectosEnOrden().map((p) => ({
 /** Los inmuebles disponibles, con la misma tarjeta de la cartera. */
 const fichasInmuebles = INMUEBLES.map(fichaDeInmueble);
 
+/** La cartera completa: los proyectos y, después, los apartamentos disponibles. */
+const cartera = [...fichas, ...fichasInmuebles];
+
+/**
+ * Los accesos de la portada, por estado, con cuántos hay de cada uno en la
+ * cartera. Un estado sin nada no se muestra.
+ */
+const accesos: AccesoHero[] = [
+  { estado: "en lanzamiento", ancla: "en-lanzamiento", texto: "En lanzamiento" },
+  { estado: "en construcción", ancla: "en-construccion", texto: "En construcción" },
+  { estado: "entrega inmediata", ancla: "entrega-inmediata", texto: "Entrega inmediata" },
+]
+  .map((e) => ({ href: `#${e.ancla}`, texto: e.texto, n: cartera.filter((f) => f.estado === e.estado).length }))
+  .filter((a) => a.n > 0);
+
 /**
  * El territorio muestra los proyectos de la Zona Norte: todos en su lista y,
  * en el mapa, solo los que tienen coordenada verificada en proyectos.ts (hoy
@@ -84,23 +106,26 @@ const pinesZonaNorte = proyectosZonaNorte.map(pinDelMapa).filter((p): p is PinPr
 
 const WA_LINK = enlaceWhatsApp(SALUDO_WHATSAPP);
 
-/** Cuántos proyectos y apartamentos hay: los saltos de arriba del bloque. */
-const saltos = { proyectos: fichas.length, apartamentos: fichasInmuebles.length };
-
 /**
- * El orden de la home y el color de cada bloque, azul y blanco alternados
- * (pedido de Rafael del 25-sep-2026: «café no me gusta, que sea azul y
- * blanco»). Cada bloque tiene su tono (src/styles/secciones.css).
+ * El orden de la home y el color de cada bloque, blanco y azul alternados
+ * («café no me gusta, que sea azul y blanco»). Cada bloque tiene su tono
+ * (src/styles/secciones.css).
  *
- *  1. Proyectos y apartamentos (blanco): lo que se viene a buscar, justo
- *     después de la portada, que ya muestra los proyectos.
- *  2. El territorio (azul): dónde quedan y qué hay alrededor.
- *  3. Quién te asesora (blanco): la persona detrás de la oferta.
- *  4. Respaldo jurídico y paso a paso (azul): cómo se compra y con qué
- *     garantías. Van en un mismo bloque, así que cuando el paso a paso no
- *     sale (producción, mientras ningún paso esté confirmado) la alternancia
- *     de colores sigue igual.
- *  5. Contacto (blanco), antes del pie azul.
+ * El orden sale de revisar las homes de las inmobiliarias y los agentes que
+ * más venden (Amarilo, Constructora Bolívar, Marval, Cusezar, Serena del Mar,
+ * Engel & Völkers, Compass, Coldwell Banker, The Agency y agentes de alto
+ * volumen), el 25-sep-2026: arriba la portada con accesos a la oferta;
+ * después, la oferta con filtros; luego quién asesora; el territorio, cuando
+ * la persona ya vio qué hay; cómo se compra y con qué respaldo; y al final
+ * las redes y el contacto.
+ *
+ *  1. Barra de confianza y cartera (blanco): proyectos y apartamentos juntos.
+ *  2. Quién te asesora (azul).
+ *  3. El territorio (blanco): «¿por qué aquí?».
+ *  4. Cómo comprar y respaldo jurídico (azul): van en un mismo bloque; si el
+ *     paso a paso no sale, la alternancia de colores sigue igual.
+ *  5. Nuestras redes (blanco).
+ *  6. Contacto (azul), antes del pie, que lleva una línea camel arriba.
  */
 function secciones(): { id: string; tono: string; nodo: React.ReactNode }[] {
   return [
@@ -109,28 +134,29 @@ function secciones(): { id: string; tono: string; nodo: React.ReactNode }[] {
       tono: "tono-claro tono-blanco-1",
       nodo: (
         <>
-          <Cartera fichas={fichas} saltos={saltos} />
-          <Inmuebles fichas={fichasInmuebles} saltos={saltos} />
+          <BarraConfianza proyectos={fichas.length} apartamentos={fichasInmuebles.length} />
+          <Cartera fichas={cartera} />
         </>
       ),
     },
+    { id: "asesor", tono: "tono-oscuro tono-azul-1", nodo: <QuienTeAsesora /> },
     {
       id: "territorio",
-      tono: "tono-oscuro tono-azul-1",
+      tono: "tono-claro tono-blanco-2",
       nodo: <MapaZona proyectos={fichasZonaNorte} pines={pinesZonaNorte} />,
     },
-    { id: "asesor", tono: "tono-claro tono-blanco-2", nodo: <QuienTeAsesora /> },
     {
-      id: "respaldo",
+      id: "compra",
       tono: "tono-oscuro tono-azul-2",
       nodo: (
         <>
-          <RespaldoJuridico />
           {PASOS.some(seMuestra) && <PasoAPaso />}
+          <RespaldoJuridico />
         </>
       ),
     },
-    { id: "contacto", tono: "tono-claro tono-blanco-3", nodo: <Contacto /> },
+    { id: "redes", tono: "tono-claro tono-blanco-3", nodo: <NuestrasRedes /> },
+    { id: "contacto", tono: "tono-oscuro tono-azul-3", nodo: <Contacto /> },
   ];
 }
 
@@ -142,7 +168,7 @@ export default function Home() {
 
       <main>
         {/* ── Over the fold ────────────────────── */}
-        <Hero fichas={heroFichas} whatsapp={WA_LINK} />
+        <Hero fichas={heroFichas} whatsapp={WA_LINK} accesos={accesos} />
 
         {/* ── Los bloques, azul y blanco alternados ── */}
         {secciones().map((x) => (

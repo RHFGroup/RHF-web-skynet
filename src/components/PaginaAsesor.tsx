@@ -35,7 +35,7 @@ import { ICONO_PILAR } from "@/components/QuienTeAsesora";
 import { EQUIPO, NOMBRE_COMPLETO, PILARES, PROPUESTA_VALOR } from "@/data/asesor";
 import { CORREO, TELEFONO_VISIBLE, WHATSAPP, enlaceWhatsApp } from "@/data/contacto";
 import { ESTUDIO_JURIDICO } from "@/data/proceso";
-import { MODO_REVISION, seMuestra } from "@/lib/revision";
+import { seMuestra } from "@/lib/revision";
 import "@/styles/asesor.css";
 import "@/styles/secciones.css";
 
@@ -113,12 +113,12 @@ export default function PaginaAsesor() {
               <picture>
                 <source
                   type="image/webp"
-                  srcSet="/rafael/perfil-520.webp 520w, /rafael/perfil-1040.webp 1040w"
+                  srcSet="/rafael/camisa-blanca-520.webp 520w, /rafael/camisa-blanca-1040.webp 1040w"
                   sizes="(max-width: 860px) 80vw, 420px"
                 />
                 <img
-                  src="/rafael/perfil-1040.jpg"
-                  srcSet="/rafael/perfil-520.jpg 520w, /rafael/perfil-1040.jpg 1040w"
+                  src="/rafael/camisa-blanca-1040.jpg"
+                  srcSet="/rafael/camisa-blanca-520.jpg 520w, /rafael/camisa-blanca-1040.jpg 1040w"
                   sizes="(max-width: 860px) 80vw, 420px"
                   width={1040}
                   height={1300}
@@ -210,15 +210,10 @@ export default function PaginaAsesor() {
           <div className="section-shell">
             <p className="section-kicker">Mi equipo</p>
             <h2 id="ap-equipo-titulo">Quiénes te acompañan</h2>
-            {MODO_REVISION && equipo.length === 0 && (
-              <p className="propuesta propuesta-seccion">
-                Pendiente — los integrantes del equipo: nombre, cargo y foto de cada uno
-              </p>
-            )}
             <RevealGrupo className="ap-equipo-lista">
               <article className="ap-persona" style={{ "--i": 0 } as React.CSSProperties}>
                 <img
-                  src="/rafael/camisa-blanca-520.jpg"
+                  src="/rafael/retrato-520.jpg"
                   alt={NOMBRE_COMPLETO}
                   width={520}
                   height={650}

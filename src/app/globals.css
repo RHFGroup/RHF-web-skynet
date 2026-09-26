@@ -321,6 +321,16 @@ h1, h2, h3, h4 {
 .footer-links { display: flex; gap: 24px; }
 .footer-links a { color: var(--marfil-dark); font-size: 13px; transition: color 0.2s ease; }
 .footer-links a:hover { color: var(--camel); }
+/* 25-sep-2026: las redes del pie y una línea camel arriba, que separa el pie
+   del contacto (también azul) en la home. */
+.site-footer { border-top: 1px solid rgb(194 165 120 / 0.35); }
+.footer-redes { display: flex; flex-wrap: wrap; gap: 10px 22px; padding: 20px 0 4px; }
+.footer-redes a {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--marfil-dark); font-size: 13px; font-weight: 500;
+  transition: color 0.2s ease;
+}
+.footer-redes a:hover { color: var(--camel); }
 .footer-legal { margin-top: 28px; }
 .footer-legal p { font-size: 12px; line-height: 1.6; margin-bottom: 10px; color: rgb(255 255 255 / 0.55); }
 .footer-legal strong { color: rgb(255 255 255 / 0.8); font-weight: 600; }
@@ -380,6 +390,9 @@ h1, h2, h3, h4 {
   .footer-links { flex-wrap: wrap; gap: 14px; }
   .whatsapp-float { bottom: 100px; right: 20px; width: 50px; height: 50px; }
   .contacto-form { padding: 24px; }
+  /* 25-sep-2026: en el teléfono las secciones respiran menos (antes, 110 px
+     arriba y abajo también aquí). */
+  .section { padding: 76px 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
