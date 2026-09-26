@@ -7,7 +7,8 @@
  *
  * REGLAS (las mismas de la cartera)
  *  · El precio sale solo donde está escrito, con su fecha de corte. Hoy solo
- *    Doral Suites 320 tiene precio escrito (ficha de venta de marzo de 2026).
+ *    Doral Suites 320 tiene precio (confirmado el 25 de septiembre de 2026;
+ *    reemplaza el de la ficha de venta del 6 de marzo de 2026).
  *  · Cada área lleva la etiqueta literal de su fuente: la escritura pública,
  *    el plano oficial o la presentación de venta. Nunca una cifra de la
  *    publicidad cuando el documento dice otra: la ficha de venta de Cavana
@@ -142,9 +143,9 @@ export const INMUEBLES: Inmueble[] = [
       fuente: "doralcartagena.com/doral-suites",
     },
     precio: {
-      valor: 350_000_000,
-      corte: "6 de marzo de 2026",
-      fuente: "Ficha de venta del apartamento del 6 de marzo de 2026",
+      valor: 330_000_000,
+      corte: "25 de septiembre de 2026",
+      fuente: "Precio de venta confirmado el 25 de septiembre de 2026",
     },
     fotos: serie("doral-suites-320", FOTO_PROPIA_FEB, [
       { alt: "Doral Suites 320 — sala-comedor con la puerta al balcón" },
@@ -165,7 +166,7 @@ export const INMUEBLES: Inmueble[] = [
     fuentes: [
       "Piso, áreas y parqueadero: escritura pública del apartamento (julio de 2025).",
       "Distribución y balcón: plano oficial del apartamento tipo 5 (doralcartagena.com).",
-      "Precio: ficha de venta del 6 de marzo de 2026.",
+      "Precio: vigente al 25 de septiembre de 2026.",
       "Renta corta: doralcartagena.com/doral-suites.",
       "Fotos del apartamento: 28 de febrero de 2026.",
     ],
@@ -378,7 +379,7 @@ export function getInmueble(slug: string): Inmueble | undefined {
   return INMUEBLES.find((i) => i.slug === slug);
 }
 
-/** «$350.000.000» o «Consultar». */
+/** «$330.000.000» o «Consultar». */
 export function precioInmueble(i: Inmueble): { texto: string; corte: string | null } {
   return i.precio ? { texto: formatoPesos(i.precio.valor), corte: i.precio.corte } : { texto: "Consultar", corte: null };
 }
