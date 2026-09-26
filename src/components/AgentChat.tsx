@@ -28,7 +28,9 @@ export default function AgentChat() {
         hermesUrl={WS_URL}
         brandName="RHF"
         brandSubtitle="Asesoría inmobiliaria · Cartagena"
-        welcomeMessage="👋 ¡Hola! Soy el asistente de la cartera inmobiliaria. Preguntame por Doral Country, Doral West, Acacias Campestre u otro proyecto: precios, disponibilidad y más."
+        // Sin «precios»: el agente no los da (los confirma el asesor), y el saludo
+        // no debe prometer lo que el chat no responde. Auditoría del 25-sep-2026.
+        welcomeMessage="👋 ¡Hola! Soy el asistente de la cartera inmobiliaria. Pregúntame por Doral Country, Doral West, Acacias Campestre u otro proyecto: ubicación, disponibilidad, entregas y más."
       />
     </div>
   );
