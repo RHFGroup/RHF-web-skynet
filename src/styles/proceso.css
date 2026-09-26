@@ -10,7 +10,7 @@
   border: 1px dashed var(--camel);
   border-radius: 9999px;
   background: rgb(194 165 120 / 0.12);
-  color: var(--cuero);
+  color: var(--marino-light);
   font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -18,7 +18,7 @@
 
 /* Una sola marca por sección (AvisoPropuesta). */
 .propuesta-seccion { display: table; margin-top: 16px; font-size: 11px; }
-.rj .propuesta, .pa .propuesta, .tono .propuesta {
+.rj .propuesta, .pa .propuesta, .tono-oscuro .propuesta {
   border-color: rgb(212 188 150 / 0.7);
   background: rgb(194 165 120 / 0.16);
   color: var(--camel-light);
@@ -159,7 +159,8 @@
 /* ── Paso a paso ─────────────────────────────── 
    25-sep-2026: línea de tiempo al centro, pasos a un lado y al otro, y el
    color de quien acompaña: camel el asesor, azul el estudio jurídico. La
-   sección va sobre café oscuro (secciones.css). */
+   sección va sobre azul, en el mismo bloque del respaldo jurídico
+   (secciones.css). */
 .pa { scroll-margin-top: var(--nav-h); }
 .pa-cabeza {
   display: flex;
@@ -230,7 +231,7 @@
   height: 54px;
   border: 1px solid rgb(243 239 230 / 0.28);
   border-radius: 50%;
-  background: #2a1d14;
+  background: #16202f;
   color: rgb(243 239 230 / 0.55);
   transition: background 0.6s ease, color 0.6s ease, border-color 0.6s ease, box-shadow 0.6s ease, transform 0.6s ease;
 }
@@ -359,7 +360,7 @@
   font-size: 14px;
 }
 .guia-lista { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
-.guia-cerrar { border: none; background: none; font-family: inherit; color: var(--cuero); cursor: pointer; }
+.guia-cerrar { border: none; background: none; font-family: inherit; color: var(--marino-light); cursor: pointer; }
 
 /* Teléfono: la línea baja a la izquierda y todos los pasos van a su derecha. */
 @media (max-width: 860px) {

@@ -321,18 +321,29 @@ h1, h2, h3, h4 {
 .footer-links { display: flex; gap: 24px; }
 .footer-links a { color: var(--marfil-dark); font-size: 13px; transition: color 0.2s ease; }
 .footer-links a:hover { color: var(--camel); }
+/* 25-sep-2026: las redes del pie y una línea camel arriba, que separa el pie
+   del contacto (también azul) en la home. */
+.site-footer { border-top: 1px solid rgb(194 165 120 / 0.35); }
+.footer-redes { display: flex; flex-wrap: wrap; gap: 10px 22px; padding: 20px 0 4px; }
+.footer-redes a {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--marfil-dark); font-size: 13px; font-weight: 500;
+  transition: color 0.2s ease;
+}
+.footer-redes a:hover { color: var(--camel); }
 .footer-legal { margin-top: 28px; }
-.footer-legal p { font-size: 12px; line-height: 1.6; margin-bottom: 10px; color: rgb(255 255 255 / 0.55); }
+.footer-legal p { font-size: 12px; line-height: 1.6; margin-bottom: 10px; color: rgb(255 255 255 / 0.62); }
 .footer-legal strong { color: rgb(255 255 255 / 0.8); font-weight: 600; }
 .footer-circular {
-  font-size: 11px !important;
+  font-size: 12px !important;
   padding: 10px 0;
   border-top: 1px solid rgb(255 255 255 / 0.06);
 }
 .footer-copy {
   margin-top: 16px !important;
-  color: rgb(255 255 255 / 0.35) !important;
-  font-size: 11px !important;
+  /* Auditoría del 25-sep-2026: al 35 % no llegaba al contraste AA (3,1:1); al 62 %, 6,5:1. */
+  color: rgb(255 255 255 / 0.62) !important;
+  font-size: 12px !important;
 }
 
 /* ── WhatsApp flotante ─────────────────────── */
@@ -380,6 +391,9 @@ h1, h2, h3, h4 {
   .footer-links { flex-wrap: wrap; gap: 14px; }
   .whatsapp-float { bottom: 100px; right: 20px; width: 50px; height: 50px; }
   .contacto-form { padding: 24px; }
+  /* 25-sep-2026: en el teléfono las secciones respiran menos (antes, 110 px
+     arriba y abajo también aquí). */
+  .section { padding: 76px 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -958,7 +972,8 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
 .footer-legal-links {
   margin-top: 0.75rem;
   font-size: 0.8125rem;
-  opacity: 0.75;
+  /* Antes: opacity 0,75 sobre un texto al 55 %, que quedaba en 3,9:1. Ahora 7,8:1. */
+  color: rgb(255 255 255 / 0.7);
 }
 .footer-legal-links a {
   color: inherit;
@@ -1030,14 +1045,17 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
 .bloque-legal-norma {
   margin: 0 0 1.5rem;
   font-size: 0.8125rem;
-  opacity: 0.65;
+  /* Auditoría del 25-sep-2026: con 0,6 y 0,65 los textos secundarios del
+     bloque quedaban entre 2,9:1 y 4,3:1. Con 0,8 dan 6,7:1 (y 5,3:1 dentro de
+     reservas y conflictos, que ya llevan 0,85). */
+  opacity: 0.8;
 }
 .bloque-legal-datos { margin: 0 0 1.5rem; display: grid; gap: 1.25rem; }
 .bloque-legal-datos dt {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  opacity: 0.6;
+  opacity: 0.8;
   margin-bottom: 0.3rem;
 }
 .bloque-legal-datos dd { margin: 0; }
@@ -1046,10 +1064,10 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
   display: block;
   margin-top: 0.25rem;
   font-size: 0.8125rem;
-  opacity: 0.6;
+  opacity: 0.8;
   line-height: 1.45;
 }
-.bloque-legal-fuente-inline { font-size: 0.8125rem; opacity: 0.6; }
+.bloque-legal-fuente-inline { font-size: 0.8125rem; opacity: 0.85; }
 .bloque-legal-areas { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.75rem; }
 .bloque-legal-aviso {
   margin: 0 0 1rem;

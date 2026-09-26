@@ -6,8 +6,10 @@
  * cartera, cada uno con su ficha y su página, sin decir de quién son.
  *
  * REGLAS (las mismas de la cartera)
- *  · El precio sale solo donde está escrito, con su fecha de corte. Hoy solo
- *    Doral Suites 320 tiene precio escrito (ficha de venta de marzo de 2026).
+ *  · El precio sale solo donde está escrito, con su fecha de corte. Hoy lo
+ *    tienen Doral Suites 320 (confirmado el 25 de septiembre de 2026;
+ *    reemplaza el de la ficha de venta del 6 de marzo de 2026) y Cavana 303
+ *    (confirmado el 26 de septiembre de 2026).
  *  · Cada área lleva la etiqueta literal de su fuente: la escritura pública,
  *    el plano oficial o la presentación de venta. Nunca una cifra de la
  *    publicidad cuando el documento dice otra: la ficha de venta de Cavana
@@ -142,9 +144,9 @@ export const INMUEBLES: Inmueble[] = [
       fuente: "doralcartagena.com/doral-suites",
     },
     precio: {
-      valor: 350_000_000,
-      corte: "6 de marzo de 2026",
-      fuente: "Ficha de venta del apartamento del 6 de marzo de 2026",
+      valor: 330_000_000,
+      corte: "25 de septiembre de 2026",
+      fuente: "Precio de venta confirmado el 25 de septiembre de 2026",
     },
     fotos: serie("doral-suites-320", FOTO_PROPIA_FEB, [
       { alt: "Doral Suites 320 — sala-comedor con la puerta al balcón" },
@@ -165,7 +167,7 @@ export const INMUEBLES: Inmueble[] = [
     fuentes: [
       "Piso, áreas y parqueadero: escritura pública del apartamento (julio de 2025).",
       "Distribución y balcón: plano oficial del apartamento tipo 5 (doralcartagena.com).",
-      "Precio: ficha de venta del 6 de marzo de 2026.",
+      "Precio: vigente al 25 de septiembre de 2026.",
       "Renta corta: doralcartagena.com/doral-suites.",
       "Fotos del apartamento: 28 de febrero de 2026.",
     ],
@@ -194,15 +196,19 @@ export const INMUEBLES: Inmueble[] = [
     linea: "3 alcobas · 5 baños · vista al lago · piso 3",
     frase: "Amplio y terminado, con balcones hacia el lago, en Serena del Mar.",
     descripcion: [
-      "Apartamento en el piso 3 de la torre 10 del Conjunto Residencial Cavana, en Serena del Mar: salón-comedor, cocina, zona de labores, alacena, hall, tres alcobas, cinco baños y vestier.",
+      "Apartamento en el piso 3 de la torre 10 del Conjunto Residencial Cavana, en Serena del Mar: salón-comedor, cocina, zona de labores, alacena, hall, estudio, tres alcobas, cinco baños y vestier.",
       "Los balcones miran al lago, y el apartamento tiene aire acondicionado. Serena del Mar reúne el Hospital Serena del Mar y la sede Caribe de la Universidad de los Andes.",
     ],
     dependencias: {
-      texto: "Salón-comedor, cocina, zona de labores, alacena, hall, tres alcobas, cinco baños, vestier y balcones",
+      texto: "Salón-comedor, cocina, zona de labores, alacena, hall, estudio, tres alcobas, cinco baños, vestier y balcones",
       fuente: "Escritura pública del apartamento",
     },
     conjunto: null,
-    precio: null,
+    precio: {
+      valor: 1_280_000_000,
+      corte: "26 de septiembre de 2026",
+      fuente: "Precio de venta confirmado el 26 de septiembre de 2026",
+    },
     fotos: serie("cavana-303-torre-10", FOTO_PROPIA_FEB, [
       { alt: "Cavana 303 — balcón con vista al lago" },
       { alt: "Cavana 303 — sala con el ventanal hacia el lago" },
@@ -216,6 +222,7 @@ export const INMUEBLES: Inmueble[] = [
     plano: null,
     fuentes: [
       "Piso, torre, dependencias y áreas: escritura pública del apartamento.",
+      "Precio: vigente al 26 de septiembre de 2026.",
       "Vista al lago y aire acondicionado: fotos del apartamento del 28 de febrero de 2026.",
     ],
     compartir: "/inmuebles/cavana-303-torre-10/01.jpg",
@@ -378,7 +385,7 @@ export function getInmueble(slug: string): Inmueble | undefined {
   return INMUEBLES.find((i) => i.slug === slug);
 }
 
-/** «$350.000.000» o «Consultar». */
+/** «$330.000.000» o «Consultar». */
 export function precioInmueble(i: Inmueble): { texto: string; corte: string | null } {
   return i.precio ? { texto: formatoPesos(i.precio.valor), corte: i.precio.corte } : { texto: "Consultar", corte: null };
 }

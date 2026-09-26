@@ -26,6 +26,14 @@ export type Ficha = {
   slug: string;
   nombre: string;
   zona: string;
+  /**
+   * De dónde sale la tarjeta: un proyecto de la cartera o un apartamento
+   * disponible. Desde el 25-sep-2026 los dos van en la misma cartera, con un
+   * filtro para verlos por separado.
+   */
+  origen: "proyecto" | "apartamento";
+  /** La zona para el filtro: «Zona Norte», «Cartagena», «Vía Turbaco», «Atlántico». */
+  zonaFiltro: string;
   estado: Proyecto["estado"];
   tipoInmueble: Proyecto["tipoInmueble"] | null;
   href: string;
@@ -185,6 +193,8 @@ export function fichaDe(p: Proyecto): Ficha {
     slug: p.slug,
     nombre: p.nombre,
     zona: p.zona,
+    origen: "proyecto",
+    zonaFiltro: p.zona,
     estado: p.estado,
     tipoInmueble: p.tipoInmueble ?? null,
     href: `/proyectos/${p.slug}`,
@@ -226,6 +236,9 @@ export function fichaDeInmueble(i: Inmueble): Ficha {
     slug: i.slug,
     nombre: i.nombre,
     zona: i.zona,
+    origen: "apartamento",
+    // «Serena del Mar · Zona Norte» filtra con la Zona Norte; Agua Marina, con el Atlántico.
+    zonaFiltro: /Zona Norte/.test(i.zona) ? "Zona Norte" : /Atlántico/.test(i.zona) ? "Atlántico" : i.zona,
     estado: i.estado === "En construcción" ? "en construcción" : "entrega inmediata",
     estadoTexto: i.estado,
     tipoInmueble: "apartamentos",

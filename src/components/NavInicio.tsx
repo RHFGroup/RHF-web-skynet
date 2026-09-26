@@ -4,15 +4,21 @@
  * El menú de la home.
  *
  * Sobre la portada va transparente —logo claro, enlaces en blanco— para que
- * las imágenes lleguen hasta arriba. Apenas la página baja, se vuelve marfil
- * con desenfoque y el logo oscuro, como era antes. En el borde de abajo, una
- * línea camel se llena a medida que se lee la página.
+ * las imágenes lleguen hasta arriba. Apenas la página baja, se vuelve blanco
+ * con desenfoque y el logo oscuro. En el borde de abajo, una línea camel se
+ * llena a medida que se lee la página.
+ *
+ * Los enlaces siguen el orden de la home (src/data/navegacion.ts). En el
+ * teléfono, el botón de tres líneas abre el menú con todas las secciones
+ * (MenuMovil).
  *
  * Es fijo en vez de pegajoso (`sticky`): la portada empieza debajo de él, en
  * el borde de la pantalla. La altura no cambia al bajar, así `--nav-h` sigue
  * valiendo para los elementos que se anclan debajo del menú.
  */
 import { useEffect, useRef, useState } from "react";
+import MenuMovil from "@/components/MenuMovil";
+import { SECCIONES_HOME } from "@/data/navegacion";
 import "@/styles/nav-inicio.css";
 
 export default function NavInicio({ whatsapp }: { whatsapp: string }) {
@@ -55,15 +61,19 @@ export default function NavInicio({ whatsapp }: { whatsapp: string }) {
           <img className="brand-oscuro" src="/marca/rhf-living-oscuro.svg" alt="RHF Living" width="215" height="48" />
         </a>
         <nav className="nav-links" aria-label="Secciones">
-          <a href="#mapa">El territorio</a>
-          <a href="#asesor">Quién te asesora</a>
-          <a href="#cartera">Nuestra cartera</a>
-          <a href="#inmuebles">Inmuebles</a>
-          <a href="#contacto">Contacto</a>
+          {SECCIONES_HOME.filter((s) => !s.soloMovil).map((s) => (
+            <a key={s.ancla} href={`#${s.ancla}`}>
+              {s.texto}
+            </a>
+          ))}
         </nav>
         <a className="nav-cta" href={whatsapp} target="_blank" rel="noopener noreferrer">
           Escríbenos
         </a>
+        <MenuMovil
+          enlaces={SECCIONES_HOME.map((s) => ({ href: `#${s.ancla}`, texto: s.texto }))}
+          whatsapp={whatsapp}
+        />
       </div>
       <div className="nav-avance" ref={barra} aria-hidden="true" />
     </header>
