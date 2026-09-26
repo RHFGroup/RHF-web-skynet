@@ -195,11 +195,11 @@ export const INMUEBLES: Inmueble[] = [
     linea: "3 alcobas · 5 baños · vista al lago · piso 3",
     frase: "Amplio y terminado, con balcones hacia el lago, en Serena del Mar.",
     descripcion: [
-      "Apartamento en el piso 3 de la torre 10 del Conjunto Residencial Cavana, en Serena del Mar: salón-comedor, cocina, zona de labores, alacena, hall, tres alcobas, cinco baños y vestier.",
+      "Apartamento en el piso 3 de la torre 10 del Conjunto Residencial Cavana, en Serena del Mar: salón-comedor, cocina, zona de labores, alacena, hall, estudio, tres alcobas, cinco baños y vestier.",
       "Los balcones miran al lago, y el apartamento tiene aire acondicionado. Serena del Mar reúne el Hospital Serena del Mar y la sede Caribe de la Universidad de los Andes.",
     ],
     dependencias: {
-      texto: "Salón-comedor, cocina, zona de labores, alacena, hall, tres alcobas, cinco baños, vestier y balcones",
+      texto: "Salón-comedor, cocina, zona de labores, alacena, hall, estudio, tres alcobas, cinco baños, vestier y balcones",
       fuente: "Escritura pública del apartamento",
     },
     conjunto: null,
