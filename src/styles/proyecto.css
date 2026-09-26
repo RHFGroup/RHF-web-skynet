@@ -165,7 +165,8 @@
   color: var(--marino);
 }
 .pp-fuente { margin-top: 14px; font-size: 12px; line-height: 1.5; color: var(--text-muted); }
-.pp-fuente-inline { font-size: 12px; color: var(--text-muted); }
+/* #555 y no el gris de siempre: sobre el fondo de los tipos daba 4,4:1; así da 6,1:1. */
+.pp-fuente-inline { font-size: 12px; color: #555555; }
 
 /* ── 2 · Datos clave ─────────────────────────── */
 /* Flex y no grid: con cinco o siete datos, la última fila se estira en vez de
@@ -190,7 +191,9 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--camel);
+  /* Auditoría del 25-sep-2026: el camel sobre blanco daba 2,3:1; el marino
+     claro da 8,9:1. Lo mismo en las etiquetas de tipos, respaldo y lateral. */
+  color: var(--marino-light);
 }
 .pp-franja dd { margin: 6px 0 0; }
 .pp-franja strong {
@@ -265,7 +268,7 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--camel);
+  color: var(--marino-light);
 }
 .pp-tipo-datos dd { margin: 0; }
 .pp-tipo-datos dd strong { display: block; font-size: 16px; font-weight: 600; color: var(--marino); }
@@ -383,7 +386,7 @@
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--camel);
+  color: var(--marino-light);
 }
 .pp-respaldo dd { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--near-black); }
 .pp-respaldo a { color: var(--cuero); text-decoration: underline; text-underline-offset: 3px; }
@@ -429,7 +432,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--camel);
+  color: var(--marino-light);
 }
 .pp-lateral-precio {
   margin-top: 6px;

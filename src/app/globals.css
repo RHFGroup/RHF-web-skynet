@@ -1045,14 +1045,17 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
 .bloque-legal-norma {
   margin: 0 0 1.5rem;
   font-size: 0.8125rem;
-  opacity: 0.65;
+  /* Auditoría del 25-sep-2026: con 0,6 y 0,65 los textos secundarios del
+     bloque quedaban entre 2,9:1 y 4,3:1. Con 0,8 dan 6,7:1 (y 5,3:1 dentro de
+     reservas y conflictos, que ya llevan 0,85). */
+  opacity: 0.8;
 }
 .bloque-legal-datos { margin: 0 0 1.5rem; display: grid; gap: 1.25rem; }
 .bloque-legal-datos dt {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  opacity: 0.6;
+  opacity: 0.8;
   margin-bottom: 0.3rem;
 }
 .bloque-legal-datos dd { margin: 0; }
@@ -1061,10 +1064,10 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
   display: block;
   margin-top: 0.25rem;
   font-size: 0.8125rem;
-  opacity: 0.6;
+  opacity: 0.8;
   line-height: 1.45;
 }
-.bloque-legal-fuente-inline { font-size: 0.8125rem; opacity: 0.6; }
+.bloque-legal-fuente-inline { font-size: 0.8125rem; opacity: 0.85; }
 .bloque-legal-areas { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.75rem; }
 .bloque-legal-aviso {
   margin: 0 0 1rem;
