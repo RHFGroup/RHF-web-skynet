@@ -332,17 +332,18 @@ h1, h2, h3, h4 {
 }
 .footer-redes a:hover { color: var(--camel); }
 .footer-legal { margin-top: 28px; }
-.footer-legal p { font-size: 12px; line-height: 1.6; margin-bottom: 10px; color: rgb(255 255 255 / 0.55); }
+.footer-legal p { font-size: 12px; line-height: 1.6; margin-bottom: 10px; color: rgb(255 255 255 / 0.62); }
 .footer-legal strong { color: rgb(255 255 255 / 0.8); font-weight: 600; }
 .footer-circular {
-  font-size: 11px !important;
+  font-size: 12px !important;
   padding: 10px 0;
   border-top: 1px solid rgb(255 255 255 / 0.06);
 }
 .footer-copy {
   margin-top: 16px !important;
-  color: rgb(255 255 255 / 0.35) !important;
-  font-size: 11px !important;
+  /* Auditoría del 25-sep-2026: al 35 % no llegaba al contraste AA (3,1:1); al 62 %, 6,5:1. */
+  color: rgb(255 255 255 / 0.62) !important;
+  font-size: 12px !important;
 }
 
 /* ── WhatsApp flotante ─────────────────────── */
@@ -971,7 +972,8 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
 .footer-legal-links {
   margin-top: 0.75rem;
   font-size: 0.8125rem;
-  opacity: 0.75;
+  /* Antes: opacity 0,75 sobre un texto al 55 %, que quedaba en 3,9:1. Ahora 7,8:1. */
+  color: rgb(255 255 255 / 0.7);
 }
 .footer-legal-links a {
   color: inherit;

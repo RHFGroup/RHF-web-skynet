@@ -482,7 +482,7 @@
   .hero-leyenda-precio strong { padding: 6px 12px; font-size: 13px; }
   .hero-leyenda-precio small { font-size: 10.5px; }
   .hero-leyenda-contenido .hero-leyenda-cta { margin-top: 10px; font-size: 13px; }
-  .hero-leyenda-contenido .hero-leyenda-credito { margin-top: 8px; font-size: 10px; }
+  .hero-leyenda-contenido .hero-leyenda-credito { margin-top: 8px; font-size: 11px; }
   .hero-controles { width: 100%; padding: 0 0 18px; gap: 8px; }
   .hero-tabs {
     display: flex;
