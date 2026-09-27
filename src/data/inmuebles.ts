@@ -130,12 +130,12 @@ export const INMUEBLES: Inmueble[] = [
     linea: "1 habitación · balcón · piso 3",
     frase: "Terminado, con balcón y parqueadero de uso exclusivo, en un proyecto aprobado para renta corta.",
     descripcion: [
-      "Apartamento terminado en el piso 3 de Doral Suites, dentro del desarrollo Doral sobre la Vía al Mar: una habitación, un baño, cocina integral, sala-comedor y balcón.",
+      "Apartamento terminado en el piso 3 de Doral Suites, dentro del desarrollo Doral sobre la Vía al Mar: una habitación, un baño, cocina con muebles altos y bajos y mesón con lavaplatos, sala-comedor y balcón. La estufa la escoge quien compre.",
       "Doral Suites está aprobado para renta corta, según su constructor: sirve para vivir o para rentar por días.",
     ],
     dependencias: {
-      texto: "Habitación, baño, cocina integral, sala-comedor, balcón y parqueadero de uso exclusivo",
-      fuente: "Plano oficial del apartamento tipo 5 y escritura pública",
+      texto: "Habitación, baño, cocina con muebles y mesón con lavaplatos (la estufa la escoge quien compre), sala-comedor, balcón y parqueadero de uso exclusivo",
+      fuente: "Plano oficial del apartamento tipo 5, escritura pública y fotos del apartamento del 28 de febrero de 2026",
     },
     conjunto: {
       items: ["Aprobado para renta corta", "Dentro del desarrollo Doral, sobre la Vía al Mar"],
@@ -149,7 +149,7 @@ export const INMUEBLES: Inmueble[] = [
     fotos: serie("doral-suites-320", FOTO_PROPIA_FEB, [
       { alt: "Doral Suites 320 — sala-comedor con la puerta al balcón" },
       { alt: "Doral Suites 320 — balcón con vista a la Vía al Mar" },
-      { alt: "Doral Suites 320 — cocina integral" },
+      { alt: "Doral Suites 320 — cocina con muebles altos y bajos y mesón con lavaplatos" },
       { alt: "Doral Suites 320 — habitación con ventana" },
       { alt: "Doral Suites 320 — clóset de la habitación" },
       { alt: "Doral Suites 320 — baño con ducha en vidrio" },
@@ -165,6 +165,7 @@ export const INMUEBLES: Inmueble[] = [
     fuentes: [
       "Piso, áreas y parqueadero: escritura pública del apartamento (julio de 2025).",
       "Distribución y balcón: plano oficial del apartamento tipo 5 (doralcartagena.com).",
+      "Cocina: fotos del apartamento del 28 de febrero de 2026; trae muebles y mesón con lavaplatos, y la estufa la escoge quien compre (confirmado el 27 de septiembre de 2026).",
       "Precio: ficha de venta del 6 de marzo de 2026.",
       "Renta corta: doralcartagena.com/doral-suites.",
       "Fotos del apartamento: 28 de febrero de 2026.",
