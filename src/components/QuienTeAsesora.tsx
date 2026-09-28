@@ -7,9 +7,10 @@
  * /asesor (src/app/asesor/page.tsx): allí viven la biografía, las
  * credenciales, el equipo y los datos estructurados de la persona.
  *
- * Aquí queda lo esencial: la foto de perfil (la de redes, de la sesión de
- * estudio), el nombre, el oficio, una frase, los tres pilares en su versión
- * básica y dos botones. «Te asesoro si…» salió entero, por su pedido.
+ * Aquí queda lo esencial: la foto, el nombre, el oficio, una frase, los tres
+ * pilares en su versión básica y dos botones. «Te asesoro si…» salió entero,
+ * por su pedido. La foto es la de camisa blanca de la sesión de estudio: la
+ * de camiseta negra no le gustó («quiero que se vea más serio», 25-sep-2026).
  *
  * Reglas del vault que siguen mandando: copy en afirmativo, ninguna cifra sin
  * respaldo, y el teléfono escrito a la vista, fuera de un botón.
@@ -43,12 +44,12 @@ export default function QuienTeAsesora() {
             <picture>
               <source
                 type="image/webp"
-                srcSet="/rafael/perfil-520.webp 520w, /rafael/perfil-1040.webp 1040w"
+                srcSet="/rafael/camisa-blanca-520.webp 520w, /rafael/camisa-blanca-1040.webp 1040w"
                 sizes="(max-width: 860px) 78vw, 380px"
               />
               <img
-                src="/rafael/perfil-1040.jpg"
-                srcSet="/rafael/perfil-520.jpg 520w, /rafael/perfil-1040.jpg 1040w"
+                src="/rafael/camisa-blanca-1040.jpg"
+                srcSet="/rafael/camisa-blanca-520.jpg 520w, /rafael/camisa-blanca-1040.jpg 1040w"
                 sizes="(max-width: 860px) 78vw, 380px"
                 width={1040}
                 height={1300}

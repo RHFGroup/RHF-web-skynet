@@ -57,7 +57,7 @@ export default function InmuebleLanding({ i }: { i: Inmueble }) {
       <main className="pp pi">
         <div className="pp-migas">
           <div className="section-shell">
-            <VolverACartera href="/#inmuebles" texto="Volver a los inmuebles" />
+            <VolverACartera href="/#apartamentos" texto="Volver a los apartamentos" />
           </div>
         </div>
 

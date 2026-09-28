@@ -5,9 +5,16 @@
  * línea de tiempo «Cómo comprar con nosotros» de la home.
  *
  * REGLA: cada servicio y cada paso lleva `confirmado`. Lo confirmado se
- * publica; lo que está en `false` solo aparece en las vistas previas de las
- * ramas, marcado como propuesta (ver src/lib/revision.ts). Para publicar uno,
- * se cambia su `confirmado` a `true` después del OK de Rafael.
+ * publica; lo que está en `false` no sale en ninguna parte (ver
+ * src/lib/revision.ts). Para publicar uno, se cambia su `confirmado` a `true`
+ * después del OK de Rafael.
+ *
+ * 25-sep-2026: Rafael revisó en la vista previa la frase, los cuatro
+ * servicios y los ocho pasos y pidió quitar la marca «Propuesta · por
+ * confirmar» y dejar la web lista («eso sácalo… déjame el website listo»).
+ * Quedan confirmados tal como los vio, salvo el paso 8: decía «te ayudamos
+ * con su administración o su arriendo», un servicio que él no confirmó, y
+ * quedó en la entrega.
  *
  * Lo que ya está confirmado: RHF Living tiene estudio jurídico propio (Rafael,
  * 24-sep-2026; nota en el vault). Los servicios, el equipo y los proyectos
@@ -57,32 +64,32 @@ export const ESTUDIO_JURIDICO = {
   frase: {
     texto:
       "Contamos con estudio jurídico propio: revisamos el proyecto y los documentos antes de que firmes, y te acompañamos hasta la escritura.",
-    confirmado: false,
+    confirmado: true,
   },
   servicios: [
     {
       titulo: "Títulos y situación legal",
       texto: "Revisión de títulos y de la situación legal del inmueble.",
       icono: "documento",
-      confirmado: false,
+      confirmado: true,
     },
     {
       titulo: "Licencias y constructora",
       texto: "Verificación de las licencias del proyecto y de la constructora.",
       icono: "escudo",
-      confirmado: false,
+      confirmado: true,
     },
     {
       titulo: "Promesa y contratos",
       texto: "Revisión de la promesa de compraventa y de los contratos antes de firmar.",
       icono: "documento",
-      confirmado: false,
+      confirmado: true,
     },
     {
       titulo: "Escritura y registro",
       texto: "Acompañamiento en la escrituración y el registro del inmueble.",
       icono: "llave",
-      confirmado: false,
+      confirmado: true,
     },
   ] satisfies Servicio[],
   /**
@@ -99,7 +106,7 @@ export const PASOS: Paso[] = [
     icono: "conversacion",
     juridico: false,
     quien: "asesor",
-    confirmado: false,
+    confirmado: true,
   },
   {
     titulo: "Te mostramos opciones",
@@ -107,7 +114,7 @@ export const PASOS: Paso[] = [
     icono: "pin",
     juridico: false,
     quien: "asesor",
-    confirmado: false,
+    confirmado: true,
   },
   {
     titulo: "Revisión jurídica",
@@ -115,7 +122,7 @@ export const PASOS: Paso[] = [
     icono: "escudo",
     juridico: true,
     quien: "juridico",
-    confirmado: false,
+    confirmado: true,
   },
   {
     titulo: "Separas tu unidad",
@@ -123,7 +130,7 @@ export const PASOS: Paso[] = [
     icono: "documento",
     juridico: true,
     quien: "ambos",
-    confirmado: false,
+    confirmado: true,
   },
   {
     titulo: "Plan de pagos y financiación",
@@ -131,7 +138,7 @@ export const PASOS: Paso[] = [
     icono: "calendario",
     juridico: false,
     quien: "asesor",
-    confirmado: false,
+    confirmado: true,
   },
   {
     titulo: "Seguimiento de obra",
@@ -139,7 +146,7 @@ export const PASOS: Paso[] = [
     icono: "edificio",
     juridico: false,
     quien: "asesor",
-    confirmado: false,
+    confirmado: true,
   },
   {
     titulo: "Escritura y registro",
@@ -147,16 +154,15 @@ export const PASOS: Paso[] = [
     icono: "llave",
     juridico: true,
     quien: "juridico",
-    confirmado: false,
+    confirmado: true,
   },
   {
-    titulo: "Entrega y después",
-    texto: "Recibes tu inmueble y, si quieres, te ayudamos con su administración o su arriendo.",
+    titulo: "Entrega",
+    texto: "Recibes tu inmueble y te acompañamos en la entrega.",
     icono: "destello",
     juridico: false,
     quien: "asesor",
-    confirmado: false,
-    pendiente: "Solo si ofreces administración o arriendo.",
+    confirmado: true,
   },
 ];
 

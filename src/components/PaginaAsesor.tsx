@@ -6,7 +6,9 @@
  * detalle de él y su equipo». Aquí están la biografía, las credenciales, los
  * pilares, el equipo y el contacto.
  *
- * Las secciones alternan azul y café, como la home.
+ * Las secciones alternan azul y blanco, como la home (secciones.css). El
+ * color se asigna sobre las que de verdad salen: los pilares no se publican
+ * mientras no estén confirmados, y la alternancia no se rompe.
  *
  * Reglas que siguen mandando (vault): copy en afirmativo; ninguna cifra sin
  * respaldo (ni años de experiencia, ni operaciones cerradas, ni
@@ -33,11 +35,20 @@ import { ICONO_PILAR } from "@/components/QuienTeAsesora";
 import { EQUIPO, NOMBRE_COMPLETO, PILARES, PROPUESTA_VALOR } from "@/data/asesor";
 import { CORREO, TELEFONO_VISIBLE, WHATSAPP, enlaceWhatsApp } from "@/data/contacto";
 import { ESTUDIO_JURIDICO } from "@/data/proceso";
-import { MODO_REVISION, seMuestra } from "@/lib/revision";
+import { seMuestra } from "@/lib/revision";
 import "@/styles/asesor.css";
 import "@/styles/secciones.css";
 
 const WA_LINK = enlaceWhatsApp("Hola Rafael, vi tu perfil en la página y quiero hablar contigo sobre: ");
+
+/** Azul y blanco, en orden, sobre las secciones que salen. */
+const TONOS_AP = [
+  "tono tono-oscuro tono-azul-1",
+  "tono tono-claro tono-blanco-1",
+  "tono tono-oscuro tono-azul-2",
+  "tono tono-claro tono-blanco-2",
+  "tono tono-oscuro tono-azul-3",
+];
 
 /** Cada credencial es verificable: el pie dice dónde y cuándo. */
 export const CREDENCIALES = [
@@ -60,14 +71,16 @@ export default function PaginaAsesor() {
   const pilares = PILARES.filter(seMuestra);
   const equipo = EQUIPO.filter(seMuestra);
   const responsable = ESTUDIO_JURIDICO.responsable;
+  const bloques = ["portada", "historia", ...(pilares.length > 0 ? ["pilares"] : []), "equipo", "contacto"];
+  const tono = (id: string) => TONOS_AP[bloques.indexOf(id)];
 
   return (
     <>
-      <CabeceraSitio mensaje="Hola Rafael, vi tu perfil en la página y quiero hablar contigo." />
+      <CabeceraSitio blanca mensaje="Hola Rafael, vi tu perfil en la página y quiero hablar contigo." />
 
       <main className="ap">
         {/* ── Portada ─────────────────────────────────── */}
-        <section className="ap-portada tono tono-azul-1" aria-labelledby="ap-nombre">
+        <section className={`ap-portada ${tono("portada")}`} aria-labelledby="ap-nombre">
           <div className="section-shell ap-portada-grid">
             <Reveal className="ap-portada-texto" variant="up">
               <p className="section-kicker">Quién te asesora</p>
@@ -100,12 +113,12 @@ export default function PaginaAsesor() {
               <picture>
                 <source
                   type="image/webp"
-                  srcSet="/rafael/perfil-520.webp 520w, /rafael/perfil-1040.webp 1040w"
+                  srcSet="/rafael/camisa-blanca-520.webp 520w, /rafael/camisa-blanca-1040.webp 1040w"
                   sizes="(max-width: 860px) 80vw, 420px"
                 />
                 <img
-                  src="/rafael/perfil-1040.jpg"
-                  srcSet="/rafael/perfil-520.jpg 520w, /rafael/perfil-1040.jpg 1040w"
+                  src="/rafael/camisa-blanca-1040.jpg"
+                  srcSet="/rafael/camisa-blanca-520.jpg 520w, /rafael/camisa-blanca-1040.jpg 1040w"
                   sizes="(max-width: 860px) 80vw, 420px"
                   width={1040}
                   height={1300}
@@ -117,7 +130,7 @@ export default function PaginaAsesor() {
         </section>
 
         {/* ── Mi historia ─────────────────────────────── */}
-        <section className="section ap-historia tono tono-cafe-1" aria-labelledby="ap-historia-titulo">
+        <section className={`section ap-historia ${tono("historia")}`} aria-labelledby="ap-historia-titulo">
           <div className="section-shell ap-historia-grid">
             <Reveal className="ap-historia-foto" variant="zoom">
               <figure>
@@ -174,7 +187,7 @@ export default function PaginaAsesor() {
 
         {/* ── Por qué asesorarte conmigo ──────────────── */}
         {pilares.length > 0 && (
-          <section className="section ap-pilares tono tono-azul-2" aria-labelledby="ap-pilares-titulo">
+          <section className={`section ap-pilares ${tono("pilares")}`} aria-labelledby="ap-pilares-titulo">
             <div className="section-shell">
               <p className="section-kicker">Cómo trabajo</p>
               <h2 id="ap-pilares-titulo">Por qué asesorarte conmigo</h2>
@@ -193,19 +206,14 @@ export default function PaginaAsesor() {
         )}
 
         {/* ── Mi equipo ───────────────────────────────── */}
-        <section className="section ap-equipo tono tono-cafe-2" aria-labelledby="ap-equipo-titulo">
+        <section className={`section ap-equipo ${tono("equipo")}`} aria-labelledby="ap-equipo-titulo">
           <div className="section-shell">
             <p className="section-kicker">Mi equipo</p>
             <h2 id="ap-equipo-titulo">Quiénes te acompañan</h2>
-            {MODO_REVISION && equipo.length === 0 && (
-              <p className="propuesta propuesta-seccion">
-                Pendiente — los integrantes del equipo: nombre, cargo y foto de cada uno
-              </p>
-            )}
             <RevealGrupo className="ap-equipo-lista">
               <article className="ap-persona" style={{ "--i": 0 } as React.CSSProperties}>
                 <img
-                  src="/rafael/camisa-blanca-520.jpg"
+                  src="/rafael/retrato-520.jpg"
                   alt={NOMBRE_COMPLETO}
                   width={520}
                   height={650}
@@ -253,7 +261,7 @@ export default function PaginaAsesor() {
         </section>
 
         {/* ── Contacto ────────────────────────────────── */}
-        <section className="section section-contacto tono tono-azul-3" id="contacto">
+        <section className={`section section-contacto ${tono("contacto")}`} id="contacto">
           <div className="section-shell contacto-shell">
             <div className="contacto-texto">
               <p className="section-kicker">Contacto</p>
