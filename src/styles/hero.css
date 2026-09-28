@@ -35,6 +35,9 @@
    fundido nunca deja ver el fondo. */
 .hero-diapo.previa { z-index: 1; opacity: 1; transition: none; }
 .hero-diapo.activa { z-index: 2; opacity: 1; }
+/* El <picture> (AVIF con el JPG de respaldo) ocupa toda la diapositiva, para
+   que la imagen siga cubriéndola con su 100 % de alto. */
+.hero-diapo picture { display: block; width: 100%; height: 100%; }
 .hero-diapo img {
   width: 100%;
   height: 100%;

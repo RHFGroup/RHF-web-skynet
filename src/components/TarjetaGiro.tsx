@@ -41,6 +41,7 @@ import {
 } from "@/components/Iconos";
 import { enlaceWhatsApp } from "@/data/contacto";
 import type { Ficha } from "@/lib/ficha";
+import { SIZES_TARJETA, srcSetTarjeta } from "@/lib/imagenes";
 import { usePrefersReducedMotion } from "@/lib/motion";
 import { marcarSalidaDesdeCartera } from "@/lib/volver";
 import "@/styles/tarjeta-giro.css";
@@ -187,6 +188,11 @@ export default function TarjetaGiro({
                         : undefined
                   }
                   src={foto.src}
+                  // WebP de 640 y 1080 px: la tarjeta mide unos 350 px en el
+                  // teléfono, así que la foto entera sobraba (auditoría del
+                  // 25-sep-2026, W-1).
+                  srcSet={srcSetTarjeta(foto.src)}
+                  sizes={SIZES_TARJETA}
                   alt={i === 0 ? foto.alt : ""}
                   aria-hidden={i === 0 ? undefined : true}
                   loading={prioritaria && i === 0 ? "eager" : "lazy"}
