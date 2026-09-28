@@ -58,8 +58,12 @@ export default function PaginaNoticias() {
           </div>
         </section>
 
-        <section className="np-cuerpo tono tono-claro tono-blanco-2" aria-label="Todas las noticias">
+        <section className="np-cuerpo tono tono-claro tono-blanco-2" aria-labelledby="np-todas">
           <div className="section-shell">
+            {/* El título de la lista, para que las tarjetas (h3) queden debajo de un h2. */}
+            <h2 id="np-todas" className="sr-only">
+              Todas las noticias
+            </h2>
             <ListaNoticias />
           </div>
         </section>
