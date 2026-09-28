@@ -72,8 +72,6 @@
 .tono > #cartera { border-top: 0; }
 
 /* ── Bloques que juntan dos piezas ───────────── */
-/* La barra de confianza y la cartera, sobre el mismo blanco. */
-.bloque-oferta .cartera { padding-top: 64px; }
 /* Cómo comprar y el respaldo jurídico: el segundo sigue al primero,
    separado por una línea. Si el paso a paso no sale, el respaldo queda solo
    con su espacio de siempre. */
@@ -84,7 +82,6 @@
   border-top: 1px solid rgb(243 239 230 / 0.12);
 }
 @media (max-width: 560px) {
-  .bloque-oferta .cartera { padding-top: 44px; }
   .bloque-compra .pa { padding-bottom: 64px; }
   .bloque-compra .pa + .rj > .rj-shell { padding-top: 56px; }
 }

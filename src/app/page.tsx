@@ -45,7 +45,6 @@
 import ContactForm from "@/components/ContactForm";
 import MapaZona from "@/components/MapaZona";
 import Cartera from "@/components/Cartera";
-import BarraConfianza from "@/components/BarraConfianza";
 import NuestrasRedes from "@/components/NuestrasRedes";
 import Hero, { type AccesoHero, type FichaHero } from "@/components/Hero";
 import NavInicio from "@/components/NavInicio";
@@ -132,12 +131,9 @@ function secciones(): { id: string; tono: string; nodo: React.ReactNode }[] {
     {
       id: "oferta",
       tono: "tono-claro tono-blanco-1",
-      nodo: (
-        <>
-          <BarraConfianza proyectos={fichas.length} apartamentos={fichasInmuebles.length} />
-          <Cartera fichas={cartera} />
-        </>
-      ),
+      // 28-sep-2026: Rafael pidió quitar la barra de cifras que iba encima
+      // («quita toda la barra esa»). BarraConfianza.tsx queda en el repo, sin uso.
+      nodo: <Cartera fichas={cartera} />,
     },
     { id: "asesor", tono: "tono-oscuro tono-azul-1", nodo: <QuienTeAsesora /> },
     {
