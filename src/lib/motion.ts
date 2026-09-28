@@ -20,7 +20,8 @@ import { useEffect, useRef, useState } from "react";
  * elección se guarda en el navegador y un script en <head> (layout.tsx) la
  * pone en <html data-mov> antes de pintar. Cada bloque de reduced-motion del
  * CSS obedece las dos cosas: el sistema, salvo `data-mov="activo"`, y
- * `data-mov="reducido"` aunque el sistema no lo pida.
+ * `data-mov="reducido"` aunque el sistema no lo pida. Un bloque nuevo se
+ * deja así con scripts/movimiento-css.py.
  */
 
 /** Cómo quiere el visitante el movimiento. «auto» sigue al sistema. */
