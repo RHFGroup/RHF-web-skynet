@@ -54,6 +54,8 @@
   .confianza-cifra { font-size: 40px; }
   .confianza-icono { width: 40px; height: 40px; border-radius: 12px; }
 }
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .confianza-icono { transition: none; }
+  :root:not([data-mov="activo"]) .confianza-icono { transition: none; }
 }
+:root[data-mov="reducido"] .confianza-icono { transition: none; }

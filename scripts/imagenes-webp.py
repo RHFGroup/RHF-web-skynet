@@ -14,8 +14,17 @@ tarjetas de la cartera y las de la portada, que el script saca de los datos
     cubrir el alto. AVIF pesa entre un 25 y un 50 % menos que el JPG; en WebP
     la foto grande casi no bajaba, y algunas hasta pesaban más.
 
+  - <nombre>-movil.avif (28-sep-2026), para la portada de las páginas de
+    proyecto y de apartamento (PortadaGaleria.tsx): el centro de la foto en
+    vertical (4:5) y a su alto completo. En el teléfono vertical la portada
+    agranda la foto hasta cubrir el alto y solo se ve esa franja del centro:
+    con el recorte se ve igual de nítida y pesa un tercio del JPG. Solo en
+    AVIF (Safari 16 o más, Chrome, Brave, Firefox); el navegador que no lo
+    lea sigue con el JPG de siempre. Los planos no se recortan.
+
 Escribe src/data/imagenes.json con el mapa «ruta del JPG → variantes», que
-leen la portada (Hero.tsx) y las tarjetas (TarjetaGiro.tsx). El JPG se queda
+leen la portada (Hero.tsx), las tarjetas (TarjetaGiro.tsx) y la portada de
+proyectos y apartamentos (PortadaGaleria.tsx). El JPG se queda
 como respaldo para el navegador que no lea esos formatos. Las variantes salen
 sin metadatos (ni EXIF ni GPS): Pillow no los copia si no se le piden.
 
@@ -37,6 +46,10 @@ CALIDAD_WEBP = 78
 CALIDAD_AVIF = 60
 ANCHO_MIN = 900
 ANCHO_MIN_AVIF = 1100
+# El recorte del teléfono: ancho / alto. La portada del teléfono mide entre
+# 0,64 y 0,78 (390 × 608 px, 360 × 461 px); con 0,8 la cubre siempre.
+PROPORCION_MOVIL = 0.8
+CALIDAD_AVIF_MOVIL = 55
 
 
 def al_dia(destino: str, origen: str) -> bool:
@@ -99,12 +112,42 @@ def fotos_de_portada() -> set[str]:
     return rutas
 
 
+def fotos_de_galeria() -> set[str]:
+    """Las fotos de la portada de cada página de proyecto (la `galeria` de
+    src/data/proyectos.ts, en su tamaño completo) y de cada apartamento
+    (public/inmuebles/<slug>/NN.jpg; el plano no). Llevan el recorte del
+    teléfono."""
+    with open(os.path.join(RAIZ, "src/data/proyectos.ts"), encoding="utf-8") as t:
+        texto = t.read()
+    rutas: set[str] = set()
+    for m in re.finditer(r"galeria:\s*\[(.*?)\]", texto, re.S):
+        rutas.update(re.findall(r'\bsrc:\s*"([^"]+)"', m.group(1)))
+    carpeta = os.path.join(PUBLICO, "inmuebles")
+    for slug in sorted(os.listdir(carpeta)):
+        dir_ = os.path.join(carpeta, slug)
+        if not os.path.isdir(dir_):
+            continue
+        for nombre in sorted(os.listdir(dir_)):
+            if re.fullmatch(r"\d{2}\.jpg", nombre):
+                rutas.add(web(os.path.join(dir_, nombre)))
+    return rutas
+
+
+def recorte_movil(im: Image.Image) -> Image.Image:
+    """El centro de la foto en 4:5, a su alto completo (sin achicar)."""
+    ancho, alto = im.size
+    w = round(alto * PROPORCION_MOVIL)
+    x = (ancho - w) // 2
+    return im.crop((x, 0, x + w, alto))
+
+
 def main() -> None:
     portada = fotos_de_portada()
     tarjetas = fotos_de_tarjeta()
-    fuentes = sorted(os.path.join(PUBLICO, r.lstrip("/")) for r in portada | tarjetas if r.endswith(".jpg"))
+    galeria = fotos_de_galeria()
+    fuentes = sorted(os.path.join(PUBLICO, r.lstrip("/")) for r in portada | tarjetas | galeria if r.endswith(".jpg"))
     mapa: dict[str, dict] = {}
-    pesos = {"jpg": 0, "avif": 0}
+    pesos = {"jpg": 0, "avif": 0, "galeria": 0, "movil": 0}
     for f in fuentes:
         if os.path.basename(f) == "og.jpg":
             continue
@@ -116,7 +159,7 @@ def main() -> None:
         base = f[: -len(".jpg")]
         entrada: dict = {"ancho": ancho, "alto": alto}
         ruta = web(f)
-        if ruta not in portada and ruta not in tarjetas:
+        if ruta not in portada and ruta not in tarjetas and ruta not in galeria:
             continue
         for w in ANCHOS_TARJETA:
             if ruta not in tarjetas or ancho <= w:
@@ -134,12 +177,21 @@ def main() -> None:
             entrada["avif"] = web(destino)
             pesos["jpg"] += os.path.getsize(f)
             pesos["avif"] += os.path.getsize(destino)
+        # Solo fotos apaisadas: una vertical ya es su propio recorte.
+        if ruta in galeria and ancho > alto * PROPORCION_MOVIL * 1.15:
+            destino = f"{base}-movil.avif"
+            if not al_dia(destino, f):
+                recorte_movil(im).save(destino, "AVIF", quality=CALIDAD_AVIF_MOVIL, speed=4)
+            entrada["movilAvif"] = web(destino)
+            pesos["galeria"] += os.path.getsize(f)
+            pesos["movil"] += os.path.getsize(destino)
         mapa[ruta] = entrada
     with open(SALIDA, "w", encoding="utf-8") as s:
         json.dump(mapa, s, ensure_ascii=False, indent=2, sort_keys=True)
         s.write("\n")
     print(
         f"{len(mapa)} fotos · portada: JPG {pesos['jpg'] // 1024} KB → AVIF {pesos['avif'] // 1024} KB"
+        f" · galerías: JPG {pesos['galeria'] // 1024} KB → recorte del teléfono en AVIF {pesos['movil'] // 1024} KB"
         " · mapa en src/data/imagenes.json"
     )
 

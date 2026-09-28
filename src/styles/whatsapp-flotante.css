@@ -89,7 +89,10 @@
   .wa-flotante { right: 20px; bottom: 100px; width: 54px; height: 54px; }
   .wa-flotante-globo { display: none; }
 }
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .wa-flotante, .wa-flotante img { transition: none; }
-  .wa-flotante::before { animation: none; }
+  :root:not([data-mov="activo"]) .wa-flotante, :root:not([data-mov="activo"]) .wa-flotante img { transition: none; }
+  :root:not([data-mov="activo"]) .wa-flotante::before { animation: none; }
 }
+:root[data-mov="reducido"] .wa-flotante, :root[data-mov="reducido"] .wa-flotante img { transition: none; }
+:root[data-mov="reducido"] .wa-flotante::before { animation: none; }

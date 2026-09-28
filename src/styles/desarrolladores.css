@@ -67,7 +67,10 @@
   .desarrollador { flex-direction: row; align-items: center; gap: 18px; padding: 16px 18px; text-align: left; }
   .desarrollador-logo { flex: none; width: 116px; height: 44px; object-position: left center; }
 }
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .desarrollador { transition: none; }
-  .desarrollador:hover { transform: none; }
+  :root:not([data-mov="activo"]) .desarrollador { transition: none; }
+  :root:not([data-mov="activo"]) .desarrollador:hover { transform: none; }
 }
+:root[data-mov="reducido"] .desarrollador { transition: none; }
+:root[data-mov="reducido"] .desarrollador:hover { transform: none; }

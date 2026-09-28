@@ -59,12 +59,18 @@
 /* ── Imágenes con profundidad: se desplazan más lento que la página ──
    Solo donde el navegador anima con el scroll sin JavaScript. */
 @supports (animation-timeline: view()) {
+  /* movimiento: sistema o preferencia (src/lib/motion.ts) */
   @media (prefers-reduced-motion: no-preference) {
-    .zn-render img {
+    :root:not([data-mov="reducido"]) .zn-render img {
       animation: anim-profundidad linear both;
       animation-timeline: view();
       animation-range: cover 0% cover 100%;
     }
+  }
+  :root[data-mov="activo"] .zn-render img {
+    animation: anim-profundidad linear both;
+    animation-timeline: view();
+    animation-range: cover 0% cover 100%;
   }
 }
 @keyframes anim-profundidad {
@@ -72,12 +78,31 @@
   to { transform: translateY(5%) scale(1.12); }
 }
 
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .anim, .anim-titulo, .anim-kicker, .anim-sube, .anim-boton, .anim-imagen {
+  :root:not([data-mov="activo"]) .anim,
+  :root:not([data-mov="activo"]) .anim-titulo,
+  :root:not([data-mov="activo"]) .anim-kicker,
+  :root:not([data-mov="activo"]) .anim-sube,
+  :root:not([data-mov="activo"]) .anim-boton,
+  :root:not([data-mov="activo"]) .anim-imagen {
     opacity: 1 !important;
     transform: none !important;
     clip-path: none !important;
     filter: none !important;
   }
-  .btn-primary::after, .btn-whatsapp::after { display: none; }
+  :root:not([data-mov="activo"]) .btn-primary::after,
+  :root:not([data-mov="activo"]) .btn-whatsapp::after { display: none; }
 }
+:root[data-mov="reducido"] .anim,
+:root[data-mov="reducido"] .anim-titulo,
+:root[data-mov="reducido"] .anim-kicker,
+:root[data-mov="reducido"] .anim-sube,
+:root[data-mov="reducido"] .anim-boton,
+:root[data-mov="reducido"] .anim-imagen {
+  opacity: 1 !important;
+  transform: none !important;
+  clip-path: none !important;
+  filter: none !important;
+}
+:root[data-mov="reducido"] .btn-primary::after, :root[data-mov="reducido"] .btn-whatsapp::after { display: none; }

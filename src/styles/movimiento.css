@@ -1,0 +1,67 @@
+/* ─────────────────────────────────────────────────────────────
+   El control «Animaciones» del pie de página (PreferenciaMovimiento.tsx)
+
+   Tres opciones en una sola pieza, como un interruptor: la elegida en camel.
+   Son radios de verdad (teclado, lector de pantalla), con el círculo oculto.
+   ───────────────────────────────────────────────────────────── */
+
+.movimiento-control {
+  margin: 18px 0 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+/* El legend flotado queda en la misma línea que las opciones. */
+.movimiento-leyenda {
+  float: left;
+  margin: 0 14px 0 0;
+  padding: 0;
+  line-height: 44px;
+  color: var(--marfil-dark);
+  font-size: 13px;
+  font-weight: 500;
+}
+.movimiento-opciones {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 999px;
+}
+.movimiento-opcion { position: relative; display: block; }
+.movimiento-opcion input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.movimiento-opcion span {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  color: rgb(255 255 255 / 0.78);
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.movimiento-opcion:hover input:not(:checked) + span { color: var(--white); }
+.movimiento-opcion input:checked + span { background: var(--camel); color: var(--marino); font-weight: 600; }
+.movimiento-opcion input:focus-visible + span { outline: 2px solid var(--camel); outline-offset: 2px; }
+.movimiento-nota {
+  clear: both;
+  max-width: 62ch;
+  margin: 10px 0 0 !important;
+  color: rgb(255 255 255 / 0.72);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+@media (max-width: 560px) {
+  .movimiento-leyenda { float: none; display: block; margin: 0 0 6px; line-height: 1.4; }
+}

@@ -30,7 +30,7 @@ export default function LegalPage({
       <div className="mx-auto w-full max-w-3xl px-5 py-16 sm:px-8 sm:py-24">
         <Link
           href="/"
-          className="text-sm font-medium tracking-wide text-cuero hover:underline"
+          className="legal-volver text-sm font-medium tracking-wide text-cuero hover:underline"
         >
           ← Volver a rhfliving.com
         </Link>

@@ -410,9 +410,28 @@
   .tr-hoja .tr-acciones { padding-right: 64px; }
 }
 
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .tr-caen .tr-pin-cuerpo, .tr-lista-nueva > li, .tr-hoja, .tr-pin-halo { animation: none; }
-  .tr-armado .tr-pin-cuerpo { opacity: 1; }
-  .tr-chip, .tr-item, .tr-boton, .tr-pin-icono, .tr-controles button { transition: none; }
-  .tr-boton:hover { transform: none; }
+  :root:not([data-mov="activo"]) .tr-caen .tr-pin-cuerpo,
+  :root:not([data-mov="activo"]) .tr-lista-nueva > li,
+  :root:not([data-mov="activo"]) .tr-hoja,
+  :root:not([data-mov="activo"]) .tr-pin-halo { animation: none; }
+  :root:not([data-mov="activo"]) .tr-armado .tr-pin-cuerpo { opacity: 1; }
+  :root:not([data-mov="activo"]) .tr-chip,
+  :root:not([data-mov="activo"]) .tr-item,
+  :root:not([data-mov="activo"]) .tr-boton,
+  :root:not([data-mov="activo"]) .tr-pin-icono,
+  :root:not([data-mov="activo"]) .tr-controles button { transition: none; }
+  :root:not([data-mov="activo"]) .tr-boton:hover { transform: none; }
 }
+:root[data-mov="reducido"] .tr-caen .tr-pin-cuerpo,
+:root[data-mov="reducido"] .tr-lista-nueva > li,
+:root[data-mov="reducido"] .tr-hoja,
+:root[data-mov="reducido"] .tr-pin-halo { animation: none; }
+:root[data-mov="reducido"] .tr-armado .tr-pin-cuerpo { opacity: 1; }
+:root[data-mov="reducido"] .tr-chip,
+:root[data-mov="reducido"] .tr-item,
+:root[data-mov="reducido"] .tr-boton,
+:root[data-mov="reducido"] .tr-pin-icono,
+:root[data-mov="reducido"] .tr-controles button { transition: none; }
+:root[data-mov="reducido"] .tr-boton:hover { transform: none; }

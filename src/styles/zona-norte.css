@@ -289,8 +289,12 @@
   .zn-hecho { padding: 20px 18px 18px; }
 }
 
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .zn-anillo-relleno { transition: none; }
-  .zn-proyectos a { transition: none; }
-  .zn-proyectos a:hover { transform: none; }
+  :root:not([data-mov="activo"]) .zn-anillo-relleno { transition: none; }
+  :root:not([data-mov="activo"]) .zn-proyectos a { transition: none; }
+  :root:not([data-mov="activo"]) .zn-proyectos a:hover { transform: none; }
 }
+:root[data-mov="reducido"] .zn-anillo-relleno { transition: none; }
+:root[data-mov="reducido"] .zn-proyectos a { transition: none; }
+:root[data-mov="reducido"] .zn-proyectos a:hover { transform: none; }

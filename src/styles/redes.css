@@ -94,16 +94,25 @@
   /* En pantallas angostas queda solo la flecha. */
   .red-accion { gap: 0; font-size: 0; }
 }
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .red, .red-icono, .red-accion svg { transition: none; }
-  .red:hover { transform: none; }
-  .red-instagram .red-icono { animation: none; }
+  :root:not([data-mov="activo"]) .red,
+  :root:not([data-mov="activo"]) .red-icono,
+  :root:not([data-mov="activo"]) .red-accion svg { transition: none; }
+  :root:not([data-mov="activo"]) .red:hover { transform: none; }
+  :root:not([data-mov="activo"]) .red-instagram .red-icono { animation: none; }
 }
+:root[data-mov="reducido"] .red,
+:root[data-mov="reducido"] .red-icono,
+:root[data-mov="reducido"] .red-accion svg { transition: none; }
+:root[data-mov="reducido"] .red:hover { transform: none; }
+:root[data-mov="reducido"] .red-instagram .red-icono { animation: none; }
 
 /* ─────────────────────────────────────────────────────────────
    Últimos reels (UltimosReels.tsx, 28-sep-2026): una fila que se
    desliza, con la portada del reel y el enlace a Instagram. En
-   escritorio caben tres; en el teléfono asoma el siguiente.
+   escritorio caben cuatro (la fila tiene cinco, con flechas); en el
+   teléfono asoma el siguiente.
    ───────────────────────────────────────────────────────────── */
 .reels { margin-top: 64px; }
 .reels-cabeza {
@@ -211,6 +220,30 @@
   font-size: 13.5px;
   font-weight: 600;
 }
+/* Las flechas de la fila (FilaDeslizable.tsx): corren una tarjeta. A la
+   derecha en escritorio; a la izquierda en el teléfono, lejos de los botones
+   flotantes de WhatsApp y del chat, como en la cartera. */
+.fila-mando { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+.fila-mando-boton {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid #dfe5ee;
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--marino);
+  cursor: pointer;
+  box-shadow: 0 10px 24px -18px rgb(22 30 43 / 0.5);
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease, transform 0.2s ease;
+}
+.fila-mando-boton:hover { border-color: var(--marino); background: var(--marino); color: var(--white); }
+.fila-mando-boton:active { transform: scale(0.94); }
+.fila-mando-boton:focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
+.fila-mando-boton[aria-disabled="true"] { opacity: 0.4; cursor: default; }
+.fila-mando-boton[aria-disabled="true"]:hover { border-color: #dfe5ee; background: var(--white); color: var(--marino); }
+.fila-mando-boton[aria-disabled="true"]:active { transform: none; }
 @media (max-width: 1080px) {
   .reels-fila { grid-auto-columns: calc((100% - 2 * 20px) / 3); }
 }
@@ -221,8 +254,19 @@
 @media (max-width: 560px) {
   .reels-fila { grid-auto-columns: 72%; gap: 14px; }
   .reel-titulo { font-size: 20px; }
+  .fila-mando { justify-content: flex-start; }
+  .fila-mando-boton { width: 42px; height: 42px; }
 }
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .reel, .reel-portada img, .reel-play { transition: none; }
-  .reel:hover .reel-portada img, .reel:hover .reel-play { transform: none; }
+  :root:not([data-mov="activo"]) .reel,
+  :root:not([data-mov="activo"]) .reel-portada img,
+  :root:not([data-mov="activo"]) .reel-play { transition: none; }
+  :root:not([data-mov="activo"]) .reel:hover .reel-portada img,
+  :root:not([data-mov="activo"]) .reel:hover .reel-play { transform: none; }
 }
+:root[data-mov="reducido"] .reel,
+:root[data-mov="reducido"] .reel-portada img,
+:root[data-mov="reducido"] .reel-play { transition: none; }
+:root[data-mov="reducido"] .reel:hover .reel-portada img,
+:root[data-mov="reducido"] .reel:hover .reel-play { transform: none; }

@@ -301,6 +301,17 @@ h1, h2, h3, h4 {
   border-color: var(--camel); box-shadow: 0 0 0 3px rgb(194 165 120 / 0.15);
 }
 .contacto-form textarea { resize: vertical; }
+/* 28-sep-2026: Safari y Brave del iPhone (WebKit) ignoran el relleno de un
+   <select> con su aspecto nativo y lo dejaban de 23 px, más bajo que los
+   demás campos. Con aspecto propio mide lo mismo que ellos. */
+.contacto-form select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231f2a3d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
 .contacto-form .btn-primary { width: 100%; justify-content: center; margin-top: 8px; }
 .form-disclaimer {
   margin-top: 14px; color: var(--text-muted); font-size: 12px;
@@ -395,13 +406,24 @@ h1, h2, h3, h4 {
      arriba y abajo también aquí). */
   .section { padding: 76px 0; }
 }
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-  *, *::before, *::after {
+  :root:not([data-mov="activo"]) { scroll-behavior: auto; }
+  :root:not([data-mov="activo"]) *,
+  :root:not([data-mov="activo"]) *::before,
+  :root:not([data-mov="activo"]) *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+:root[data-mov="reducido"] { scroll-behavior: auto; }
+:root[data-mov="reducido"] *,
+:root[data-mov="reducido"] *::before,
+:root[data-mov="reducido"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }
 
 /* ── Print ─────────────────────────────── */
@@ -532,18 +554,29 @@ h1, h2, h3, h4 {
    ningún elemento se oculta nunca. */
 
 /* ── Menos movimiento: se ve todo, no se anima ── */
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .reveal, .stagger > * {
+  :root:not([data-mov="activo"]) .reveal, :root:not([data-mov="activo"]) .stagger > * {
     opacity: 1 !important;
     transform: none !important;
     filter: none !important;
     transition: none !important;
     transition-delay: 0ms !important;
   }
-  .zone-img img { transform: none !important; }
-  .hero-scroll span { animation: none; opacity: 0.8; }
-  .proyecto-card:hover { transform: none; }
+  :root:not([data-mov="activo"]) .zone-img img { transform: none !important; }
+  :root:not([data-mov="activo"]) .hero-scroll span { animation: none; opacity: 0.8; }
+  :root:not([data-mov="activo"]) .proyecto-card:hover { transform: none; }
 }
+:root[data-mov="reducido"] .reveal, :root[data-mov="reducido"] .stagger > * {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+  transition: none !important;
+  transition-delay: 0ms !important;
+}
+:root[data-mov="reducido"] .zone-img img { transform: none !important; }
+:root[data-mov="reducido"] .hero-scroll span { animation: none; opacity: 0.8; }
+:root[data-mov="reducido"] .proyecto-card:hover { transform: none; }
 
 /* ── Responsive del scrollytelling ───────────── */
 @media (max-width: 720px) {
@@ -1414,3 +1447,26 @@ button.nav-cta { border: none; cursor: pointer; font-family: inherit; }
 .form-fallo .btn-whatsapp { padding: 12px 22px; font-size: 14px; }
 
 .contacto-form button[type="submit"][disabled] { opacity: 0.6; cursor: wait; }
+
+/* ── Teléfono: tocar y escribir sin sorpresas (28-sep-2026) ──────────────
+   · En el iPhone (Safari y Brave usan el mismo motor) un campo con letra de
+     menos de 16 px agranda la página al tocarlo, y hay que volver a achicarla
+     con los dedos. En pantallas táctiles todos los campos van a 16 px.
+   · Los enlaces y botones chicos (volver, «Ver proyecto» del reverso de la
+     tarjeta, los enlaces del pie) agrandan su zona de toque sin cambiar cómo
+     se ven: al menos 24 px de alto (WCAG 2.5.8).
+   · El selector de cada filtro de la cartera ocupa todo el alto del botón. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  select,
+  textarea { font-size: 16px !important; }
+  .tg-link, .tg-volver, .pp-volver, .legal-volver { position: relative; }
+  .tg-link::after, .tg-volver::after, .pp-volver::after, .legal-volver::after {
+    content: "";
+    position: absolute;
+    inset: -11px -8px;
+  }
+  .footer-links a, .footer-legal-links a { display: inline-block; padding-block: 5px; }
+  .footer-redes a { padding-block: 5px; }
+  .cartera-filtro select { align-self: stretch; }
+}

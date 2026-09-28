@@ -572,7 +572,10 @@
   .pp-barra-movil { padding-right: 92px; }
 }
 
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .pp-portada { animation: none; }
-  .pp-portada-fotos img { transition: none; }
+  :root:not([data-mov="activo"]) .pp-portada { animation: none; }
+  :root:not([data-mov="activo"]) .pp-portada-fotos img { transition: none; }
 }
+:root[data-mov="reducido"] .pp-portada { animation: none; }
+:root[data-mov="reducido"] .pp-portada-fotos img { transition: none; }

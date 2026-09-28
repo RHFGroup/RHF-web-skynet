@@ -252,7 +252,20 @@
   .suscripcion-boton { width: 100%; }
   .np-portada { padding: 48px 0 28px; }
 }
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .noticia, .noticias-todas, .noticia-fuente svg, .suscripcion-boton { transition: none; }
-  .noticia:hover, .noticias-todas:hover, .suscripcion-boton:hover { transform: none; }
+  :root:not([data-mov="activo"]) .noticia,
+  :root:not([data-mov="activo"]) .noticias-todas,
+  :root:not([data-mov="activo"]) .noticia-fuente svg,
+  :root:not([data-mov="activo"]) .suscripcion-boton { transition: none; }
+  :root:not([data-mov="activo"]) .noticia:hover,
+  :root:not([data-mov="activo"]) .noticias-todas:hover,
+  :root:not([data-mov="activo"]) .suscripcion-boton:hover { transform: none; }
 }
+:root[data-mov="reducido"] .noticia,
+:root[data-mov="reducido"] .noticias-todas,
+:root[data-mov="reducido"] .noticia-fuente svg,
+:root[data-mov="reducido"] .suscripcion-boton { transition: none; }
+:root[data-mov="reducido"] .noticia:hover,
+:root[data-mov="reducido"] .noticias-todas:hover,
+:root[data-mov="reducido"] .suscripcion-boton:hover { transform: none; }

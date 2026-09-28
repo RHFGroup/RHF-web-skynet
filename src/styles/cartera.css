@@ -100,11 +100,15 @@
      número se ve igual en el conteo de abajo. */
   .cartera-oferta button span { display: none; }
 }
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .cartera-oferta-marca { transition: none; }
-  .cartera-grilla-filtrada .cartera-entra { animation: none; }
-  .cartera-flota { animation: none; }
+  :root:not([data-mov="activo"]) .cartera-oferta-marca { transition: none; }
+  :root:not([data-mov="activo"]) .cartera-grilla-filtrada .cartera-entra { animation: none; }
+  :root:not([data-mov="activo"]) .cartera-flota { animation: none; }
 }
+:root[data-mov="reducido"] .cartera-oferta-marca { transition: none; }
+:root[data-mov="reducido"] .cartera-grilla-filtrada .cartera-entra { animation: none; }
+:root[data-mov="reducido"] .cartera-flota { animation: none; }
 
 /* Los saltos entre dos listas (SaltosOferta.tsx). Sin uso en la home desde
    que los apartamentos van dentro de la cartera. */
@@ -338,6 +342,26 @@
   transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
 }
 .cartera-mando-boton:hover { border-color: var(--marino); background: var(--marino); color: var(--white); }
+/* 28-sep-2026: cuando el sistema pide reducir el movimiento, la cartera no gira
+   y aquí se ofrece activarlo (src/lib/motion.ts). */
+.cartera-mando-activar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--marino);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--marino);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+.cartera-mando-activar:hover { background: var(--marino); color: var(--white); }
+.cartera-mando-activar:focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
 .cartera-mando-boton:active { transform: scale(0.94); }
 .cartera-mando-boton:focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
 .cartera-mando-boton[aria-pressed="true"] { border-color: var(--marino); background: var(--marino); color: var(--white); }
