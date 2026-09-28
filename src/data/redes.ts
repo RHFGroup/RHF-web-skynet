@@ -16,6 +16,8 @@
  *    tienen respaldo en el vault.
  *  · No se incrustan publicaciones: una publicación de un proyecto sin los
  *    datos del numeral 2.16.1 de la Circular 004 no puede ir en la página.
+ *    Los últimos reels (28-sep-2026) van como portada con enlace, y el de
+ *    un proyecto lleva al lado los datos de su ficha (src/data/reels.ts).
  */
 export type Red = {
   id: "instagram";

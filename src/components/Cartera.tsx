@@ -5,8 +5,20 @@
  * filtros.
  *
  * El visitante ve todo lo que asesoramos, filtra por lo que le importa y cada
- * tarjeta abre su página propia. Grilla de tres columnas en escritorio, dos
- * en tableta y carrusel que se desliza con el dedo en el teléfono.
+ * tarjeta abre su página propia.
+ *
+ * 28-sep-2026 (pedido de Rafael: «que se muevan las propiedades de manera
+ * horizontal» y «que floten»): la cartera es una fila horizontal en todas las
+ * pantallas —tres tarjetas a la vista en escritorio, dos en tableta y una y
+ * algo en el teléfono— y las tarjetas flotan suave, cada una a su ritmo.
+ *
+ * 28-sep-2026, tarde («agiliza el carrusel, más rápido, más fluido, como una
+ * calesita»): la fila gira sin parar y sin final, a velocidad constante —una
+ * tarjeta cada 4 s— en vez de avanzar a saltos. El motor está en
+ * src/lib/calesita.ts: frena suave con el mouse o el foco encima, con una
+ * tarjeta girada, mientras alguien la arrastra con el dedo y con el botón de
+ * pausa (que también quieta la flotación). Con «reducir movimiento» no gira
+ * ni flota: queda una fila que se desliza a mano. Debajo van las flechas.
  *
  * 25-sep-2026 (pedido de Rafael): «los apartamentos terminados y en
  * construcción tienen que estar dentro de la cartera». Desde entonces es una
@@ -28,6 +40,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import RevealGrupo from "@/components/RevealGrupo";
 import TarjetaGiro from "@/components/TarjetaGiro";
 import type { Ficha } from "@/lib/ficha";
+import { useCalesita } from "@/lib/calesita";
 import "@/styles/cartera.css";
 
 type Rango = { id: string; etiqueta: string; min: number; max: number };
@@ -75,6 +88,11 @@ export default function Cartera({ fichas }: { fichas: Ficha[] }) {
   // después, cada cambio de filtro vuelve a repartir las tarjetas con una
   // entrada corta (cartera.css, `.cartera-grilla-filtrada`).
   const [filtro, setFiltro] = useState(0);
+  // La calesita (src/lib/calesita.ts): la zona con las flechas y el recorte
+  // visible, que contiene la fila de tarjetas.
+  const carril = useRef<HTMLDivElement>(null);
+  const vista = useRef<HTMLDivElement>(null);
+  const [pausada, setPausada] = useState(false);
 
   const cuantos = {
     todo: fichas.length,
@@ -98,6 +116,8 @@ export default function Cartera({ fichas }: { fichas: Ficha[] }) {
         (!r || (f.precioDesde !== null && f.precioDesde >= r.min && f.precioDesde < r.max)),
     );
   }, [fichas, oferta, zona, tipo, estado, rango]);
+
+  const calesita = useCalesita({ carril, vista, clave: `${filtro}:${visibles.length}`, pausada });
 
   const filtrando = oferta !== "todo" || zona || tipo || estado || rango;
   const cambiar = <T,>(set: (v: T) => void) => (v: T) => {
@@ -157,12 +177,23 @@ export default function Cartera({ fichas }: { fichas: Ficha[] }) {
 
   const celdas = visibles.map((f, i) => (
     <div key={f.slug} className="cartera-celda" style={{ "--i": i % 6 } as React.CSSProperties}>
-      <TarjetaGiro ficha={f} desdeCartera prioritaria={i === 0} retraso={i * 900} />
+      {/* Tres capas, cada una con su transform: la celda gira con la calesita,
+          `.cartera-entra` hace la entrada con el scroll o el filtro, y
+          `.cartera-flota` la flotación. */}
+      <div className="cartera-entra">
+        <div className="cartera-flota" style={{ "--f": i % 4 } as React.CSSProperties}>
+          <TarjetaGiro ficha={f} desdeCartera prioritaria={i === 0} retraso={i * 900} />
+        </div>
+      </div>
     </div>
   ));
 
   return (
-    <section className="cartera section" id="cartera" aria-labelledby="cartera-titulo">
+    <section
+      className={"cartera section" + (pausada ? " cartera-quieta" : "")}
+      id="cartera"
+      aria-labelledby="cartera-titulo"
+    >
       {/* Anclas de los enlaces que llegan filtrados. */}
       {Object.keys(ANCLAS).map((a) => (
         <span key={a} id={a} className="cartera-ancla" aria-hidden="true" />
@@ -255,13 +286,53 @@ export default function Cartera({ fichas }: { fichas: Ficha[] }) {
         )}
 
         {visibles.length > 0 ? (
-          filtro === 0 ? (
-            <RevealGrupo className="cartera-grilla">{celdas}</RevealGrupo>
-          ) : (
-            <div key={filtro} className="cartera-grilla cartera-grilla-filtrada">
-              {celdas}
+          <div className={"cartera-carril" + (calesita.activa ? " calesita-activa" : "")} ref={carril}>
+            <div className="cartera-vista" ref={vista}>
+              {filtro === 0 ? (
+                <RevealGrupo className="cartera-grilla">{celdas}</RevealGrupo>
+              ) : (
+                <div key={filtro} className="cartera-grilla cartera-grilla-filtrada">
+                  {celdas}
+                </div>
+              )}
             </div>
-          )
+            {calesita.desborda && (
+              <div className="cartera-mando">
+                <div className="cartera-mando-botones" role="group" aria-label="Mover la cartera">
+                  <button type="button" className="cartera-mando-boton" onClick={() => calesita.mover(-1)} aria-label="Ver las anteriores">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="m15 18-6-6 6-6" />
+                    </svg>
+                  </button>
+                  {calesita.activa && (
+                    <button
+                      type="button"
+                      className="cartera-mando-boton"
+                      onClick={() => setPausada((v) => !v)}
+                      aria-pressed={pausada}
+                      aria-label={pausada ? "Reanudar el movimiento" : "Pausar el movimiento"}
+                    >
+                      {pausada ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <path d="M8 5.5v13l11-6.5z" />
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <rect x="6.5" y="5" width="3.6" height="14" rx="1" />
+                          <rect x="13.9" y="5" width="3.6" height="14" rx="1" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                  <button type="button" className="cartera-mando-boton" onClick={() => calesita.mover(1)} aria-label="Ver las siguientes">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="cartera-vacia">
             <p>Con esa combinación no hay nada en la cartera hoy.</p>

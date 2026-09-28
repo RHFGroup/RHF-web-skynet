@@ -13,7 +13,8 @@ export default function Privacidad() {
   return (
     <LegalPage
       titulo="Política de Tratamiento de Datos Personales"
-      bajada="Si nos escribes por WhatsApp, por el chat de esta página, por Instagram o por Facebook, o si dejas tus datos en una feria, quedamos con información tuya. Aquí decimos qué hacemos con ella, por cuánto tiempo, y cómo pedir que la borremos."
+      bajada="Si nos escribes por WhatsApp, por el chat de esta página, por Instagram o por Facebook, si te suscribes al boletín o si dejas tus datos en una feria, quedamos con información tuya. Aquí decimos qué hacemos con ella, por cuánto tiempo, y cómo pedir que la borremos."
+      vigencia="28 de septiembre de 2026"
     >
       <Seccion titulo="1. Quién responde por tus datos">
         <p>
@@ -46,7 +47,7 @@ export default function Privacidad() {
           recogemos además los datos de identificación que exige el proceso de
           vinculación del constructor.
         </p>
-        <p>Los canales por los que entran esos datos son cinco:</p>
+        <p>Los canales por los que entran esos datos son seis:</p>
         <ul className="ml-5 list-disc space-y-2">
           <li>
             <strong>El formulario de esta página.</strong> Guardamos lo que
@@ -59,6 +60,12 @@ export default function Privacidad() {
             informada, y sin ella guardar tus datos sería peor que no
             guardarlos. Al enviar también se abre WhatsApp con tu mensaje ya
             escrito, para que la conversación empiece por donde te respondemos.
+          </li>
+          <li>
+            <strong>La suscripción al boletín.</strong> Si te suscribes al
+            boletín de noticias de la Zona Norte, guardamos tu correo y la misma
+            constancia de tu autorización: fecha y hora, la versión del texto
+            que aceptaste, tu dirección IP y el navegador.
           </li>
           <li>
             <strong>WhatsApp Business.</strong> Cuando nos escribes, recibimos
@@ -95,6 +102,16 @@ export default function Privacidad() {
           correspondiente; para enviarte información sobre proyectos,
           disponibilidad y precios cuando has aceptado recibirla; y para llevar
           el registro interno de la gestión comercial.
+        </p>
+        <p id="boletin">
+          Si te suscribes al boletín, usamos tu correo solo para enviarte las
+          noticias de la Zona Norte y las novedades de nuestra cartera. Puedes
+          darte de baja cuando quieras respondiendo <em>BAJA</em> a cualquier
+          boletín o escribiendo a{" "}
+          <a href={`mailto:${RESPONSABLE.correo}`} className="underline">
+            {RESPONSABLE.correo}
+          </a>
+          , y desde ese momento no te llega ninguno más.
         </p>
         <p>
           El envío de mensajes promocionales por WhatsApp requiere tu
@@ -229,6 +246,13 @@ export default function Privacidad() {
           reclamaciones. Cumplido ese plazo, se eliminan.
         </p>
         <p>
+          El correo del boletín se conserva mientras sigas suscrito. Si te das
+          de baja, deja de usarse para cualquier envío y queda marcado como
+          dado de baja, junto con la constancia de tu autorización, para poder
+          demostrar las dos. Si además quieres que lo eliminemos, pídelo como
+          explica el punto 7.
+        </p>
+        <p>
           Para las consultas que llegan por el formulario de esta página el
           plazo es concreto: <strong>dos años contados desde nuestro último
           contacto contigo</strong>. Ese es el tiempo en que una decisión
@@ -238,7 +262,8 @@ export default function Privacidad() {
           el punto 7—.
         </p>
         <p>
-          Esas consultas se guardan en una base de datos alojada en la
+          Esas consultas, y los correos del boletín, se guardan en una base de
+          datos alojada en la
           infraestructura de Cloudflare, cifrada en reposo. El formulario solo
           puede escribir en ella; la lectura la hace el responsable desde sus
           propias credenciales, y no está expuesta en la página.
