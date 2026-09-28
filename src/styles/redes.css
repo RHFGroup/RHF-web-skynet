@@ -1,0 +1,101 @@
+/* ─────────────────────────────────────────────────────────────
+   Nuestras redes (NuestrasRedes.tsx): Instagram, WhatsApp y correo.
+   Va sobre blanco (secciones.css). Cada tarjeta es un enlace entero.
+   ───────────────────────────────────────────────────────────── */
+
+.redes { scroll-margin-top: var(--nav-h); }
+.redes-cabeza { max-width: 640px; }
+.redes-lista {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 40px;
+}
+.red-celda { display: flex; }
+.red {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  padding: 26px 24px 22px;
+  overflow: hidden;
+  border: 1px solid #dfe5ee;
+  border-radius: 24px;
+  background: var(--white);
+  color: var(--marino);
+  box-shadow: 0 20px 44px -34px rgb(22 30 43 / 0.5);
+  transition:
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.5s ease,
+    border-color 0.5s ease;
+}
+.red:hover {
+  transform: translateY(-6px);
+  border-color: var(--camel);
+  box-shadow: 0 30px 60px -34px rgb(22 30 43 / 0.55);
+}
+.red:focus-visible { outline: 2px solid var(--camel); outline-offset: 3px; }
+
+.red-icono {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  color: var(--white);
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.red:hover .red-icono { transform: rotate(-8deg) scale(1.08); }
+/* El degradado de Instagram se mueve despacio: la única tarjeta con color propio de su red. */
+.red-instagram .red-icono {
+  background: linear-gradient(135deg, #f58529, #dd2a7b 45%, #8134af 75%, #515bd4);
+  background-size: 220% 220%;
+  animation: red-degradado 6s ease-in-out infinite alternate;
+}
+@keyframes red-degradado {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
+}
+.red-whatsapp .red-icono { background: var(--green-wa); }
+.red-correo .red-icono { background: var(--marino); color: var(--camel-light); }
+
+.red-texto { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.red-texto strong {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.red-texto span { color: var(--text-muted); font-size: 14px; overflow-wrap: anywhere; }
+.red-accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  color: var(--marino);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.red-accion svg { transition: transform 0.35s ease; }
+.red:hover .red-accion svg { transform: translateX(4px); }
+
+/* Teléfono y tableta: una tarjeta por fila, en horizontal. */
+@media (max-width: 900px) {
+  .redes-lista { grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 28px; }
+  .red { flex-direction: row; align-items: center; gap: 14px; padding: 16px; border-radius: 18px; }
+  .red-icono { width: 52px; height: 52px; border-radius: 15px; }
+  .red-texto strong { font-size: 22px; }
+  .red-accion { margin: 0 0 0 auto; }
+}
+@media (max-width: 420px) {
+  /* En pantallas angostas queda solo la flecha. */
+  .red-accion { gap: 0; font-size: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .red, .red-icono, .red-accion svg { transition: none; }
+  .red:hover { transform: none; }
+  .red-instagram .red-icono { animation: none; }
+}

@@ -27,13 +27,13 @@ export const metadata: Metadata = {
     siteName: "RHF Living",
     locale: "es_CO",
     type: "profile",
-    images: [{ url: `${SITIO}/rafael/perfil-1040.jpg`, width: 1040, height: 1300, alt: NOMBRE_COMPLETO }],
+    images: [{ url: `${SITIO}/rafael/camisa-blanca-1040.jpg`, width: 1040, height: 1300, alt: NOMBRE_COMPLETO }],
   },
   twitter: {
     card: "summary_large_image",
     title: TITULO,
     description: DESCRIPCION,
-    images: [`${SITIO}/rafael/perfil-1040.jpg`],
+    images: [`${SITIO}/rafael/camisa-blanca-1040.jpg`],
   },
 };
 
@@ -49,7 +49,7 @@ const perfilJsonLd = {
     description:
       "Asesor inmobiliario independiente en Cartagena de Indias. Acompaña la compra de vivienda en Cartagena y la Zona Norte.",
     url: `${SITIO}/asesor`,
-    image: `${SITIO}/rafael/perfil-1040.jpg`,
+    image: `${SITIO}/rafael/camisa-blanca-1040.jpg`,
     telephone: `+${WHATSAPP}`,
     email: CORREO,
     worksFor: { "@type": "RealEstateAgent", name: "RHF Living — Rafael Hernández Franco", url: SITIO },

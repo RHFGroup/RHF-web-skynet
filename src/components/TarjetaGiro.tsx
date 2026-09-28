@@ -200,6 +200,8 @@ export default function TarjetaGiro({
             )}
             <span className="tg-estado">{f.estadoTexto ?? ESTADO[f.estado]}</span>
             {f.nuevo && <span className="tg-nuevo">Nuevo</span>}
+            {/* 25-sep-2026: los apartamentos van en la misma cartera; esta marca los distingue. */}
+            {f.origen === "apartamento" && <span className="tg-origen">Apartamento</span>}
             {fotos.length > 1 && (
               <span className="tg-puntos" aria-hidden="true">
                 {fotos.map((foto, i) => (

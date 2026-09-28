@@ -16,7 +16,15 @@
  */
 export const MODO_REVISION = process.env.NEXT_PUBLIC_MODO_REVISION === "1";
 
-/** ¿Se muestra este elemento? Confirmado, siempre; propuesto, solo en revisión. */
+/**
+ * ¿Se muestra este elemento? Solo si está confirmado, en producción y en las
+ * vistas previas.
+ *
+ * 25-sep-2026: Rafael pidió sacar la marca «Propuesta · por confirmar» y dejar
+ * la web lista. Desde entonces las vistas previas muestran lo mismo que se
+ * publica: lo que no está confirmado no sale en ninguna parte, y la marca ya
+ * no aparece. `MODO_REVISION` queda para quien quiera volver a usarlo.
+ */
 export function seMuestra(item: { confirmado: boolean }): boolean {
-  return item.confirmado || MODO_REVISION;
+  return item.confirmado;
 }

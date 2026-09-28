@@ -50,26 +50,28 @@ export type Pilar = Confirmable & {
 
 /**
  * «Por qué asesorarte conmigo»: tres tarjetas. El 25-sep-2026 Rafael pidió
- * esta información «más básica»: un titular y una línea por tarjeta.
+ * esta información «más básica»: un titular y una línea por tarjeta. Ese
+ * mismo día, al revisarlas en la vista previa, pidió quitar la marca de
+ * propuesta y dejar la web lista: quedan confirmadas tal como las vio.
  */
 export const PILARES: Pilar[] = [
   {
     icono: "comparar",
     titulo: "Comparo por ti",
     texto: "Proyectos de varias constructoras, lado a lado.",
-    confirmado: false,
+    confirmado: true,
   },
   {
     icono: "escudo",
     titulo: "Respaldo jurídico",
     texto: "Nuestro estudio jurídico revisa antes de que firmes.",
-    confirmado: false,
+    confirmado: true,
   },
   {
     icono: "llave",
     titulo: "Datos con fuente",
     texto: "Cada precio, con su fuente y su fecha de corte.",
-    confirmado: false,
+    confirmado: true,
   },
 ];
 

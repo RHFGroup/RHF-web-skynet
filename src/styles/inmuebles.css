@@ -3,7 +3,8 @@
    de cada uno (InmuebleLanding.tsx).
 
    La sección reutiliza la grilla de la cartera (cartera.css) y la tarjeta que
-   gira (tarjeta-giro.css); va sobre café (secciones.css). La página reutiliza
+   gira (tarjeta-giro.css). Desde el 25-sep-2026 va en el mismo bloque blanco
+   de la cartera, separada por una línea (secciones.css). La página reutiliza
    la plantilla de proyecto (proyecto.css) y suma el plano y las fuentes.
    ───────────────────────────────────────────────────────────── */
 
