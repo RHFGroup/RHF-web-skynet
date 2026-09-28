@@ -41,6 +41,7 @@ import RevealGrupo from "@/components/RevealGrupo";
 import TarjetaGiro from "@/components/TarjetaGiro";
 import type { Ficha } from "@/lib/ficha";
 import { useCalesita } from "@/lib/calesita";
+import { usePreferenciaMovimiento } from "@/lib/motion";
 import "@/styles/cartera.css";
 
 type Rango = { id: string; etiqueta: string; min: number; max: number };
@@ -118,6 +119,10 @@ export default function Cartera({ fichas }: { fichas: Ficha[] }) {
   }, [fichas, oferta, zona, tipo, estado, rango]);
 
   const calesita = useCalesita({ carril, vista, clave: `${filtro}:${visibles.length}`, pausada });
+  // Si el sistema pide reducir el movimiento (ahorro de batería, accesibilidad)
+  // la cartera no gira; se ofrece activarlo aquí mismo, donde se nota.
+  const movimiento = usePreferenciaMovimiento();
+  const ofrecerMovimiento = movimiento.listo && movimiento.sistema && movimiento.preferencia === "auto";
 
   const filtrando = oferta !== "todo" || zona || tipo || estado || rango;
   const cambiar = <T,>(set: (v: T) => void) => (v: T) => {
@@ -298,6 +303,14 @@ export default function Cartera({ fichas }: { fichas: Ficha[] }) {
             </div>
             {calesita.desborda && (
               <div className="cartera-mando">
+                {ofrecerMovimiento && (
+                  <button type="button" className="cartera-mando-activar" onClick={() => movimiento.elegir("activo")}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M8 5.5v13l11-6.5z" />
+                    </svg>
+                    Activar animaciones
+                  </button>
+                )}
                 <div className="cartera-mando-botones" role="group" aria-label="Mover la cartera">
                   <button type="button" className="cartera-mando-boton" onClick={() => calesita.mover(-1)} aria-label="Ver las anteriores">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

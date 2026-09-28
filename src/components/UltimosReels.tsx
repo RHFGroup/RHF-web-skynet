@@ -6,10 +6,12 @@
  * zona—, leídos de proyectos.ts como en la cartera, nunca del video. Reglas y
  * lista: src/data/reels.ts.
  *
- * La fila se desliza sola con el dedo o el trackpad (scroll nativo con
- * imán); en escritorio caben tres.
+ * La fila se desliza con el dedo o el trackpad (scroll nativo con imán) y
+ * con las flechas de FilaDeslizable; en escritorio caben cuatro. Las
+ * portadas se turnan con y sin Rafael (src/data/reels.ts).
  */
 import Link from "next/link";
+import FilaDeslizable from "@/components/FilaDeslizable";
 import { IconoFlecha, IconoInstagram } from "@/components/Iconos";
 import { fechaNoticia } from "@/data/noticias";
 import { getProyecto } from "@/data/proyectos";
@@ -30,7 +32,7 @@ export default function UltimosReels() {
           </a>
         )}
       </div>
-      <ul className="reels-fila">
+      <FilaDeslizable className="reels-fila" etiqueta="Mover los reels">
         {REELS.map((r) => {
           const p = r.proyecto ? getProyecto(r.proyecto) : undefined;
           const f = p ? fichaDe(p) : null;
@@ -74,7 +76,7 @@ export default function UltimosReels() {
             </li>
           );
         })}
-      </ul>
+      </FilaDeslizable>
     </div>
   );
 }

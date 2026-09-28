@@ -42,7 +42,7 @@ import { CATEGORIAS, LUGARES, TIEMPOS_ZONA, type Categoria, type Lugar } from "@
 import type { Ficha } from "@/lib/ficha";
 import { svgGlifo } from "@/lib/glifos";
 import { cargarLeaflet, TESELAS } from "@/lib/leaflet";
-import { usePrefersReducedMotion } from "@/lib/motion";
+import { movimientoReducido, usePrefersReducedMotion } from "@/lib/motion";
 import "@/styles/territorio.css";
 
 type Filtro = "todo" | "proyectos" | Exclude<Categoria, "obras">;
@@ -203,7 +203,7 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
     cargarLeaflet()
       .then((L: any) => {
         if (cancelado || !contenedor.current) return;
-        const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const quieto = movimientoReducido();
         const mapa = L.map(contenedor.current, {
           zoomControl: false,
           scrollWheelZoom: false, // la rueda es del usuario hasta que haga clic en el mapa

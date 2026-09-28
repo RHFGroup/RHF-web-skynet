@@ -11,21 +11,115 @@ import { useEffect, useRef, useState } from "react";
  *
  * Regla transversal: si el sistema pide reducir el movimiento, no hay animación
  * — el contenido aparece en su estado final, nunca queda oculto.
+ *
+ * Salvo que el visitante elija otra cosa (28-sep-2026). Rafael no veía las
+ * animaciones en Brave: el navegador informa lo que pide el sistema, y un
+ * teléfono en ahorro de batería o con «reducir movimiento» en accesibilidad
+ * pide reducir. El pie de página tiene el control «Animaciones»
+ * (PreferenciaMovimiento.tsx) y la cartera un botón para activarlas. La
+ * elección se guarda en el navegador y un script en <head> (layout.tsx) la
+ * pone en <html data-mov> antes de pintar. Cada bloque de reduced-motion del
+ * CSS obedece las dos cosas: el sistema, salvo `data-mov="activo"`, y
+ * `data-mov="reducido"` aunque el sistema no lo pida.
  */
 
-/** ¿El sistema pide reducir el movimiento? Reactivo si el usuario lo cambia. */
+/** Cómo quiere el visitante el movimiento. «auto» sigue al sistema. */
+export type PreferenciaMovimiento = "auto" | "activo" | "reducido";
+
+/** Dónde se guarda la elección. El script de <head> de layout.tsx lee la misma clave. */
+export const CLAVE_MOVIMIENTO = "rhf-movimiento";
+/** Evento de `window` que avisa que la elección cambió. */
+export const EVENTO_MOVIMIENTO = "rhf-movimiento";
+
+const CONSULTA_REDUCIR = "(prefers-reduced-motion: reduce)";
+
+/** La elección vigente, leída de <html data-mov>. */
+export function leerPreferencia(): PreferenciaMovimiento {
+  if (typeof document === "undefined") return "auto";
+  const m = document.documentElement.getAttribute("data-mov");
+  return m === "activo" || m === "reducido" ? m : "auto";
+}
+
+/** ¿El sistema (o el navegador) pide reducir el movimiento? */
+export function sistemaPideReducir(): boolean {
+  return typeof window !== "undefined" && !!window.matchMedia && window.matchMedia(CONSULTA_REDUCIR).matches;
+}
+
+/** ¿Hay que quedarse quietos? La elección del visitante manda sobre el sistema. */
+export function movimientoReducido(): boolean {
+  const p = leerPreferencia();
+  if (p === "activo") return false;
+  if (p === "reducido") return true;
+  return sistemaPideReducir();
+}
+
+/** Guarda la elección, la aplica al instante y avisa a quien escuche. */
+export function guardarPreferencia(p: PreferenciaMovimiento) {
+  const raiz = document.documentElement;
+  if (p === "auto") raiz.removeAttribute("data-mov");
+  else raiz.setAttribute("data-mov", p);
+  try {
+    if (p === "auto") localStorage.removeItem(CLAVE_MOVIMIENTO);
+    else localStorage.setItem(CLAVE_MOVIMIENTO, p);
+  } catch {
+    // Sin almacenamiento (bloqueado por el navegador): vale para esta página.
+  }
+  window.dispatchEvent(new Event(EVENTO_MOVIMIENTO));
+}
+
+/** Escucha la consulta del sistema; Safari anterior a 14 solo tiene addListener. */
+function escucharSistema(fn: () => void): () => void {
+  if (typeof window === "undefined" || !window.matchMedia) return () => {};
+  const mq = window.matchMedia(CONSULTA_REDUCIR);
+  if (typeof mq.addEventListener === "function") {
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }
+  mq.addListener(fn);
+  return () => mq.removeListener(fn);
+}
+
+/** Escucha el sistema y la elección del visitante. Devuelve cómo dejar de escuchar. */
+export function escucharMovimiento(fn: () => void): () => void {
+  const dejar = escucharSistema(fn);
+  window.addEventListener(EVENTO_MOVIMIENTO, fn);
+  return () => {
+    dejar();
+    window.removeEventListener(EVENTO_MOVIMIENTO, fn);
+  };
+}
+
+/**
+ * ¿Hay que reducir el movimiento? Reactivo: cambia si el sistema cambia o si
+ * el visitante elige otra cosa en el control «Animaciones».
+ */
 export function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
+    const actualizar = () => setReduced(movimientoReducido());
+    actualizar();
+    return escucharMovimiento(actualizar);
   }, []);
 
   return reduced;
+}
+
+/** Para los controles: la elección, lo que pide el sistema y cómo cambiarla. */
+export function usePreferenciaMovimiento() {
+  const [estado, setEstado] = useState<{ preferencia: PreferenciaMovimiento; sistema: boolean; listo: boolean }>({
+    preferencia: "auto",
+    sistema: false,
+    listo: false,
+  });
+
+  useEffect(() => {
+    const actualizar = () => setEstado({ preferencia: leerPreferencia(), sistema: sistemaPideReducir(), listo: true });
+    actualizar();
+    return escucharMovimiento(actualizar);
+  }, []);
+
+  return { ...estado, elegir: guardarPreferencia };
 }
 
 /**
@@ -52,8 +146,7 @@ export function useReveal<T extends HTMLElement>(threshold = 0.15) {
     const el = ref.current;
     if (!el) return;
 
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce || typeof IntersectionObserver === "undefined") return;
+    if (movimientoReducido() || typeof IntersectionObserver === "undefined") return;
 
     const rect = el.getBoundingClientRect();
     if (rect.top < window.innerHeight && rect.bottom > 0) return; // ya se ve

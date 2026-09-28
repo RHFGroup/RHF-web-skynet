@@ -380,10 +380,32 @@
 .mi-leyenda { margin: 8px 2px 0; color: var(--text-muted); font-size: 10.5px; line-height: 1.45; }
 
 /* ── Menos movimiento: nada se mueve, todo se ve ── */
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .mi-olas path, .mi-velero, .mi-canoa, .mi-proyecto-halo { animation: none; }
-  .mi-puntos .mi-punto-cuerpo { animation: none !important; opacity: 1; }
-  .mi-capa-oculta .mi-punto-cuerpo { opacity: 0; transition: none; }
-  .mi-malecon, .mi-malecon-halo, .mi-malecon-etiqueta, .mi-rotulo-lugar, .mi-rotulo-viaducto,
-  .mi-direccion-sur, .mi-pestanas button { transition: none; }
+  :root:not([data-mov="activo"]) .mi-olas path,
+  :root:not([data-mov="activo"]) .mi-velero,
+  :root:not([data-mov="activo"]) .mi-canoa,
+  :root:not([data-mov="activo"]) .mi-proyecto-halo { animation: none; }
+  :root:not([data-mov="activo"]) .mi-puntos .mi-punto-cuerpo { animation: none !important; opacity: 1; }
+  :root:not([data-mov="activo"]) .mi-capa-oculta .mi-punto-cuerpo { opacity: 0; transition: none; }
+  :root:not([data-mov="activo"]) .mi-malecon,
+  :root:not([data-mov="activo"]) .mi-malecon-halo,
+  :root:not([data-mov="activo"]) .mi-malecon-etiqueta,
+  :root:not([data-mov="activo"]) .mi-rotulo-lugar,
+  :root:not([data-mov="activo"]) .mi-rotulo-viaducto,
+  :root:not([data-mov="activo"]) .mi-direccion-sur,
+  :root:not([data-mov="activo"]) .mi-pestanas button { transition: none; }
 }
+:root[data-mov="reducido"] .mi-olas path,
+:root[data-mov="reducido"] .mi-velero,
+:root[data-mov="reducido"] .mi-canoa,
+:root[data-mov="reducido"] .mi-proyecto-halo { animation: none; }
+:root[data-mov="reducido"] .mi-puntos .mi-punto-cuerpo { animation: none !important; opacity: 1; }
+:root[data-mov="reducido"] .mi-capa-oculta .mi-punto-cuerpo { opacity: 0; transition: none; }
+:root[data-mov="reducido"] .mi-malecon,
+:root[data-mov="reducido"] .mi-malecon-halo,
+:root[data-mov="reducido"] .mi-malecon-etiqueta,
+:root[data-mov="reducido"] .mi-rotulo-lugar,
+:root[data-mov="reducido"] .mi-rotulo-viaducto,
+:root[data-mov="reducido"] .mi-direccion-sur,
+:root[data-mov="reducido"] .mi-pestanas button { transition: none; }

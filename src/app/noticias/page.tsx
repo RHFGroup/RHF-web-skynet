@@ -36,6 +36,15 @@ export const metadata: Metadata = {
     siteName: "RHF Living",
     locale: "es_CO",
     type: "website",
+    // Al definir su propio openGraph, la página no hereda la imagen de la
+    // raíz: sin esto se compartía sin foto (auditoría del 28-sep-2026).
+    images: [{ url: `${SITIO}/og.jpg`, width: 1200, height: 630, alt: "RHF Living — Asesoría inmobiliaria en Cartagena" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITULO,
+    description: DESCRIPCION,
+    images: [`${SITIO}/og.jpg`],
   },
 };
 

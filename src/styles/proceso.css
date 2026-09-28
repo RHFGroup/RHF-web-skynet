@@ -453,9 +453,24 @@
   .pa-cta { padding: 24px; }
 }
 
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .pa-resumen-paso, .pa-detalle { animation: none; }
-  .pa-ver-boton svg { transition: none; }
-  .pa-punto, .pa-numero, .pa-tarjeta, .pa-linea::after { transition: none; }
-  .pa-tarjeta, .pa-izq .pa-tarjeta, .pa-der .pa-tarjeta { opacity: 1; transform: none; }
+  :root:not([data-mov="activo"]) .pa-resumen-paso, :root:not([data-mov="activo"]) .pa-detalle { animation: none; }
+  :root:not([data-mov="activo"]) .pa-ver-boton svg { transition: none; }
+  :root:not([data-mov="activo"]) .pa-punto,
+  :root:not([data-mov="activo"]) .pa-numero,
+  :root:not([data-mov="activo"]) .pa-tarjeta,
+  :root:not([data-mov="activo"]) .pa-linea::after { transition: none; }
+  :root:not([data-mov="activo"]) .pa-tarjeta,
+  :root:not([data-mov="activo"]) .pa-izq .pa-tarjeta,
+  :root:not([data-mov="activo"]) .pa-der .pa-tarjeta { opacity: 1; transform: none; }
 }
+:root[data-mov="reducido"] .pa-resumen-paso, :root[data-mov="reducido"] .pa-detalle { animation: none; }
+:root[data-mov="reducido"] .pa-ver-boton svg { transition: none; }
+:root[data-mov="reducido"] .pa-punto,
+:root[data-mov="reducido"] .pa-numero,
+:root[data-mov="reducido"] .pa-tarjeta,
+:root[data-mov="reducido"] .pa-linea::after { transition: none; }
+:root[data-mov="reducido"] .pa-tarjeta,
+:root[data-mov="reducido"] .pa-izq .pa-tarjeta,
+:root[data-mov="reducido"] .pa-der .pa-tarjeta { opacity: 1; transform: none; }

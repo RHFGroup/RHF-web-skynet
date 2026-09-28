@@ -106,7 +106,7 @@
    marfil, y su botón siempre marino. */
 .tono .contacto-form input,
 .tono .contacto-form select,
-.tono .contacto-form textarea { border-color: var(--frio-borde); background: var(--frio-suave); }
+.tono .contacto-form textarea { border-color: var(--frio-borde); background-color: var(--frio-suave); }
 .tono .contacto-form input:focus,
 .tono .contacto-form select:focus,
 .tono .contacto-form textarea:focus {
