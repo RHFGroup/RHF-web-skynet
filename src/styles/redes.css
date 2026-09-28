@@ -99,3 +99,130 @@
   .red:hover { transform: none; }
   .red-instagram .red-icono { animation: none; }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Últimos reels (UltimosReels.tsx, 28-sep-2026): una fila que se
+   desliza, con la portada del reel y el enlace a Instagram. En
+   escritorio caben tres; en el teléfono asoma el siguiente.
+   ───────────────────────────────────────────────────────────── */
+.reels { margin-top: 64px; }
+.reels-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 20px;
+}
+.reels-cabeza h3 {
+  margin: 0;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: clamp(26px, 2.6vw, 34px);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--marino);
+}
+.reels-todos {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--marino);
+  font-size: 14px;
+  font-weight: 600;
+}
+.reels-todos svg { transition: transform 0.35s ease; }
+.reels-todos:hover svg { transform: translateX(4px); }
+.reels-fila {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 3 * 20px) / 4);
+  gap: 20px;
+  margin: 24px 0 0;
+  padding: 6px 2px 14px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  list-style: none;
+}
+.reel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dfe5ee;
+  border-radius: 22px;
+  background: var(--white);
+  box-shadow: 0 20px 44px -36px rgb(22 30 43 / 0.5);
+  scroll-snap-align: start;
+  transition: border-color 0.5s ease, box-shadow 0.5s ease;
+}
+.reel:hover { border-color: var(--camel); box-shadow: 0 30px 60px -38px rgb(22 30 43 / 0.55); }
+.reel-portada { position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden; background: #e9eef4; }
+.reel-portada img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reel:hover .reel-portada img { transform: scale(1.045); }
+.reel-portada:focus-visible { outline: 2px solid var(--camel); outline-offset: -4px; }
+.reel-play {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding-left: 3px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.92);
+  color: var(--marino);
+  box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.5);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.reel:hover .reel-play { transform: scale(1.1); }
+.reel-cuerpo { display: flex; flex: 1; flex-direction: column; gap: 8px; padding: 16px 18px 18px; }
+.reel-cuerpo > p { margin: 0; }
+.reel-fecha { color: var(--text-muted); font-size: 12.5px; }
+.reel-titulo {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--marino);
+}
+.reel-ficha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.reel-ficha a { color: var(--marino); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.reel-ig {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 6px;
+  color: var(--marino);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+@media (max-width: 1080px) {
+  .reels-fila { grid-auto-columns: calc((100% - 2 * 20px) / 3); }
+}
+@media (max-width: 900px) {
+  .reels { margin-top: 48px; }
+  .reels-fila { grid-auto-columns: 46%; gap: 16px; }
+}
+@media (max-width: 560px) {
+  .reels-fila { grid-auto-columns: 72%; gap: 14px; }
+  .reel-titulo { font-size: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reel, .reel-portada img, .reel-play { transition: none; }
+  .reel:hover .reel-portada img, .reel:hover .reel-play { transform: none; }
+}

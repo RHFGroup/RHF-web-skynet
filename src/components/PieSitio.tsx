@@ -35,6 +35,7 @@ export default function PieSitio({
                 {s.texto}
               </Link>
             ))}
+            <Link href="/noticias">Noticias</Link>
           </div>
         </div>
         {/* Las redes (src/data/redes.ts), con su usuario a la vista. */}

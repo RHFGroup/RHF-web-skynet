@@ -6,11 +6,15 @@
  * @rafaelhf.realestate); al lado van WhatsApp y el correo, los dos canales
  * donde se atiende.
  *
- * No se incrustan publicaciones ni se muestran cifras de seguidores: ver las
- * reglas en redes.ts. Cada tarjeta es un enlace entero, grande y fácil de
- * tocar en el teléfono.
+ * No se muestran cifras de seguidores: ver las reglas en redes.ts. Cada
+ * tarjeta es un enlace entero, grande y fácil de tocar en el teléfono.
+ *
+ * 28-sep-2026: debajo van los últimos reels, en fila (UltimosReels.tsx), por
+ * pedido de Rafael. No se incrustan: cada tarjeta lleva la portada y abre el
+ * reel en Instagram.
  */
 import RevealGrupo from "@/components/RevealGrupo";
+import UltimosReels from "@/components/UltimosReels";
 import { IconoCorreo, IconoFlecha, IconoInstagram, IconoWhatsApp } from "@/components/Iconos";
 import { CORREO, TELEFONO_VISIBLE, enlaceWhatsApp } from "@/data/contacto";
 import { REDES } from "@/data/redes";
@@ -82,6 +86,7 @@ export default function NuestrasRedes() {
             </div>
           ))}
         </RevealGrupo>
+        <UltimosReels />
       </div>
     </section>
   );
