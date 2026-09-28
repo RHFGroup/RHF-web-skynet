@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { PROYECTOS } from "@/data/proyectos";
 import { INMUEBLES } from "@/data/inmuebles";
@@ -95,6 +95,35 @@ export default function ContactForm({
   const formRef = useRef<HTMLFormElement>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * Turnstile se carga cuando el formulario se acerca a la pantalla o cuando
+   * alguien toca uno de sus campos, no junto con la página. Auditoría del
+   * 25-sep-2026 (W-1): su verificación pesaba entre 350 y 700 KB, y el
+   * teléfono la bajaba aunque nadie llegara al formulario.
+   */
+  const [cargarTurnstile, setCargarTurnstile] = useState(false);
+  useEffect(() => {
+    const el = formRef.current;
+    if (!el || cargarTurnstile) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setCargarTurnstile(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) setCargarTurnstile(true);
+      },
+      { rootMargin: "1200px 0px" },
+    );
+    io.observe(el);
+    const alEnfocar = () => setCargarTurnstile(true);
+    el.addEventListener("focusin", alEnfocar);
+    return () => {
+      io.disconnect();
+      el.removeEventListener("focusin", alEnfocar);
+    };
+  }, [cargarTurnstile]);
+
   /** El mensaje que se le manda a WhatsApp si la persona elige ese camino. */
   function textoWhatsApp(): string {
     return [
@@ -182,10 +211,9 @@ export default function ContactForm({
 
   return (
     <form className="contacto-form" onSubmit={enviar} ref={formRef}>
-      <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
-        strategy="lazyOnload"
-      />
+      {cargarTurnstile && (
+        <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
+      )}
       <h3>Déjanos tus datos</h3>
 
       <label>

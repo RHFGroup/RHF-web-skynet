@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Montserrat } from "next/font/google";
 import "./globals.css";
-import AgentChat from "@/components/AgentChat";
+import ChatDiferido from "@/components/ChatDiferido";
 import Script from "next/script";
 
 const cormorant = Cormorant_Garamond({
@@ -117,7 +117,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-dvh font-sans antialiased">
         {children}
-        <AgentChat />
+        <ChatDiferido />
       </body>
     </html>
   );

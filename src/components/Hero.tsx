@@ -38,6 +38,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IconoFlecha, IconoWhatsApp } from "@/components/Iconos";
 import { CIFRA_OFERTA } from "@/data/zona";
 import type { Ficha } from "@/lib/ficha";
+import { avifDe } from "@/lib/imagenes";
 import { usePrefersReducedMotion } from "@/lib/motion";
 import { marcarSalidaDesdeCartera } from "@/lib/volver";
 import "@/styles/hero.css";
@@ -66,6 +67,17 @@ type Diapositiva = {
   /** null en la primera: la del corredor, que presenta la zona. */
   ficha: FichaHero | null;
 };
+
+/**
+ * El srcset en AVIF de una foto de la portada (scripts/imagenes-webp.py), o
+ * undefined si no lo tiene: entonces queda el JPG de siempre.
+ */
+function srcSetAvif(img: Diapositiva["imagen"]): string | undefined {
+  const grande = avifDe(img.src);
+  if (!grande) return undefined;
+  const mediana = img.ancho > 1200 ? avifDe(img.src1200) : null;
+  return mediana ? `${mediana} 1200w, ${grande} ${img.ancho}w` : `${grande} ${img.ancho}w`;
+}
 
 /**
  * La caja que ocupa la foto con `object-fit: cover`: los porcentajes de un pin
@@ -134,7 +146,10 @@ export default function Hero({
 
   const [activo, setActivo] = useState(0);
   const [previa, setPrevia] = useState<number | null>(null);
-  const [montadas, setMontadas] = useState<number[]>(() => (total > 1 ? [0, 1] : [0]));
+  // Solo la primera foto sale con la página; la segunda se monta cuando la
+  // página ya cargó (efecto de abajo). En el teléfono competían entre las dos
+  // por la conexión (auditoría del 25-sep-2026, W-1).
+  const [montadas, setMontadas] = useState<number[]>([0]);
   const [pausaBoton, setPausaBoton] = useState(false);
   const [pausaCursor, setPausaCursor] = useState(false);
   const [pausaTeclado, setPausaTeclado] = useState(false);
@@ -166,6 +181,17 @@ export default function Hero({
     [total],
   );
   const siguiente = useCallback(() => ir((activoRef.current + 1) % total), [ir, total]);
+
+  useEffect(() => {
+    if (total < 2) return;
+    const sumar = () => setMontadas((m) => (m.includes(1) ? m : [...m, 1]));
+    if (document.readyState === "complete") {
+      sumar();
+      return;
+    }
+    window.addEventListener("load", sumar, { once: true });
+    return () => window.removeEventListener("load", sumar);
+  }, [total]);
 
   // La portada se detiene cuando sale de la pantalla o la pestaña queda de fondo.
   useEffect(() => {
@@ -239,21 +265,31 @@ export default function Hero({
             aria-hidden={i !== activo}
           >
             {montadas.includes(i) && (
-              <img
-                src={s.imagen.src}
-                srcSet={
-                  s.imagen.ancho > 1200
-                    ? `${s.imagen.src1200} 1200w, ${s.imagen.src} ${s.imagen.ancho}w`
-                    : undefined
-                }
-                // En una pantalla vertical la imagen se agranda hasta cubrir el
-                // alto: pide la versión grande aunque el ancho sea chico.
-                sizes="(orientation: portrait) 190vh, 100vw"
-                alt={s.imagen.alt}
-                style={{ objectPosition: s.imagen.enfoque }}
-                fetchPriority={i === 0 ? "high" : "low"}
-                decoding="async"
-              />
+              // AVIF primero (un 25–50 % más liviano); el JPG queda de respaldo.
+              <picture>
+                {srcSetAvif(s.imagen) && (
+                  <source
+                    type="image/avif"
+                    srcSet={srcSetAvif(s.imagen)}
+                    sizes="(orientation: portrait) 190vh, 100vw"
+                  />
+                )}
+                <img
+                  src={s.imagen.src}
+                  srcSet={
+                    s.imagen.ancho > 1200
+                      ? `${s.imagen.src1200} 1200w, ${s.imagen.src} ${s.imagen.ancho}w`
+                      : undefined
+                  }
+                  // En una pantalla vertical la imagen se agranda hasta cubrir el
+                  // alto: pide la versión grande aunque el ancho sea chico.
+                  sizes="(orientation: portrait) 190vh, 100vw"
+                  alt={s.imagen.alt}
+                  style={{ objectPosition: s.imagen.enfoque }}
+                  fetchPriority={i === 0 ? "high" : "low"}
+                  decoding="async"
+                />
+              </picture>
             )}
           </div>
         ))}
