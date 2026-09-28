@@ -5,8 +5,17 @@
  * filtros.
  *
  * El visitante ve todo lo que asesoramos, filtra por lo que le importa y cada
- * tarjeta abre su página propia. Grilla de tres columnas en escritorio, dos
- * en tableta y carrusel que se desliza con el dedo en el teléfono.
+ * tarjeta abre su página propia.
+ *
+ * 28-sep-2026 (pedido de Rafael: «que se muevan las propiedades de manera
+ * horizontal» y «que floten»): la cartera es un carril horizontal en todas las
+ * pantallas —tres tarjetas a la vista en escritorio, dos en tableta y una y
+ * algo en el teléfono— que avanza solo, una tarjeta cada 4,5 s, y vuelve al
+ * principio al llegar al final. Se detiene mientras el mouse o el foco están
+ * encima, un rato después de que alguien la desliza con el dedo, cuando sale
+ * de la pantalla y con el botón de pausa (que también quieta la flotación).
+ * Las tarjetas flotan suave, cada una a su ritmo. Con «reducir movimiento»
+ * no avanza ni flota. Debajo van la barra de avance y las flechas.
  *
  * 25-sep-2026 (pedido de Rafael): «los apartamentos terminados y en
  * construcción tienen que estar dentro de la cartera». Desde entonces es una
@@ -28,6 +37,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import RevealGrupo from "@/components/RevealGrupo";
 import TarjetaGiro from "@/components/TarjetaGiro";
 import type { Ficha } from "@/lib/ficha";
+import { usePrefersReducedMotion } from "@/lib/motion";
 import "@/styles/cartera.css";
 
 type Rango = { id: string; etiqueta: string; min: number; max: number };
@@ -52,6 +62,11 @@ const ESTADOS: Record<Ficha["estado"], string> = {
   "entrega inmediata": "Entrega inmediata",
 };
 
+/** Cada cuánto avanza sola la cartera. */
+const AVANCE_MS = 4500;
+/** Después de que alguien la desliza con el dedo o la rueda, cuánto espera. */
+const ESPERA_TRAS_TOCAR_MS = 8000;
+
 /** Los enlaces que llegan filtrados, y lo que filtra cada uno. */
 const ANCLAS: Record<string, { oferta?: Oferta; estado?: Ficha["estado"] }> = {
   proyectos: { oferta: "proyecto" },
@@ -75,6 +90,11 @@ export default function Cartera({ fichas }: { fichas: Ficha[] }) {
   // después, cada cambio de filtro vuelve a repartir las tarjetas con una
   // entrada corta (cartera.css, `.cartera-grilla-filtrada`).
   const [filtro, setFiltro] = useState(0);
+  const reduced = usePrefersReducedMotion();
+  // El carril: el contenedor de la grilla, que es la que se desliza.
+  const carril = useRef<HTMLDivElement>(null);
+  const [pausada, setPausada] = useState(false);
+  const [desborda, setDesborda] = useState(false);
 
   const cuantos = {
     todo: fichas.length,
@@ -155,14 +175,107 @@ export default function Cartera({ fichas }: { fichas: Ficha[] }) {
   ];
   const indice = OFERTAS.findIndex((o) => o.id === oferta);
 
+  // ── El carril que se desliza solo ───────────────────────────────────
+  const pista = () => carril.current?.querySelector<HTMLElement>(".cartera-grilla") ?? null;
+
+  /** Una tarjeta hacia un lado; al llegar a un extremo, salta al otro. */
+  const mover = (sentido: 1 | -1) => {
+    const p = pista();
+    if (!p) return;
+    const celda = p.querySelector<HTMLElement>(".cartera-celda");
+    const hueco = parseFloat(getComputedStyle(p).columnGap) || 0;
+    const paso = celda ? celda.getBoundingClientRect().width + hueco : p.clientWidth;
+    const alFinal = p.scrollLeft + p.clientWidth >= p.scrollWidth - 8;
+    const alInicio = p.scrollLeft <= 8;
+    let destino = p.scrollLeft + sentido * paso;
+    if (sentido === 1 && alFinal) destino = 0;
+    if (sentido === -1 && alInicio) destino = p.scrollWidth;
+    p.scrollTo({ left: destino, behavior: reduced ? "auto" : "smooth" });
+  };
+
+  // ¿Hay más tarjetas que las que caben? Solo entonces hay flechas y avance.
+  // La barra de avance sigue al carril (sin estado de React: va por CSS).
+  useEffect(() => {
+    const zona = carril.current;
+    const p = pista();
+    if (!zona || !p) {
+      setDesborda(false);
+      return;
+    }
+    const medir = () => {
+      setDesborda(p.scrollWidth > p.clientWidth + 8);
+      const total = p.scrollWidth || 1;
+      zona.style.setProperty("--carril-izq", String(p.scrollLeft / total));
+      zona.style.setProperty("--carril-ancho", String(Math.min(1, p.clientWidth / total)));
+    };
+    medir();
+    // El ancho cambia al cargar las fuentes y al girar el teléfono.
+    const ro = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(medir);
+    ro?.observe(p);
+    p.addEventListener("scroll", medir, { passive: true });
+    window.addEventListener("resize", medir, { passive: true });
+    return () => {
+      ro?.disconnect();
+      p.removeEventListener("scroll", medir);
+      window.removeEventListener("resize", medir);
+    };
+  }, [visibles.length, filtro]);
+
+  // El avance solo.
+  useEffect(() => {
+    const zona = carril.current;
+    const p = pista();
+    if (!zona || !p || reduced || pausada || !desborda) return;
+    let encima = false;
+    let quietoHasta = 0;
+    let enPantalla = typeof IntersectionObserver === "undefined";
+    const io =
+      typeof IntersectionObserver === "undefined"
+        ? null
+        : new IntersectionObserver(([e]) => (enPantalla = e.isIntersecting), { threshold: 0.35 });
+    io?.observe(zona);
+    const entrar = () => (encima = true);
+    const salir = () => (encima = false);
+    const tocar = () => (quietoHasta = performance.now() + ESPERA_TRAS_TOCAR_MS);
+    zona.addEventListener("pointerenter", entrar);
+    zona.addEventListener("pointerleave", salir);
+    zona.addEventListener("focusin", entrar);
+    zona.addEventListener("focusout", salir);
+    p.addEventListener("touchstart", tocar, { passive: true });
+    p.addEventListener("wheel", tocar, { passive: true });
+    const reloj = window.setInterval(() => {
+      if (encima || !enPantalla || document.hidden || performance.now() < quietoHasta) return;
+      mover(1);
+    }, AVANCE_MS);
+    return () => {
+      window.clearInterval(reloj);
+      io?.disconnect();
+      zona.removeEventListener("pointerenter", entrar);
+      zona.removeEventListener("pointerleave", salir);
+      zona.removeEventListener("focusin", entrar);
+      zona.removeEventListener("focusout", salir);
+      p.removeEventListener("touchstart", tocar);
+      p.removeEventListener("wheel", tocar);
+    };
+    // `mover` solo depende de `reduced`, que ya está en la lista.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduced, pausada, desborda, filtro]);
+
   const celdas = visibles.map((f, i) => (
     <div key={f.slug} className="cartera-celda" style={{ "--i": i % 6 } as React.CSSProperties}>
-      <TarjetaGiro ficha={f} desdeCartera prioritaria={i === 0} retraso={i * 900} />
+      {/* La flotación va en su propia capa: la celda ya usa transform para entrar. */}
+      <div className="cartera-flota" style={{ "--f": i % 4 } as React.CSSProperties}>
+        <TarjetaGiro ficha={f} desdeCartera prioritaria={i === 0} retraso={i * 900} />
+      </div>
     </div>
   ));
 
   return (
-    <section className="cartera section" id="cartera" aria-labelledby="cartera-titulo">
+    <section
+      className={"cartera section" + (pausada ? " cartera-quieta" : "")}
+      id="cartera"
+      aria-labelledby="cartera-titulo"
+    >
       {/* Anclas de los enlaces que llegan filtrados. */}
       {Object.keys(ANCLAS).map((a) => (
         <span key={a} id={a} className="cartera-ancla" aria-hidden="true" />
@@ -255,13 +368,54 @@ export default function Cartera({ fichas }: { fichas: Ficha[] }) {
         )}
 
         {visibles.length > 0 ? (
-          filtro === 0 ? (
-            <RevealGrupo className="cartera-grilla">{celdas}</RevealGrupo>
-          ) : (
-            <div key={filtro} className="cartera-grilla cartera-grilla-filtrada">
-              {celdas}
-            </div>
-          )
+          <div className="cartera-carril" ref={carril}>
+            {filtro === 0 ? (
+              <RevealGrupo className="cartera-grilla">{celdas}</RevealGrupo>
+            ) : (
+              <div key={filtro} className="cartera-grilla cartera-grilla-filtrada">
+                {celdas}
+              </div>
+            )}
+            {desborda && (
+              <div className="cartera-mando">
+                <div className="cartera-progreso" aria-hidden="true">
+                  <span />
+                </div>
+                <div className="cartera-mando-botones" role="group" aria-label="Mover la cartera">
+                  <button type="button" className="cartera-mando-boton" onClick={() => mover(-1)} aria-label="Ver las anteriores">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="m15 18-6-6 6-6" />
+                    </svg>
+                  </button>
+                  {!reduced && (
+                    <button
+                      type="button"
+                      className="cartera-mando-boton"
+                      onClick={() => setPausada((v) => !v)}
+                      aria-pressed={pausada}
+                      aria-label={pausada ? "Reanudar el movimiento" : "Pausar el movimiento"}
+                    >
+                      {pausada ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <path d="M8 5.5v13l11-6.5z" />
+                        </svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <rect x="6.5" y="5" width="3.6" height="14" rx="1" />
+                          <rect x="13.9" y="5" width="3.6" height="14" rx="1" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                  <button type="button" className="cartera-mando-boton" onClick={() => mover(1)} aria-label="Ver las siguientes">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="cartera-vacia">
             <p>Con esa combinación no hay nada en la cartera hoy.</p>
