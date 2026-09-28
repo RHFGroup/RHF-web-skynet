@@ -96,6 +96,8 @@
   .nav-inner .nav-cta { display: none; }
 }
 
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .menu-movil, .menu-movil nav a { transition: none; transform: none; }
+  :root:not([data-mov="activo"]) .menu-movil, :root:not([data-mov="activo"]) .menu-movil nav a { transition: none; transform: none; }
 }
+:root[data-mov="reducido"] .menu-movil, :root[data-mov="reducido"] .menu-movil nav a { transition: none; transform: none; }

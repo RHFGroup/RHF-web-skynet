@@ -25,6 +25,7 @@
  * cartera y los mapas.
  */
 import { useEffect } from "react";
+import { movimientoReducido, usePrefersReducedMotion } from "@/lib/motion";
 import "@/styles/animaciones.css";
 
 const VARIANTES: [selector: string, variante: string][] = [
@@ -42,8 +43,12 @@ const FUERA = "#inicio, [data-revela], .tg, .zn-mapa-fijo, .leaflet-container, .
 const DURACION_MS = 1400;
 
 export default function Animador() {
+  // Se vuelve a armar si el visitante activa las animaciones en el pie de
+  // página; si las reduce, la limpieza de abajo muestra lo que quedaba armado.
+  const reducido = usePrefersReducedMotion();
+
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (movimientoReducido()) return;
 
     // Se revisa la posición en cada scroll en vez de usar IntersectionObserver:
     // el observador no ve un elemento recortado entero con `clip-path` (el de
@@ -107,7 +112,7 @@ export default function Animador() {
       window.removeEventListener("resize", alMover);
       armados.forEach(quitar);
     };
-  }, []);
+  }, [reducido]);
 
   return null;
 }

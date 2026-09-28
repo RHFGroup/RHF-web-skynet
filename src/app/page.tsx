@@ -45,7 +45,9 @@
 import ContactForm from "@/components/ContactForm";
 import MapaZona from "@/components/MapaZona";
 import Cartera from "@/components/Cartera";
-import BarraConfianza from "@/components/BarraConfianza";
+import Desarrolladores from "@/components/Desarrolladores";
+import Noticias from "@/components/Noticias";
+import Resenas from "@/components/Resenas";
 import NuestrasRedes from "@/components/NuestrasRedes";
 import Hero, { type AccesoHero, type FichaHero } from "@/components/Hero";
 import NavInicio from "@/components/NavInicio";
@@ -119,23 +121,31 @@ const WA_LINK = enlaceWhatsApp(SALUDO_WHATSAPP);
  * la persona ya vio qué hay; cómo se compra y con qué respaldo; y al final
  * las redes y el contacto.
  *
- *  1. Barra de confianza y cartera (blanco): proyectos y apartamentos juntos.
+ *  1. Cartera (blanco): proyectos y apartamentos juntos, y debajo, en el
+ *     mismo bloque, los desarrolladores con sus logos (28-sep-2026).
  *  2. Quién te asesora (azul).
  *  3. El territorio (blanco): «¿por qué aquí?».
  *  4. Cómo comprar y respaldo jurídico (azul): van en un mismo bloque; si el
  *     paso a paso no sale, la alternancia de colores sigue igual.
- *  5. Nuestras redes (blanco).
- *  6. Contacto (azul), antes del pie, que lleva una línea camel arriba.
+ *  5. Noticias de la Zona Norte, con la suscripción al boletín (blanco).
+ *  6. Reseñas (azul): hoy, la invitación a dejar una.
+ *  7. Nuestras redes, con los últimos reels (blanco).
+ *  8. Contacto (azul), antes del pie, que lleva una línea camel arriba.
+ *
+ * 28-sep-2026, tarde (Rafael): entran los desarrolladores, las noticias con
+ * su página /noticias y la suscripción, las reseñas y los reels.
  */
 function secciones(): { id: string; tono: string; nodo: React.ReactNode }[] {
   return [
     {
       id: "oferta",
       tono: "tono-claro tono-blanco-1",
+      // 28-sep-2026: Rafael pidió quitar la barra de cifras que iba encima
+      // («quita toda la barra esa»). BarraConfianza.tsx queda en el repo, sin uso.
       nodo: (
         <>
-          <BarraConfianza proyectos={fichas.length} apartamentos={fichasInmuebles.length} />
           <Cartera fichas={cartera} />
+          <Desarrolladores />
         </>
       ),
     },
@@ -155,6 +165,8 @@ function secciones(): { id: string; tono: string; nodo: React.ReactNode }[] {
         </>
       ),
     },
+    { id: "noticias", tono: "tono-claro tono-blanco-1", nodo: <Noticias /> },
+    { id: "resenas", tono: "tono-oscuro tono-azul-1", nodo: <Resenas /> },
     { id: "redes", tono: "tono-claro tono-blanco-3", nodo: <NuestrasRedes /> },
     { id: "contacto", tono: "tono-oscuro tono-azul-3", nodo: <Contacto /> },
   ];

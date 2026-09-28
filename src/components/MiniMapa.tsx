@@ -9,6 +9,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { cargarLeaflet, TESELAS } from "@/lib/leaflet";
+import { movimientoReducido } from "@/lib/motion";
 
 export default function MiniMapa({
   lat,
@@ -50,7 +51,7 @@ export default function MiniMapa({
         if (cancelado || !caja.current) return;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const leaflet = L as any;
-        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const reduced = movimientoReducido();
         const mapa = leaflet.map(caja.current, {
           center: [lat, lon],
           zoom: 14,

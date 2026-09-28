@@ -44,6 +44,16 @@
   flex-direction: column;
   padding: 28px 26px 24px;
 }
+/* 28-sep-2026: la cara que no toca se apaga del todo, no solo con
+   `backface-visibility`. Donde el navegador pinta sin aceleración (WebKit sin
+   GPU, ahorro de energía, algunos visores de apps) esa propiedad no se
+   respeta y la tarjeta mostraba el reverso espejado encima del frente. El
+   cambio llega cuando la tarjeta pasa de canto (90°): con la curva del giro,
+   a los 90 ms de los 700. */
+.tg-cara { transition: opacity 0s linear 90ms; }
+.tg-reverso { opacity: 0; }
+.tg-girada .tg-reverso { opacity: 1; }
+.tg-girada .tg-frente { opacity: 0; }
 .tg-reverso:focus { outline: none; }
 .tg-reverso:focus-visible { outline: 2px solid var(--camel); outline-offset: 3px; }
 
@@ -420,12 +430,30 @@
 }
 
 /* ── Menos movimiento: un fundido en vez del giro ── */
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .tg-giro, .tg-girada .tg-giro { transform: none; transition: none; }
-  .tg-cara { transition: opacity 0.3s ease; }
-  .tg-reverso { transform: none; opacity: 0; }
-  .tg-girada .tg-reverso { opacity: 1; }
-  .tg-girada .tg-frente { opacity: 0; }
-  .tg-cabeza, .tg-datos, .tg-pie, .tg-frase, .tg-capas li, .tg-acciones { transform: none !important; }
-  .tg-foto img { animation: none !important; transform: none; }
+  :root:not([data-mov="activo"]) .tg-giro, :root:not([data-mov="activo"]) .tg-girada .tg-giro { transform: none; transition: none; }
+  :root:not([data-mov="activo"]) .tg-cara { transition: opacity 0.3s ease; }
+  :root:not([data-mov="activo"]) .tg-reverso { transform: none; opacity: 0; }
+  :root:not([data-mov="activo"]) .tg-girada .tg-reverso { opacity: 1; }
+  :root:not([data-mov="activo"]) .tg-girada .tg-frente { opacity: 0; }
+  :root:not([data-mov="activo"]) .tg-cabeza,
+  :root:not([data-mov="activo"]) .tg-datos,
+  :root:not([data-mov="activo"]) .tg-pie,
+  :root:not([data-mov="activo"]) .tg-frase,
+  :root:not([data-mov="activo"]) .tg-capas li,
+  :root:not([data-mov="activo"]) .tg-acciones { transform: none !important; }
+  :root:not([data-mov="activo"]) .tg-foto img { animation: none !important; transform: none; }
 }
+:root[data-mov="reducido"] .tg-giro, :root[data-mov="reducido"] .tg-girada .tg-giro { transform: none; transition: none; }
+:root[data-mov="reducido"] .tg-cara { transition: opacity 0.3s ease; }
+:root[data-mov="reducido"] .tg-reverso { transform: none; opacity: 0; }
+:root[data-mov="reducido"] .tg-girada .tg-reverso { opacity: 1; }
+:root[data-mov="reducido"] .tg-girada .tg-frente { opacity: 0; }
+:root[data-mov="reducido"] .tg-cabeza,
+:root[data-mov="reducido"] .tg-datos,
+:root[data-mov="reducido"] .tg-pie,
+:root[data-mov="reducido"] .tg-frase,
+:root[data-mov="reducido"] .tg-capas li,
+:root[data-mov="reducido"] .tg-acciones { transform: none !important; }
+:root[data-mov="reducido"] .tg-foto img { animation: none !important; transform: none; }

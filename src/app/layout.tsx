@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Montserrat } from "next/font/google";
 import "./globals.css";
-import AgentChat from "@/components/AgentChat";
+import ChatDiferido from "@/components/ChatDiferido";
 import Script from "next/script";
 
 const cormorant = Cormorant_Garamond({
@@ -98,6 +98,14 @@ const jsonLd = {
   },
 };
 
+/**
+ * La elección del control «Animaciones» del pie de página (src/lib/motion.ts),
+ * aplicada antes de pintar: sin esto, quien las activó vería un instante la
+ * página quieta y luego el salto. Si el navegador no deja leer el
+ * almacenamiento, no pasa nada: manda lo que pida el sistema.
+ */
+const MOVIMIENTO_ANTES_DE_PINTAR = `try{var m=localStorage.getItem("rhf-movimiento");if(m==="activo"||m==="reducido")document.documentElement.setAttribute("data-mov",m)}catch(e){}`;
+
 export default function RootLayout({
   children,
 }: {
@@ -107,8 +115,11 @@ export default function RootLayout({
     <html
       lang="es"
       className={`${cormorant.variable} ${montserrat.variable} scroll-smooth`}
+      // El script de abajo puede agregar data-mov antes de que React hidrate.
+      suppressHydrationWarning
     >
       <head>
+        <script id="movimiento" dangerouslySetInnerHTML={{ __html: MOVIMIENTO_ANTES_DE_PINTAR }} />
         <Script
           id="json-ld"
           type="application/ld+json"
@@ -117,7 +128,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-dvh font-sans antialiased">
         {children}
-        <AgentChat />
+        <ChatDiferido />
       </body>
     </html>
   );

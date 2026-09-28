@@ -69,6 +69,8 @@
   pointer-events: none;
 }
 
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .nav.nav-inicio { transition: none; }
+  :root:not([data-mov="activo"]) .nav.nav-inicio { transition: none; }
 }
+:root[data-mov="reducido"] .nav.nav-inicio { transition: none; }

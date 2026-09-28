@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { IconoInstagram } from "@/components/Iconos";
+import PreferenciaMovimiento from "@/components/PreferenciaMovimiento";
 import { SECCIONES_HOME } from "@/data/navegacion";
 import { REDES } from "@/data/redes";
 
@@ -35,6 +36,7 @@ export default function PieSitio({
                 {s.texto}
               </Link>
             ))}
+            <Link href="/noticias">Noticias</Link>
           </div>
         </div>
         {/* Las redes (src/data/redes.ts), con su usuario a la vista. */}
@@ -45,6 +47,8 @@ export default function PieSitio({
             </a>
           ))}
         </div>
+        {/* Animaciones: automáticas (lo que pida el sistema), activadas o reducidas. */}
+        <PreferenciaMovimiento />
         <div className="footer-legal">
           <p>
             <strong>Rafael Hernández Franco</strong> — Asesor inmobiliario independiente.{" "}

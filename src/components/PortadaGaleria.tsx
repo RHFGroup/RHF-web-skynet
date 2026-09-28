@@ -9,10 +9,16 @@
  *
  * Cada foto lleva su crédito a la vista. La primera carga con prioridad; las
  * demás, solo cuando se piden.
+ *
+ * En el teléfono vertical (28-sep-2026) cada foto llega recortada al centro
+ * y en vertical, en AVIF (src/lib/imagenes.ts): es lo único que se ve de
+ * ella, con la misma nitidez, y pesa un tercio. La primera foto de la página
+ * de un proyecto era un JPG de hasta 600 KB y tardaba casi 7 s en aparecer.
  */
 import { useRef, useState, type ReactNode } from "react";
 import type { Foto } from "@/data/proyectos";
 import { IconoFlecha, IconoFlechaIzq } from "@/components/Iconos";
+import { avifDe, MEDIA_MOVIL, movilDe } from "@/lib/imagenes";
 
 export default function PortadaGaleria({
   fotos,
@@ -75,23 +81,29 @@ export default function PortadaGaleria({
       }}
     >
       <div className="pp-portada-fotos">
-        {fotos.map((f, i) =>
-          vistas.has(i) ? (
-            <img
-              key={f.src}
-              src={f.src}
-              alt={i === actual ? f.alt : ""}
-              aria-hidden={i === actual ? undefined : true}
-              width={f.ancho}
-              height={f.alto}
-              className={i === actual ? "activa" : ""}
-              // La primera foto es lo primero que se ve: va con prioridad.
-              fetchPriority={i === 0 ? "high" : "auto"}
-              loading={i === 0 ? "eager" : "lazy"}
-              decoding="async"
-            />
-          ) : null,
-        )}
+        {fotos.map((f, i) => {
+          if (!vistas.has(i)) return null;
+          const movil = movilDe(f.src);
+          const avif = avifDe(f.src);
+          return (
+            <picture key={f.src}>
+              {movil && <source media={MEDIA_MOVIL} type="image/avif" srcSet={movil} />}
+              {avif && <source type="image/avif" srcSet={avif} />}
+              <img
+                src={f.src}
+                alt={i === actual ? f.alt : ""}
+                aria-hidden={i === actual ? undefined : true}
+                width={f.ancho}
+                height={f.alto}
+                className={i === actual ? "activa" : ""}
+                // La primera foto es lo primero que se ve: va con prioridad.
+                fetchPriority={i === 0 ? "high" : "auto"}
+                loading={i === 0 ? "eager" : "lazy"}
+                decoding="async"
+              />
+            </picture>
+          );
+        })}
       </div>
 
       <div className="pp-portada-texto">{children}</div>

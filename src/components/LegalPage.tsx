@@ -16,10 +16,13 @@ export const VIGENCIA = "18 de septiembre de 2026";
 export default function LegalPage({
   titulo,
   bajada,
+  vigencia = VIGENCIA,
   children,
 }: {
   titulo: string;
   bajada: string;
+  /** Desde cuándo rige esta versión, si cambió después de la fecha común. */
+  vigencia?: string;
   children: ReactNode;
 }) {
   return (
@@ -27,7 +30,7 @@ export default function LegalPage({
       <div className="mx-auto w-full max-w-3xl px-5 py-16 sm:px-8 sm:py-24">
         <Link
           href="/"
-          className="text-sm font-medium tracking-wide text-cuero hover:underline"
+          className="legal-volver text-sm font-medium tracking-wide text-cuero hover:underline"
         >
           ← Volver a rhfliving.com
         </Link>
@@ -37,7 +40,7 @@ export default function LegalPage({
         </h1>
         <p className="mt-4 text-base leading-relaxed text-marino/80">{bajada}</p>
         <p className="mt-6 border-t border-marino/15 pt-6 text-sm text-marino/60">
-          Vigente desde el {VIGENCIA}. Esta versión reemplaza cualquier
+          Vigente desde el {vigencia}. Esta versión reemplaza cualquier
           publicación anterior.
         </p>
 

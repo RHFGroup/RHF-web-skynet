@@ -10,6 +10,10 @@
  * cada paso entra desde su lado al llegar y queda encendido. Los pasos del estudio jurídico
  * llevan su color, para que se lea de un vistazo quién hace qué.
  *
+ * 28-sep-2026 (pedido de Rafael): la sección sale reducida. Se ven solo los
+ * nombres de los pasos, numerados y en una fila; «Ver los N pasos» abre la
+ * línea completa y «Ver menos» la vuelve a cerrar.
+ *
  * Los pasos salen de src/data/proceso.ts y solo se publican los confirmados;
  * en las vistas previas se ven todos, con un solo aviso de propuesta para la
  * sección. Si ninguno está confirmado, en producción la sección no aparece.
@@ -36,13 +40,15 @@ const QUIEN: Record<Quien, { texto: string; icono: React.ReactNode }> = {
 export default function PasoAPaso() {
   const pasos = PASOS.filter(seMuestra);
   const reduced = usePrefersReducedMotion();
+  const seccion = useRef<HTMLElement>(null);
   const lista = useRef<HTMLOListElement>(null);
+  const [abierto, setAbierto] = useState(false);
   const [avance, setAvance] = useState(0);
   const [guiaAbierta, setGuiaAbierta] = useState(false);
 
   useEffect(() => {
     const el = lista.current;
-    if (!el || reduced) return;
+    if (!abierto || !el || reduced) return;
     let ultimo = 0;
     const medir = () => {
       const r = el.getBoundingClientRect();
@@ -65,15 +71,29 @@ export default function PasoAPaso() {
       window.removeEventListener("scroll", alScroll);
       window.removeEventListener("resize", alScroll);
     };
-  }, [reduced]);
+  }, [abierto, reduced]);
 
   if (pasos.length === 0) return null;
 
   const n = pasos.length;
   const recorrido = reduced ? n : avance * n;
 
+  const alternar = () => {
+    if (abierto) {
+      // Al cerrar, la sección se achica: se vuelve a su principio para no
+      // quedar perdido más abajo.
+      setAbierto(false);
+      setAvance(0);
+      requestAnimationFrame(() =>
+        seccion.current?.scrollIntoView({ block: "start", behavior: reduced ? "auto" : "smooth" }),
+      );
+    } else {
+      setAbierto(true);
+    }
+  };
+
   return (
-    <section className="pa section" id="paso-a-paso" aria-labelledby="pa-titulo">
+    <section className="pa section" id="paso-a-paso" aria-labelledby="pa-titulo" ref={seccion}>
       <div className="section-shell">
         <div className="pa-cabeza">
           <div>
@@ -92,53 +112,94 @@ export default function PasoAPaso() {
         </div>
         <AvisoPropuesta pendiente={pasos.some((p) => !p.confirmado)} nota="todos los pasos" />
 
-        <ol
-          className="pa-linea"
-          ref={lista}
-          style={{ "--avance": (reduced ? 1 : avance).toFixed(3) } as React.CSSProperties}
-        >
-          {pasos.map((p, i) => {
-            const activo = recorrido > i + 0.15;
-            return (
-              <li
-                key={p.titulo}
-                className={
-                  "pa-paso pa-" + (i % 2 === 0 ? "izq" : "der") + " pa-es-" + p.quien + (activo ? " activo" : "")
-                }
+        <div id="pa-pasos">
+          {abierto ? (
+            <div className="pa-detalle">
+              <ol
+                className="pa-linea"
+                ref={lista}
+                style={{ "--avance": (reduced ? 1 : avance).toFixed(3) } as React.CSSProperties}
               >
-                <span className="pa-punto" aria-hidden="true">
-                  <IconoProceso icono={p.icono} size={20} />
-                </span>
-                <div className="pa-tarjeta">
-                  <div className="pa-tarjeta-cabeza">
-                    <span className="pa-numero">{String(i + 1).padStart(2, "0")}</span>
-                    <span className={"pa-quien pa-quien-" + (p.quien === "asesor" ? "asesor" : "juridico")}>
-                      {QUIEN[p.quien].icono} {QUIEN[p.quien].texto}
-                    </span>
-                  </div>
-                  <h3>{p.titulo}</h3>
-                  <p>{p.texto}</p>
-                  {/* Nota para Rafael: solo en las vistas previas. */}
-                  {p.pendiente && MODO_REVISION && !p.confirmado && <p className="pa-pendiente">{p.pendiente}</p>}
-                </div>
-              </li>
-            );
-          })}
-        </ol>
+                {pasos.map((p, i) => {
+                  const activo = recorrido > i + 0.15;
+                  return (
+                    <li
+                      key={p.titulo}
+                      className={
+                        "pa-paso pa-" +
+                        (i % 2 === 0 ? "izq" : "der") +
+                        " pa-es-" +
+                        p.quien +
+                        (activo ? " activo" : "")
+                      }
+                    >
+                      <span className="pa-punto" aria-hidden="true">
+                        <IconoProceso icono={p.icono} size={20} />
+                      </span>
+                      <div className="pa-tarjeta">
+                        <div className="pa-tarjeta-cabeza">
+                          <span className="pa-numero">{String(i + 1).padStart(2, "0")}</span>
+                          <span className={"pa-quien pa-quien-" + (p.quien === "asesor" ? "asesor" : "juridico")}>
+                            {QUIEN[p.quien].icono} {QUIEN[p.quien].texto}
+                          </span>
+                        </div>
+                        <h3>{p.titulo}</h3>
+                        <p>{p.texto}</p>
+                        {/* Nota para Rafael: solo en las vistas previas. */}
+                        {p.pendiente && MODO_REVISION && !p.confirmado && <p className="pa-pendiente">{p.pendiente}</p>}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
 
-        {COMPRA_DESDE_EXTERIOR && (
-          <aside className="pa-exterior">
-            <h3>¿Compras desde el exterior?</h3>
-            <ul>
-              {COMPRA_DESDE_EXTERIOR.pasos.map((x) => (
-                <li key={x}>{x}</li>
+              {COMPRA_DESDE_EXTERIOR && (
+                <aside className="pa-exterior">
+                  <h3>¿Compras desde el exterior?</h3>
+                  <ul>
+                    {COMPRA_DESDE_EXTERIOR.pasos.map((x) => (
+                      <li key={x}>{x}</li>
+                    ))}
+                  </ul>
+                  <p className="pa-exterior-fuente">
+                    Validado por {COMPRA_DESDE_EXTERIOR.validadoPor} · {COMPRA_DESDE_EXTERIOR.fecha}
+                  </p>
+                </aside>
+              )}
+            </div>
+          ) : (
+            // Reducido: solo los nombres, con el color de quién acompaña.
+            <ol className="pa-resumen">
+              {pasos.map((p, i) => (
+                <li
+                  key={p.titulo}
+                  className={"pa-resumen-paso pa-es-" + p.quien}
+                  style={{ "--i": i } as React.CSSProperties}
+                >
+                  <span className="pa-resumen-numero" aria-hidden="true">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {p.titulo}
+                </li>
               ))}
-            </ul>
-            <p className="pa-exterior-fuente">
-              Validado por {COMPRA_DESDE_EXTERIOR.validadoPor} · {COMPRA_DESDE_EXTERIOR.fecha}
-            </p>
-          </aside>
-        )}
+            </ol>
+          )}
+        </div>
+
+        <div className="pa-ver">
+          <button
+            type="button"
+            className="pa-ver-boton"
+            aria-expanded={abierto}
+            aria-controls="pa-pasos"
+            onClick={alternar}
+          >
+            {abierto ? "Ver menos" : `Ver los ${n} pasos`}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+        </div>
 
         <div className="pa-cta">
           <div>

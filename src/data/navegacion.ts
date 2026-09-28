@@ -16,6 +16,10 @@ export const SECCIONES_HOME: Seccion[] = [
   { ancla: "asesor", texto: "Quién te asesora" },
   { ancla: "mapa", texto: "El territorio" },
   { ancla: "paso-a-paso", texto: "Cómo comprar" },
+  // 28-sep-2026: las noticias tienen su bloque en la home y su página
+  // (/noticias). En la barra de escritorio no caben; van en el menú del
+  // teléfono y, en el pie, como enlace a la página.
+  { ancla: "noticias", texto: "Noticias", soloMovil: true },
   { ancla: "redes", texto: "Nuestras redes", soloMovil: true },
   { ancla: "contacto", texto: "Contacto" },
 ];

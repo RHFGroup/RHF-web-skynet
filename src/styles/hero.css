@@ -35,6 +35,9 @@
    fundido nunca deja ver el fondo. */
 .hero-diapo.previa { z-index: 1; opacity: 1; transition: none; }
 .hero-diapo.activa { z-index: 2; opacity: 1; }
+/* El <picture> (AVIF con el JPG de respaldo) ocupa toda la diapositiva, para
+   que la imagen siga cubriéndola con su 100 % de alto. */
+.hero-diapo picture { display: block; width: 100%; height: 100%; }
 .hero-diapo img {
   width: 100%;
   height: 100%;
@@ -499,14 +502,44 @@
 }
 
 /* ── Menos movimiento: nada se mueve solo ─────── */
+/* movimiento: sistema o preferencia (src/lib/motion.ts) */
 @media (prefers-reduced-motion: reduce) {
-  .hero-diapo { transition: none; }
-  .hero-diapo img, .hero-capa-pines, .hero-pin-punto::after { animation: none !important; transform: none !important; }
-  .hero-eyebrow, .hero-eyebrow::before, .hero-linea,
-  .hero-accesos a,
-  .hero-escaparate .hero-sub, .hero-escaparate .hero-ctas,
-  .hero-leyenda, .hero-controles,
-  .hero-leyenda-etiquetas, .hero-leyenda-nombre span, .hero-leyenda-meta,
-  .hero-leyenda-precio, .hero-leyenda-cta, .hero-leyenda-credito { animation: none !important; }
-  .hero-tab .hero-tab-progreso { display: none; }
+  :root:not([data-mov="activo"]) .hero-diapo { transition: none; }
+  :root:not([data-mov="activo"]) .hero-diapo img,
+  :root:not([data-mov="activo"]) .hero-capa-pines,
+  :root:not([data-mov="activo"]) .hero-pin-punto::after { animation: none !important; transform: none !important; }
+  :root:not([data-mov="activo"]) .hero-eyebrow,
+  :root:not([data-mov="activo"]) .hero-eyebrow::before,
+  :root:not([data-mov="activo"]) .hero-linea,
+  :root:not([data-mov="activo"]) .hero-accesos a,
+  :root:not([data-mov="activo"]) .hero-escaparate .hero-sub,
+  :root:not([data-mov="activo"]) .hero-escaparate .hero-ctas,
+  :root:not([data-mov="activo"]) .hero-leyenda,
+  :root:not([data-mov="activo"]) .hero-controles,
+  :root:not([data-mov="activo"]) .hero-leyenda-etiquetas,
+  :root:not([data-mov="activo"]) .hero-leyenda-nombre span,
+  :root:not([data-mov="activo"]) .hero-leyenda-meta,
+  :root:not([data-mov="activo"]) .hero-leyenda-precio,
+  :root:not([data-mov="activo"]) .hero-leyenda-cta,
+  :root:not([data-mov="activo"]) .hero-leyenda-credito { animation: none !important; }
+  :root:not([data-mov="activo"]) .hero-tab .hero-tab-progreso { display: none; }
 }
+:root[data-mov="reducido"] .hero-diapo { transition: none; }
+:root[data-mov="reducido"] .hero-diapo img,
+:root[data-mov="reducido"] .hero-capa-pines,
+:root[data-mov="reducido"] .hero-pin-punto::after { animation: none !important; transform: none !important; }
+:root[data-mov="reducido"] .hero-eyebrow,
+:root[data-mov="reducido"] .hero-eyebrow::before,
+:root[data-mov="reducido"] .hero-linea,
+:root[data-mov="reducido"] .hero-accesos a,
+:root[data-mov="reducido"] .hero-escaparate .hero-sub,
+:root[data-mov="reducido"] .hero-escaparate .hero-ctas,
+:root[data-mov="reducido"] .hero-leyenda,
+:root[data-mov="reducido"] .hero-controles,
+:root[data-mov="reducido"] .hero-leyenda-etiquetas,
+:root[data-mov="reducido"] .hero-leyenda-nombre span,
+:root[data-mov="reducido"] .hero-leyenda-meta,
+:root[data-mov="reducido"] .hero-leyenda-precio,
+:root[data-mov="reducido"] .hero-leyenda-cta,
+:root[data-mov="reducido"] .hero-leyenda-credito { animation: none !important; }
+:root[data-mov="reducido"] .hero-tab .hero-tab-progreso { display: none; }
