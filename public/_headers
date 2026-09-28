@@ -8,10 +8,27 @@
 # Next copia public/ a la raíz del export (out/), y de ahí las lee Cloudflare.
 # Origen: auditoría de seguridad del 23-sep-2026, hallazgo M-4.
 #
-# Estas cinco cabeceras no pueden romper el sitio. Falta una Content-Security-
-# Policy, que sí puede romperlo (Three.js, el widget de chat por WebSocket,
-# estilos en línea de Next) y hay que probarla en un preview antes de fijarla.
-# Ver la descripción del PR.
+# Estas cinco cabeceras no pueden romper el sitio.
+#
+# La Content-Security-Policy va primero en modo de solo reporte (auditoría del
+# 25-sep-2026, M-4): el navegador anota en la consola lo que la política
+# bloquearía, pero no bloquea nada. Cuando pase una semana sin avisos en las
+# páginas del sitio, se cambia el nombre de la cabecera a
+# Content-Security-Policy y queda activa.
+#
+# De dónde sale cada origen:
+#   script-src  'unsafe-inline': Next mete los datos de cada página en scripts
+#               en línea (el export estático no admite nonces);
+#               challenges.cloudflare.com: Turnstile;
+#               cdnjs.cloudflare.com: Leaflet (src/lib/leaflet.ts);
+#               static.cloudflareinsights.com: la analítica de Cloudflare.
+#   style-src   'unsafe-inline': estilos en línea de React y de Leaflet;
+#               cdnjs.cloudflare.com: la hoja de Leaflet.
+#   img-src     las teselas de los mapas (OpenStreetMap y CARTO) y los íconos
+#               de Leaflet.
+#   connect-src el chat (atencion-hrf.syberloop.com) y la analítica.
+#   frame-src   el recuadro de Turnstile.
+# Un origen nuevo en el sitio (un mapa, un video, un widget) se agrega aquí.
 
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
@@ -19,3 +36,4 @@
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdnjs.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://cdnjs.cloudflare.com; font-src 'self' data:; connect-src 'self' https://atencion-hrf.syberloop.com wss://atencion-hrf.syberloop.com https://cloudflareinsights.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; media-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
