@@ -5,8 +5,10 @@
  * único que pasa por acá es `/api/*` (ver `run_worker_first` en
  * wrangler.jsonc); cualquier otra ruta se sirve como antes.
  *
- * Hoy hay un solo endpoint: POST /api/consulta, que guarda lo que alguien
- * escribe en el formulario de contacto.
+ * Hay dos endpoints: POST /api/consulta, que guarda lo que alguien escribe
+ * en el formulario de contacto, y POST /api/suscripcion (desde el
+ * 28-sep-2026), que guarda el correo de quien se suscribe al boletín de
+ * noticias de la Zona Norte, con la constancia de su autorización.
  *
  * Y desde el 23-sep-2026, un cron: cada 5 minutos el vigía de worker/vigia.ts
  * mira que el agente (chat de la web y WhatsApp) responda, y avisa por
@@ -89,6 +91,10 @@ export default {
 
     if (url.pathname === "/api/consulta") {
       return guardarConsulta(request, env, ctx);
+    }
+
+    if (url.pathname === "/api/suscripcion") {
+      return guardarSuscripcion(request, env);
     }
 
     if (url.pathname.startsWith("/api/")) {
@@ -244,6 +250,132 @@ async function guardarConsulta(
     // formulario muestre el error y le ofrezca WhatsApp a la persona, en vez
     // de decirle «enviado» sobre algo que no se guardó.
     console.error("[consulta] fallo al guardar:", e);
+    return json({ ok: false, error: "fallo_al_guardar" }, 500, request);
+  }
+}
+
+// ── El boletín ────────────────────────────────────────────────────────
+
+/** Versión del texto de autorización del boletín, si el cliente no manda la suya. */
+const AVISO_BOLETIN_POR_DEFECTO = "2026-09-28-boletin";
+
+/**
+ * La tabla del boletín. El Worker la crea sola en la primera suscripción
+ * (igual que la del vigía), así que no hace falta correr la migración
+ * 0003_suscriptores.sql para que funcione: está allá para que el esquema
+ * quede escrito donde están los demás.
+ *
+ * Un correo, una fila: si alguien se vuelve a suscribir, se actualiza la
+ * constancia (fecha, versión del texto, IP y navegador) y vuelve a quedar
+ * activo. La baja se marca con `estado = 'baja'` y `baja_en`, sin borrar la
+ * constancia, para poder demostrar la autorización y la baja.
+ *
+ * Para leer la lista:
+ *   wrangler d1 execute rhf-leads --remote --command "SELECT correo, creado_en, estado FROM suscriptores"
+ */
+const CREAR_SUSCRIPTORES = [
+  `CREATE TABLE IF NOT EXISTS suscriptores (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    creado_en      TEXT    NOT NULL,
+    correo         TEXT    NOT NULL UNIQUE,
+    autoriza       INTEGER NOT NULL CHECK (autoriza = 1),
+    version_aviso  TEXT    NOT NULL,
+    ip             TEXT,
+    user_agent     TEXT,
+    origen         TEXT,
+    estado         TEXT    NOT NULL DEFAULT 'activa' CHECK (estado IN ('activa', 'baja')),
+    actualizado_en TEXT,
+    baja_en        TEXT
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_suscriptores_ip_creado ON suscriptores(ip, actualizado_en DESC)`,
+];
+let suscriptoresLista = false;
+
+/** Un correo con forma de correo. La verificación de verdad es que llegue. */
+const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+async function guardarSuscripcion(request: Request, env: Env): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: cabecerasCors(request) });
+  }
+  if (request.method !== "POST") {
+    return json({ ok: false, error: "metodo_no_permitido" }, 405);
+  }
+  if (!origenPermitido(request)) {
+    return json({ ok: false, error: "origen_no_permitido" }, 403);
+  }
+
+  let cuerpo: Record<string, unknown>;
+  try {
+    const crudo = await request.text();
+    if (crudo.length > LIMITES.cuerpo) {
+      return json({ ok: false, error: "cuerpo_demasiado_grande" }, 413);
+    }
+    cuerpo = JSON.parse(crudo) as Record<string, unknown>;
+  } catch {
+    return json({ ok: false, error: "json_invalido" }, 400);
+  }
+
+  // La misma trampa para bots del formulario de contacto.
+  if (texto(cuerpo.sitio)) {
+    return json({ ok: true, guardado: false }, 200);
+  }
+
+  // Sin autorización no se guarda (Ley 1581, y el CHECK de la tabla).
+  if (cuerpo.autoriza !== true) {
+    return json({ ok: false, error: "falta_autorizacion" }, 422, request);
+  }
+  const correo = texto(cuerpo.correo).toLowerCase();
+  if (correo.length > LIMITES.contacto || !CORREO_VALIDO.test(correo)) {
+    return json({ ok: false, error: "correo_invalido" }, 422, request);
+  }
+  const versionAviso =
+    texto(cuerpo.version_aviso).slice(0, LIMITES.version) || AVISO_BOLETIN_POR_DEFECTO;
+  const origen = texto(cuerpo.origen).slice(0, LIMITES.origen);
+  const ip = request.headers.get("CF-Connecting-IP") ?? null;
+  const userAgent = (request.headers.get("User-Agent") ?? "").slice(0, LIMITES.userAgent);
+  const ahora = new Date().toISOString();
+
+  try {
+    if (!suscriptoresLista) {
+      await env.DB.batch(CREAR_SUSCRIPTORES.map((q) => env.DB.prepare(q)));
+      suscriptoresLista = true;
+    }
+
+    // El mismo freno por IP del formulario, contado sobre esta tabla.
+    if (ip) {
+      const desde = new Date(Date.now() - VENTANA_MINUTOS * 60_000).toISOString();
+      const fila = await env.DB.prepare(
+        `SELECT COUNT(*) AS n FROM suscriptores WHERE ip = ? AND actualizado_en > ?`,
+      )
+        .bind(ip, desde)
+        .first<{ n: number }>();
+      if ((fila?.n ?? 0) >= TOPE_POR_IP) {
+        return json({ ok: false, error: "demasiados_envios" }, 429, request);
+      }
+    }
+
+    await env.DB.prepare(
+      `INSERT INTO suscriptores
+         (creado_en, correo, autoriza, version_aviso, ip, user_agent, origen, estado, actualizado_en)
+       VALUES (?, ?, 1, ?, ?, ?, ?, 'activa', ?)
+       ON CONFLICT(correo) DO UPDATE SET
+         autoriza = 1,
+         version_aviso = excluded.version_aviso,
+         ip = excluded.ip,
+         user_agent = excluded.user_agent,
+         origen = excluded.origen,
+         estado = 'activa',
+         baja_en = NULL,
+         actualizado_en = excluded.actualizado_en`,
+    )
+      .bind(ahora, correo, versionAviso, ip, userAgent || null, origen || null, ahora)
+      .run();
+
+    // No se dice si el correo ya estaba: la respuesta es la misma para todos.
+    return json({ ok: true, guardado: true }, 201, request);
+  } catch (e) {
+    console.error("[suscripcion] fallo al guardar:", e);
     return json({ ok: false, error: "fallo_al_guardar" }, 500, request);
   }
 }
