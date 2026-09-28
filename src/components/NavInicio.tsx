@@ -59,7 +59,9 @@ export default function NavInicio({ whatsapp }: { whatsapp: string }) {
         <a className="brand" href="#inicio" aria-label="RHF Living — inicio">
           {/* El logo claro es lo primero que se ve sobre la portada (y lo que
               Lighthouse mide como elemento principal): va con prioridad. El
-              oscuro solo aparece al bajar. */}
+              oscuro solo aparece al bajar. En las páginas de proyecto y de
+              apartamento el logo no lleva prioridad: allí lo principal es la
+              primera foto (PortadaGaleria), y el logo le quitaba el turno. */}
           <img
             className="brand-claro"
             src="/marca/rhf-living.svg"

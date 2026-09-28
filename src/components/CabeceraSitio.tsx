@@ -33,7 +33,7 @@ export default function CabeceraSitio({
     <header className={blanca ? "nav nav-blanca" : "nav"}>
       <div className="nav-inner">
         <Link className="brand" href="/" aria-label="RHF Living — inicio">
-          <img src="/marca/rhf-living-oscuro.svg" alt="RHF Living" width="215" height="48" fetchPriority="high" />
+          <img src="/marca/rhf-living-oscuro.svg" alt="RHF Living" width="215" height="48" />
         </Link>
         <nav className="nav-links" aria-label="Secciones">
           {SECCIONES_HOME.filter((s) => !s.soloMovil).map((s) =>
