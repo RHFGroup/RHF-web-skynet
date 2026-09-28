@@ -15,7 +15,8 @@ anidada (@keyframes, @media dentro del bloque) se detiene y avisa.
 
 Uso, desde la raíz del repo, cada vez que se agregue un bloque de
 reduced-motion:
-  python3 scripts/movimiento-css.py $(grep -rl "prefers-reduced-motion" src --include=*.css)
+  python3 scripts/movimiento-css.py $(grep -rl "prefers-reduced-motion" src --include='*.css')
+(con comillas en '*.css': zsh, la terminal del Mac, no acepta el asterisco suelto)
 """
 import re, sys
 
