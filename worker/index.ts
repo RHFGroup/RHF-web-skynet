@@ -5,10 +5,13 @@
  * único que pasa por acá es `/api/*` (ver `run_worker_first` en
  * wrangler.jsonc); cualquier otra ruta se sirve como antes.
  *
- * Hay dos endpoints: POST /api/consulta, que guarda lo que alguien escribe
- * en el formulario de contacto, y POST /api/suscripcion (desde el
+ * Hay tres endpoints: POST /api/consulta, que guarda lo que alguien escribe
+ * en el formulario de contacto; POST /api/suscripcion (desde el
  * 28-sep-2026), que guarda el correo de quien se suscribe al boletín de
- * noticias de la Zona Norte, con la constancia de su autorización.
+ * noticias de la Zona Norte, con la constancia de su autorización; y POST
+ * /api/solicitud-agente (desde el 29-sep-2026), por donde el agente de
+ * atención (WhatsApp y chat de la web) deja la llamada que alguien pidió con
+ * Rafael. Los tres caen al mismo buzón de leads y al mismo aviso de Telegram.
  *
  * Y desde el 23-sep-2026, un cron: cada 5 minutos el vigía de worker/vigia.ts
  * mira que el agente (chat de la web y WhatsApp) responda, y avisa por
@@ -46,6 +49,11 @@ export interface Env {
   /** Opcional: otro chat para los avisos del vigía (worker/vigia.ts). Si no
    *  existe, el vigía avisa al mismo grupo de las consultas. */
   TELEGRAM_ALERTAS_CHAT_ID?: string;
+  /** Token que solo tiene el perfil del agente de atención (plugin
+   *  `aviso-a-rafael`). Sin él, /api/solicitud-agente responde 503: el
+   *  endpoint nunca queda abierto por omisión. Se carga con
+   *  `wrangler secret put AGENTE_TOKEN`. */
+  AGENTE_TOKEN?: string;
 }
 
 /**
@@ -97,6 +105,10 @@ export default {
       return guardarSuscripcion(request, env);
     }
 
+    if (url.pathname === "/api/solicitud-agente") {
+      return guardarSolicitudAgente(request, env, ctx);
+    }
+
     if (url.pathname.startsWith("/api/")) {
       return json({ ok: false, error: "no_encontrado" }, 404);
     }
@@ -108,6 +120,7 @@ export default {
   // El cron de wrangler.jsonc. Ver worker/vigia.ts.
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
     ctx.waitUntil(vigilar(env, new Date(controller.scheduledTime)));
+    ctx.waitUntil(reintentarAvisos(env));
   },
 } satisfies ExportedHandler<Env>;
 
@@ -413,6 +426,9 @@ async function notificarTelegram(
     origen: string;
     creado: Date;
   },
+  /** Primera línea del aviso, ya en HTML de Telegram. La escribe el código,
+   *  nunca sale de lo que mandó alguien. Por defecto, la de la consulta. */
+  titulo = "🏠 <b>Consulta nueva en rhfliving.com</b>",
 ): Promise<{ ok: boolean; motivo?: string }> {
   if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
     // A gritos en el log, porque este es EL fallo silencioso del diseño
@@ -440,7 +456,7 @@ async function notificarTelegram(
       : null;
 
   const lineas = [
-    "🏠 <b>Consulta nueva en rhfliving.com</b>",
+    titulo,
     "",
     `<b>Nombre:</b> ${esc(c.nombre)}`,
     `<b>Contacto:</b> ${esc(c.contacto)}`,
@@ -484,6 +500,290 @@ async function notificarTelegram(
   } catch (e) {
     console.error("[telegram] no se pudo avisar:", e);
     return { ok: false, motivo: `red: ${e instanceof Error ? e.message : "desconocido"}` };
+  }
+}
+
+// ── Las solicitudes del agente de atención ───────────────────────────────
+
+/**
+ * POST /api/solicitud-agente — la llamada que alguien pidió con Rafael por
+ * WhatsApp o por el chat de la web (29-sep-2026).
+ *
+ * Hasta hoy el agente decía «un asesor te contacta» y nadie se enteraba: las
+ * conversaciones quedaban solo en el servidor del agente. El informe de
+ * Luciano (28-sep) cierra cada conversación con una llamada agendada con
+ * Rafael, así que la llamada entra al mismo buzón del formulario —la tabla
+ * `consultas`— y avisa por el mismo Telegram.
+ *
+ * La petición no viene de un navegador: la hace el plugin `aviso-a-rafael` del
+ * perfil `atencion`, de servidor a servidor. Por eso acá no hay Origin ni
+ * Turnstile, sino un token propio (`AGENTE_TOKEN`) que solo tiene ese perfil.
+ * Sin el secreto cargado el endpoint responde 503: nunca queda abierto por
+ * omisión.
+ *
+ * El número de teléfono lo pone el plugin: en WhatsApp sale de la plataforma,
+ * no del modelo. Acá solo se valida que tenga forma de número.
+ *
+ * Autorización (Ley 1581): el agente le da a la persona el aviso de datos con
+ * el enlace a /privacidad en la misma respuesta en que confirma la llamada, y
+ * la persona pidió la llamada ella misma. `version_aviso` dice qué texto fue.
+ */
+const TIPOS_SOLICITUD = new Set(["llamada_compra", "consignar"]);
+const CANALES_AGENTE = new Set(["whatsapp_cloud", "webchat", "api_server"]);
+const AVISO_AGENTE_POR_DEFECTO = "agente-2026-09-29";
+
+/** Tope global: más de esto por hora, desde el agente, es un bucle o un abuso. */
+const TOPE_AGENTE_POR_HORA = 60;
+
+const LIMITES_AGENTE = {
+  nombre: 120,
+  nombrePerfil: 120,
+  ciudad: 80,
+  interes: 160,
+  rango: 80,
+  diaHora: 120,
+  resumen: 600,
+  conversacion: 32,
+} as const;
+
+async function guardarSolicitudAgente(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response> {
+  if (request.method !== "POST") {
+    return json({ ok: false, error: "metodo_no_permitido" }, 405);
+  }
+  if (!env.AGENTE_TOKEN) {
+    console.error("[agente] falta el secreto AGENTE_TOKEN: el endpoint está cerrado");
+    return json({ ok: false, error: "sin_configurar" }, 503);
+  }
+  const auth = request.headers.get("Authorization") ?? "";
+  const presentado = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+  if (!presentado || !(await iguales(presentado, env.AGENTE_TOKEN))) {
+    return json({ ok: false, error: "no_autorizado" }, 401);
+  }
+
+  let cuerpo: Record<string, unknown>;
+  try {
+    const crudo = await request.text();
+    if (crudo.length > LIMITES.cuerpo) {
+      return json({ ok: false, error: "cuerpo_demasiado_grande" }, 413);
+    }
+    cuerpo = JSON.parse(crudo) as Record<string, unknown>;
+  } catch {
+    return json({ ok: false, error: "json_invalido" }, 400);
+  }
+
+  const tipo = texto(cuerpo.tipo);
+  const canal = texto(cuerpo.canal);
+  const nombre = texto(cuerpo.nombre).slice(0, LIMITES_AGENTE.nombre);
+  const telefono = texto(cuerpo.telefono).replace(/\D/g, "");
+  const diaHora = texto(cuerpo.dia_hora).slice(0, LIMITES_AGENTE.diaHora);
+  if (!TIPOS_SOLICITUD.has(tipo) || !CANALES_AGENTE.has(canal)) {
+    return json({ ok: false, error: "tipo_o_canal_invalido" }, 422);
+  }
+  if (nombre.length < 2 || diaHora.length < 2 || telefono.length < 7 || telefono.length > 15) {
+    return json({ ok: false, error: "datos_incompletos" }, 422);
+  }
+  const nombrePerfil = texto(cuerpo.nombre_perfil).slice(0, LIMITES_AGENTE.nombrePerfil);
+  const ciudad = texto(cuerpo.ciudad).slice(0, LIMITES_AGENTE.ciudad);
+  const interes = texto(cuerpo.interes).slice(0, LIMITES_AGENTE.interes);
+  const rango = texto(cuerpo.rango_inversion).slice(0, LIMITES_AGENTE.rango);
+  const resumen = texto(cuerpo.resumen).slice(0, LIMITES_AGENTE.resumen);
+  const idioma = texto(cuerpo.idioma) === "en" ? "en" : "es";
+  const conversacion = texto(cuerpo.conversacion).slice(0, LIMITES_AGENTE.conversacion);
+  const versionAviso =
+    texto(cuerpo.version_aviso).slice(0, LIMITES.version) || AVISO_AGENTE_POR_DEFECTO;
+  const prueba = cuerpo.prueba === true;
+
+  const ahora = new Date();
+  try {
+    const desde = new Date(ahora.getTime() - 60 * 60_000).toISOString();
+    const fila = await env.DB.prepare(
+      `SELECT COUNT(*) AS n FROM consultas WHERE origen LIKE 'agente:%' AND creado_en > ?`,
+    )
+      .bind(desde)
+      .first<{ n: number }>();
+    if ((fila?.n ?? 0) >= TOPE_AGENTE_POR_HORA) {
+      return json({ ok: false, error: "demasiadas_solicitudes" }, 429);
+    }
+  } catch {
+    // Si el freno no se puede consultar, no se bloquea: perder una llamada
+    // pedida cuesta más que un falso negativo del tope.
+  }
+
+  const canalVisible = canal === "whatsapp_cloud" ? "WhatsApp" : canal === "webchat" ? "chat de la web" : "API";
+  const mensaje = [
+    tipo === "consignar" ? "Quiere vender o consignar su inmueble." : "Quiere comprar o invertir.",
+    `Llamada: ${diaHora}`,
+    interes ? `Interés: ${interes}` : null,
+    rango ? `Rango: ${rango}` : null,
+    ciudad ? `Escribe desde: ${ciudad}` : null,
+    nombrePerfil && nombrePerfil !== nombre ? `Nombre en WhatsApp: ${nombrePerfil}` : null,
+    `Idioma: ${idioma === "en" ? "inglés" : "español"}`,
+    resumen ? `Resumen: ${resumen}` : null,
+    conversacion ? `Conversación: ${conversacion}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n")
+    .slice(0, LIMITES.mensaje);
+
+  try {
+    const r = await env.DB.prepare(
+      `INSERT INTO consultas
+         (creado_en, nombre, contacto, proyecto, mensaje,
+          autoriza, version_aviso, ip, user_agent, origen, estado)
+       VALUES (?, ?, ?, ?, ?, 1, ?, NULL, ?, ?, ?)`,
+    )
+      .bind(
+        ahora.toISOString(),
+        nombre,
+        `+${telefono}`,
+        interes ? interes.slice(0, LIMITES.proyecto) : null,
+        mensaje,
+        versionAviso,
+        `agente-atencion (${canal})`,
+        `agente:${canal}`,
+        prueba ? "prueba" : "nueva",
+      )
+      .run();
+    const id = (r.meta?.last_row_id as number | undefined) ?? null;
+
+    const titulo =
+      (prueba ? "🧪 <b>[PRUEBA]</b> " : "") +
+      (tipo === "consignar"
+        ? `🏷️ <b>Quiere consignar su inmueble</b> · ${esc(canalVisible)}`
+        : `📞 <b>Llamada pedida con Rafael</b> · ${esc(canalVisible)}`);
+    const aviso = await notificarTelegram(
+      env,
+      {
+        id,
+        nombre,
+        contacto: `+${telefono}`,
+        proyecto: interes,
+        mensaje,
+        origen: `agente:${canal}`,
+        creado: ahora,
+      },
+      titulo,
+    );
+    if (aviso.ok && id) {
+      ctx.waitUntil(
+        env.DB.prepare(`UPDATE consultas SET notificado_en = ? WHERE id = ?`)
+          .bind(new Date().toISOString(), id)
+          .run()
+          .then(() => undefined)
+          .catch((e) => console.error("[agente] no se pudo marcar notificado_en:", e)),
+      );
+    }
+    return json(
+      {
+        ok: true,
+        guardado: true,
+        id,
+        notificado: aviso.ok,
+        ...(aviso.motivo ? { motivo_aviso: aviso.motivo } : {}),
+      },
+      201,
+    );
+  } catch (e) {
+    console.error("[agente] fallo al guardar:", e);
+    return json({ ok: false, error: "fallo_al_guardar" }, 500);
+  }
+}
+
+/**
+ * Comparación de secretos en tiempo constante. Si los largos difieren se
+ * compara igual contra sí mismo, para no delatar el largo por el tiempo.
+ */
+async function iguales(a: string, b: string): Promise<boolean> {
+  const cod = new TextEncoder();
+  const x = cod.encode(a);
+  const y = cod.encode(b);
+  if (x.byteLength !== y.byteLength) {
+    crypto.subtle.timingSafeEqual(y, y);
+    return false;
+  }
+  return crypto.subtle.timingSafeEqual(x, y);
+}
+
+// ── Reintentos de avisos ──────────────────────────────────────────────────
+
+/** Cuántos días hacia atrás se reintenta un aviso que no salió. */
+const DIAS_REINTENTO = 7;
+/** Cuántos avisos pendientes se mandan por corrida del cron (cada 5 min). */
+const REINTENTOS_POR_CORRIDA = 5;
+
+/**
+ * Reintenta, en cada corrida del cron, los avisos de Telegram que no salieron
+ * (29-sep-2026).
+ *
+ * Desde el 19-sep el aviso respondía `chat not found` y ningún lead le llegó a
+ * Rafael: la consulta #6 del 24-sep (Doral West) quedó guardada sin que nadie
+ * se enterara. Con esto, lo que se guardó sin aviso sale solo cuando el aviso
+ * vuelve a funcionar, con su fecha original. Se reintenta solo lo de los
+ * últimos 7 días y nunca lo marcado como prueba. Si el primer envío de la
+ * corrida falla, se corta: si Telegram sigue caído, no tiene sentido insistir.
+ */
+async function reintentarAvisos(env: Env): Promise<void> {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return;
+  const desde = new Date(Date.now() - DIAS_REINTENTO * 86_400_000).toISOString();
+  let filas: {
+    id: number;
+    creado_en: string;
+    nombre: string;
+    contacto: string;
+    proyecto: string | null;
+    mensaje: string | null;
+    origen: string | null;
+  }[] = [];
+  try {
+    const r = await env.DB.prepare(
+      `SELECT id, creado_en, nombre, contacto, proyecto, mensaje, origen
+         FROM consultas
+        WHERE notificado_en IS NULL AND estado != 'prueba' AND creado_en > ?
+        ORDER BY id
+        LIMIT ?`,
+    )
+      .bind(desde, REINTENTOS_POR_CORRIDA)
+      .all();
+    filas = (r.results ?? []) as typeof filas;
+  } catch (e) {
+    console.error("[reintentos] no se pudo leer la tabla de consultas:", e);
+    return;
+  }
+
+  for (const f of filas) {
+    const deAgente = (f.origen ?? "").startsWith("agente:");
+    const titulo = deAgente
+      ? "📞 <b>Llamada pedida con Rafael</b> · aviso atrasado"
+      : "🏠 <b>Consulta en rhfliving.com</b> · aviso atrasado";
+    const aviso = await notificarTelegram(
+      env,
+      {
+        id: f.id,
+        nombre: f.nombre,
+        contacto: f.contacto,
+        proyecto: f.proyecto ?? "",
+        mensaje: f.mensaje ?? "",
+        origen: f.origen ?? "",
+        creado: new Date(f.creado_en),
+      },
+      titulo,
+    );
+    if (!aviso.ok) {
+      console.error("[reintentos] el aviso sigue sin salir:", aviso.motivo);
+      return;
+    }
+    try {
+      await env.DB.prepare(`UPDATE consultas SET notificado_en = ? WHERE id = ?`)
+        .bind(new Date().toISOString(), f.id)
+        .run();
+    } catch (e) {
+      console.error("[reintentos] se avisó pero no se pudo marcar:", e);
+      return;
+    }
   }
 }
 
