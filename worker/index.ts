@@ -42,8 +42,8 @@ import { vigilar } from "./vigia";
 export interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
-  /** Secreto de Turnstile. Mientras no exista, la verificación se salta y
-   *  quedan las defensas de abajo. Se agrega con `wrangler secret put`. */
+  /** Secreto de Turnstile. Obligatorio desde el 29-sep-2026: sin él, el
+   *  formulario responde 503 y no guarda. Se carga como secret del Worker. */
   TURNSTILE_SECRET?: string;
   /** Bot de Telegram que avisa de cada consulta. Ver `notificarTelegram`. */
   TELEGRAM_BOT_TOKEN?: string;
@@ -188,15 +188,20 @@ async function guardarConsulta(
     return json({ ok: false, error: "datos_incompletos" }, 422);
   }
 
-  if (env.TURNSTILE_SECRET) {
-    const valido = await verificarTurnstile(
-      env.TURNSTILE_SECRET,
-      texto(cuerpo.turnstile),
-      request.headers.get("CF-Connecting-IP"),
-    );
-    if (!valido) {
-      return json({ ok: false, error: "verificacion_fallida" }, 403);
-    }
+  // Turnstile es obligatorio (29-sep-2026): sin la clave secreta no hay cómo
+  // verificar, así que el envío no se guarda y el formulario ofrece WhatsApp.
+  // En local se usa una clave de prueba de Turnstile en `.dev.vars`.
+  if (!env.TURNSTILE_SECRET) {
+    console.error("[consulta] falta TURNSTILE_SECRET: el envío no se guarda");
+    return json({ ok: false, error: "verificacion_no_disponible" }, 503);
+  }
+  const valido = await verificarTurnstile(
+    env.TURNSTILE_SECRET,
+    texto(cuerpo.turnstile),
+    request.headers.get("CF-Connecting-IP"),
+  );
+  if (!valido) {
+    return json({ ok: false, error: "verificacion_fallida" }, 403);
   }
 
   const ip = request.headers.get("CF-Connecting-IP") ?? null;

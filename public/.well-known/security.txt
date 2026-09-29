@@ -1,0 +1,4 @@
+Contact: mailto:rafaelhf.realestate@gmail.com
+Expires: 2027-09-01T05:00:00.000Z
+Preferred-Languages: es, en
+Canonical: https://rhfliving.com/.well-known/security.txt
