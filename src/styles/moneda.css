@@ -1,0 +1,58 @@
+/* ─────────────────────────────────────────────────────────────
+   Moneda: el selector COP/USD del menú y la referencia en dólares
+   (29-sep-2026). Ver src/lib/moneda.ts y ReferenciaDolares.tsx.
+   ───────────────────────────────────────────────────────────── */
+
+.selector-moneda {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 2px;
+  gap: 2px;
+  opacity: 0.9;
+}
+.selector-moneda button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 7px 10px;
+  min-height: 28px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.selector-moneda button[aria-pressed="true"] {
+  background: var(--marino);
+  color: var(--white);
+}
+.selector-moneda button:focus-visible {
+  outline: 2px solid var(--camel);
+  outline-offset: 2px;
+}
+/* Sobre la foto de la portada, el menú es transparente: el activo va en blanco. */
+.nav-inicio:not(.nav-solida) .selector-moneda { color: var(--white); }
+.nav-inicio:not(.nav-solida) .selector-moneda button[aria-pressed="true"] {
+  background: var(--white);
+  color: var(--marino);
+}
+
+/* La referencia en dólares: solo con USD, debajo del precio en pesos. */
+html[data-moneda="USD"] [data-usd]::after {
+  content: attr(data-usd);
+  display: block;
+  font-size: 0.8em;
+  font-weight: 500;
+  letter-spacing: 0;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+/* La nota de la TRM, en el pie: solo con USD y cuando ya se conoce la TRM. */
+.nota-trm { font-size: 12px; opacity: 0.85; }
+html:not([data-moneda="USD"]) .nota-trm { display: none; }

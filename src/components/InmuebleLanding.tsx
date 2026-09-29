@@ -153,7 +153,9 @@ export default function InmuebleLanding({ i }: { i: Inmueble }) {
           <aside className="pp-lateral" aria-label={`Contacto sobre ${i.nombre}`}>
             <div className="pp-lateral-caja">
               <p className="pp-lateral-kicker">{i.precio ? "Precio de referencia" : "Precio"}</p>
-              <p className="pp-lateral-precio">{precio.texto}</p>
+              <p className="pp-lateral-precio" data-cop={i.precio ? i.precio.valor : undefined}>
+                {precio.texto}
+              </p>
               <p className="pp-lateral-corte">
                 {precio.corte ? `corte ${precio.corte}` : "Te lo damos por WhatsApp o en asesoría directa"}
               </p>

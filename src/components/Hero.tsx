@@ -322,7 +322,11 @@ export default function Hero({
                         <span>
                           {f.zona} · {f.linea ?? ESTADO[f.estado]}
                         </span>
-                        <span className="hero-pin-precio">
+                        <span
+                          className="hero-pin-precio"
+                          data-cop={f.muestraPrecio && f.precioDesde ? f.precioDesde : undefined}
+                          data-desde={f.muestraPrecio && f.precio.startsWith("desde") ? "" : undefined}
+                        >
                           {f.precio}
                           {f.corte && <small> · corte {f.corte}</small>}
                         </span>
@@ -467,7 +471,12 @@ function Leyenda({ d, indice, total }: { d: Diapositiva; indice: number; total: 
             {f.linea ? ` · ${f.linea}` : ""}
           </p>
           <p className="hero-leyenda-precio">
-            <strong>{f.precio}</strong>
+            <strong
+              data-cop={f.muestraPrecio && f.precioDesde ? f.precioDesde : undefined}
+              data-desde={f.muestraPrecio && f.precio.startsWith("desde") ? "" : undefined}
+            >
+              {f.precio}
+            </strong>
             {f.corte && <small>corte {f.corte}</small>}
           </p>
           <Link className="hero-leyenda-cta" href={f.href} onClick={marcarSalidaDesdeCartera}>

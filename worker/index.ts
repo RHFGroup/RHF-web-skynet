@@ -12,6 +12,9 @@
  * /api/solicitud-agente (desde el 29-sep-2026), por donde el agente de
  * atención (WhatsApp y chat de la web) deja la llamada que alguien pidió con
  * Rafael. Los tres caen al mismo buzón de leads y al mismo aviso de Telegram.
+ * Y GET /api/trm (desde el 29-sep-2026): la tasa representativa del mercado
+ * del día, para la referencia en dólares que muestra la web junto al precio
+ * en pesos.
  *
  * Y desde el 23-sep-2026, un cron: cada 5 minutos el vigía de worker/vigia.ts
  * mira que el agente (chat de la web y WhatsApp) responda, y avisa por
@@ -109,6 +112,10 @@ export default {
       return guardarSolicitudAgente(request, env, ctx);
     }
 
+    if (url.pathname === "/api/trm") {
+      return trmDelDia(request, ctx);
+    }
+
     if (url.pathname.startsWith("/api/")) {
       return json({ ok: false, error: "no_encontrado" }, 404);
     }
@@ -164,6 +171,10 @@ async function guardarConsulta(
   const origen = texto(cuerpo.origen).slice(0, LIMITES.origen);
   const versionAviso =
     texto(cuerpo.version_aviso).slice(0, LIMITES.version) || AVISO_POR_DEFECTO;
+  // Desde el 29-sep-2026 el formulario de /vender manda `tipo: "consignar"`:
+  // cambia el título del aviso, para que Rafael sepa de un vistazo que es un
+  // propietario y no un comprador. Cualquier otro valor es una consulta.
+  const consignar = texto(cuerpo.tipo) === "consignar";
 
   // Sin autorización no se guarda. Es la condición de la Ley 1581 y también la
   // del CHECK de la tabla: acá se rechaza con un mensaje claro en vez de
@@ -223,15 +234,19 @@ async function guardarConsulta(
     // la persona ya está viendo un spinner y Telegram responde en ~300 ms.
     // Si tarda más de 5 s se corta — vale más una respuesta rápida con el
     // dato guardado que una espera larga por una notificación.
-    const aviso = await notificarTelegram(env, {
-      id,
-      nombre,
-      contacto,
-      proyecto,
-      mensaje,
-      origen,
-      creado: ahora,
-    });
+    const aviso = await notificarTelegram(
+      env,
+      {
+        id,
+        nombre,
+        contacto,
+        proyecto,
+        mensaje,
+        origen,
+        creado: ahora,
+      },
+      consignar ? "🏷️ <b>Quiere consignar su inmueble</b> · formulario de la web" : undefined,
+    );
 
     // La marca de que se avisó no bloquea la respuesta: si esta escritura
     // falla, el lead ya está guardado y Rafael ya recibió el mensaje.
@@ -803,6 +818,71 @@ async function reintentarAvisos(env: Env): Promise<void> {
       console.error("[reintentos] se avisó pero no se pudo marcar:", e);
       return;
     }
+  }
+}
+
+// ── La TRM del día ────────────────────────────────────────────────────────
+
+/**
+ * GET /api/trm — la tasa representativa del mercado vigente (29-sep-2026).
+ *
+ * La web muestra el precio en pesos colombianos (Ley 1480, art. 26: el precio
+ * se informa en pesos) y, si la persona lo pide con el selector de moneda, una
+ * referencia aproximada en dólares. Esa referencia sale de la TRM que certifica
+ * la Superintendencia Financiera y publica datos.gov.co (conjunto 32sa-8pi3).
+ *
+ * Se guarda 6 horas en la caché de Cloudflare: la TRM cambia una vez al día y
+ * datos.gov.co no tiene por qué recibir una consulta por visita. Si datos.gov.co
+ * no responde, se devuelve 503 y la web simplemente no muestra dólares: el
+ * precio en pesos nunca depende de esto.
+ */
+const URL_TRM =
+  "https://www.datos.gov.co/resource/32sa-8pi3.json?$order=vigenciadesde%20DESC&$limit=1";
+const HORAS_CACHE_TRM = 6;
+
+async function trmDelDia(request: Request, ctx: ExecutionContext): Promise<Response> {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return json({ ok: false, error: "metodo_no_permitido" }, 405);
+  }
+  const cache = caches.default;
+  const clave = new Request(new URL("/api/trm?v=1", request.url).toString(), { method: "GET" });
+  const guardada = await cache.match(clave);
+  if (guardada) return guardada;
+
+  try {
+    const r = await fetch(URL_TRM, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!r.ok) throw new Error(`datos.gov.co respondió ${r.status}`);
+    const filas = (await r.json()) as { valor?: string; vigenciadesde?: string; vigenciahasta?: string }[];
+    const fila = filas[0];
+    const valor = Number(fila?.valor);
+    // Una TRM fuera de este rango es un dato roto, no una devaluación.
+    if (!fila || !Number.isFinite(valor) || valor < 1000 || valor > 20000) {
+      throw new Error("TRM fuera de rango o vacía");
+    }
+    const respuesta = new Response(
+      JSON.stringify({
+        ok: true,
+        valor,
+        vigente_desde: (fila.vigenciadesde ?? "").slice(0, 10),
+        vigente_hasta: (fila.vigenciahasta ?? "").slice(0, 10),
+        fuente: "Superintendencia Financiera de Colombia (datos.gov.co)",
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": `public, max-age=${HORAS_CACHE_TRM * 3600}`,
+        },
+      },
+    );
+    ctx.waitUntil(cache.put(clave, respuesta.clone()));
+    return respuesta;
+  } catch (e) {
+    console.error("[trm] no se pudo leer la TRM:", e);
+    return json({ ok: false, error: "trm_no_disponible" }, 503);
   }
 }
 

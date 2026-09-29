@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { IconoInstagram } from "@/components/Iconos";
 import PreferenciaMovimiento from "@/components/PreferenciaMovimiento";
+import BotonCookies from "@/components/BotonCookies";
 import { SECCIONES_HOME } from "@/data/navegacion";
 import { REDES } from "@/data/redes";
 
@@ -36,7 +37,10 @@ export default function PieSitio({
                 {s.texto}
               </Link>
             ))}
-            <Link href="/noticias">Noticias</Link>
+            <Link href="/inteligencia-de-mercado">Inteligencia de mercado</Link>
+            <Link href="/vender" data-evento="click_quiero_vender" data-ubicacion="pie">
+              Quiero vender / consignar
+            </Link>
           </div>
         </div>
         {/* Las redes (src/data/redes.ts), con su usuario a la vista. */}
@@ -64,7 +68,9 @@ export default function PieSitio({
           <p className="footer-circular">
             Los precios aquí publicados son de referencia, en pesos
             colombianos, a la fecha de corte que acompaña a cada cifra, y
-            están sujetos a disponibilidad. Cada proyecto publica su área
+            están sujetos a disponibilidad. El valor en dólares que se puede
+            ver con el selector de moneda es una referencia aproximada con la
+            TRM del día: el precio es el de pesos. Cada proyecto publica su área
             con la etiqueta textual de la fuente del promotor y declara si
             su equivalencia con el área privada construida del artículo 3 de
             la Ley 675 de 2001 está pendiente de certificación. La
@@ -73,10 +79,14 @@ export default function PieSitio({
             valor de desistimiento y plan de etapas— se entrega por escrito
             antes de cualquier separación.
           </p>
+          {/* La TRM de la referencia en dólares: la llena ReferenciaDolares.tsx
+              cuando la persona elige USD. */}
+          <p id="nota-trm" className="nota-trm" hidden aria-live="polite" />
           <p className="footer-legal-links">
             <Link href="/privacidad">Política de tratamiento de datos</Link>
             {" · "}
             <Link href="/terminos">Términos de uso</Link>
+            <BotonCookies />
           </p>
           <p className="footer-copy">© {new Date().getFullYear()} RHF Living. Todos los derechos reservados.</p>
         </div>

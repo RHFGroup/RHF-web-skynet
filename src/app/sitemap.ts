@@ -23,7 +23,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     })),
     { url: `${SITIO}/asesor`, lastModified: "2026-09-25", changeFrequency: "monthly", priority: 0.7 },
-    { url: `${SITIO}/noticias`, lastModified: "2026-09-28", changeFrequency: "weekly", priority: 0.6 },
+    { url: `${SITIO}/inteligencia-de-mercado`, lastModified: "2026-09-29", changeFrequency: "weekly", priority: 0.6 },
+    { url: `${SITIO}/vender`, lastModified: "2026-09-29", changeFrequency: "monthly", priority: 0.7 },
     ...INMUEBLES.map((i) => ({
       url: `${SITIO}/inmuebles/${i.slug}`,
       lastModified: (i.precio && fechaISO(i.precio.corte)) || "2026-09-25",

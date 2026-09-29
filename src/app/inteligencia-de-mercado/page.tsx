@@ -12,27 +12,33 @@ import "@/styles/noticias.css";
 import "@/styles/secciones.css";
 
 /**
- * /noticias — todas las noticias de la Zona Norte (28-sep-2026, pedido de
- * Rafael: «que abra en una sección nueva»). La home muestra las tres más
- * nuevas y trae aquí. Las noticias y sus reglas: src/data/noticias.ts.
+ * /inteligencia-de-mercado — todas las noticias de la Zona Norte (28-sep-2026,
+ * pedido de Rafael: «que abra en una sección nueva»). La home muestra las tres
+ * más nuevas y trae aquí. Las noticias y sus reglas: src/data/noticias.ts.
+ *
+ * 29-sep-2026 (informe de Luciano): la sección se llama «Inteligencia de
+ * mercado», para darle peso de firma. Lo que no cambia es la atribución: cada
+ * noticia dice qué medio la publicó, cuándo, y abre el artículo original.
+ * Presentar una noticia ajena como análisis propio sería publicidad engañosa
+ * (Ley 1480, art. 30). /noticias redirige aquí (public/_redirects).
  *
  * Sin datos estructurados de artículo: las noticias son de sus medios, y
  * aquí solo va el resumen propio con el enlace.
  */
 
 const SITIO = "https://rhfliving.com";
-const TITULO = "Noticias de la Zona Norte de Cartagena | RHF Living";
+const TITULO = "Inteligencia de mercado: la Zona Norte de Cartagena | RHF Living";
 const DESCRIPCION =
-  "Obras, inversión, vivienda y turismo en la Zona Norte de Cartagena: noticias verificadas, cada una con su fuente, su fecha y el enlace al artículo original.";
+  "Inteligencia de mercado de la Zona Norte de Cartagena: obras, inversión, vivienda y turismo en noticias verificadas, cada una con su fuente, su fecha y el enlace al artículo original.";
 
 export const metadata: Metadata = {
   title: { absolute: TITULO },
   description: DESCRIPCION,
-  alternates: { canonical: `${SITIO}/noticias` },
+  alternates: { canonical: `${SITIO}/inteligencia-de-mercado` },
   openGraph: {
     title: TITULO,
     description: DESCRIPCION,
-    url: `${SITIO}/noticias`,
+    url: `${SITIO}/inteligencia-de-mercado`,
     siteName: "RHF Living",
     locale: "es_CO",
     type: "website",
@@ -48,9 +54,9 @@ export const metadata: Metadata = {
   },
 };
 
-const MENSAJE = "Hola Rafael, vi las noticias de la Zona Norte en tu página y quiero hablar contigo.";
+const MENSAJE = "Hola Rafael, vi la inteligencia de mercado de la Zona Norte en tu página y quiero hablar contigo.";
 
-export default function PaginaNoticias() {
+export default function PaginaInteligenciaDeMercado() {
   return (
     <>
       <CabeceraSitio blanca mensaje={MENSAJE} />
@@ -58,11 +64,11 @@ export default function PaginaNoticias() {
       <main className="np">
         <section className="np-portada tono tono-claro tono-blanco-1" aria-labelledby="np-titulo">
           <div className="section-shell">
-            <p className="section-kicker">Noticias</p>
-            <h1 id="np-titulo">Noticias de la Zona Norte de Cartagena</h1>
+            <p className="section-kicker">Inteligencia de mercado</p>
+            <h1 id="np-titulo">La Zona Norte de Cartagena, noticia por noticia</h1>
             <p className="section-lede">
-              Lo que se construye, se abre y se invierte en el norte de la ciudad. Cada noticia lleva su fuente y su
-              fecha, y abre el artículo original en su medio.
+              Seguimos lo que se construye, se abre y se invierte en el norte de la ciudad. Cada noticia lleva su medio
+              y su fecha, y abre el artículo original.
             </p>
           </div>
         </section>

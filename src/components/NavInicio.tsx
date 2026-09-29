@@ -8,9 +8,10 @@
  * con desenfoque y el logo oscuro. En el borde de abajo, una línea camel se
  * llena a medida que se lee la página.
  *
- * Los enlaces siguen el orden de la home (src/data/navegacion.ts). En el
- * teléfono, el botón de tres líneas abre el menú con todas las secciones
- * (MenuMovil).
+ * 29-sep-2026 (informe de Luciano): los enlaces son el menú principal
+ * (src/data/navegacion.ts) —Inicio, Proyectos, «Quiero vender / consignar»
+ * destacado e Inteligencia de mercado— y a la derecha el selector de moneda.
+ * En el teléfono, el botón de tres líneas abre el mismo menú (MenuMovil).
  *
  * Es fijo en vez de pegajoso (`sticky`): la portada empieza debajo de él, en
  * el borde de la pantalla. La altura no cambia al bajar, así `--nav-h` sigue
@@ -18,8 +19,10 @@
  */
 import { useEffect, useRef, useState } from "react";
 import MenuMovil from "@/components/MenuMovil";
-import { SECCIONES_HOME } from "@/data/navegacion";
+import SelectorMoneda from "@/components/SelectorMoneda";
+import { MENU_PRINCIPAL } from "@/data/navegacion";
 import "@/styles/nav-inicio.css";
+import "@/styles/menu-principal.css";
 
 export default function NavInicio({ whatsapp }: { whatsapp: string }) {
   const [solida, setSolida] = useState(false);
@@ -79,18 +82,24 @@ export default function NavInicio({ whatsapp }: { whatsapp: string }) {
             fetchPriority="low"
           />
         </a>
-        <nav className="nav-links" aria-label="Secciones">
-          {SECCIONES_HOME.filter((s) => !s.soloMovil).map((s) => (
-            <a key={s.ancla} href={`#${s.ancla}`}>
-              {s.texto}
+        <nav className="nav-links" aria-label="Menú principal">
+          {MENU_PRINCIPAL.map((e) => (
+            <a
+              key={e.id}
+              href={e.enHome ?? e.href}
+              className={e.destacado ? "nav-vender" : undefined}
+              data-evento={e.id === "vender" ? "click_quiero_vender" : undefined}
+              data-ubicacion="menu"
+            >
+              {e.texto}
             </a>
           ))}
         </nav>
-        <a className="nav-cta" href={whatsapp} target="_blank" rel="noopener noreferrer">
-          Escríbenos
-        </a>
+        <div className="nav-herramientas">
+          <SelectorMoneda />
+        </div>
         <MenuMovil
-          enlaces={SECCIONES_HOME.map((s) => ({ href: `#${s.ancla}`, texto: s.texto }))}
+          enlaces={MENU_PRINCIPAL.map((e) => ({ href: e.enHome ?? e.href, texto: e.texto, destacado: e.destacado, id: e.id }))}
           whatsapp={whatsapp}
         />
       </div>

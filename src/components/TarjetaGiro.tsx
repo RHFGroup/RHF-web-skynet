@@ -230,7 +230,13 @@ export default function TarjetaGiro({
                 {f.linea && <p className="tg-linea">{f.linea}</p>}
               </div>
               <p className="tg-precio">
-                <strong>{f.precio}</strong>
+                {/* data-cop: la referencia en dólares (ReferenciaDolares.tsx). */}
+                <strong
+                  data-cop={f.muestraPrecio && f.precioDesde ? f.precioDesde : undefined}
+                  data-desde={f.muestraPrecio && f.precio.startsWith("desde") ? "" : undefined}
+                >
+                  {f.precio}
+                </strong>
                 {f.corte && <span>corte {f.corte}</span>}
               </p>
             </div>

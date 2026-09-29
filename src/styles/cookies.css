@@ -1,0 +1,48 @@
+/* El aviso de cookies (Analitica.tsx), abajo y sin tapar el contenido. */
+.aviso-cookies {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--marino);
+  color: var(--white);
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.45);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.aviso-cookies p { margin: 0; flex: 1 1 320px; }
+.aviso-cookies a { text-decoration: underline; color: var(--camel-light); }
+.aviso-cookies-botones { display: flex; gap: 10px; }
+.aviso-cookies button {
+  appearance: none;
+  border: 1px solid rgb(255 255 255 / 0.7);
+  background: transparent;
+  color: var(--white);
+  font: inherit;
+  font-weight: 600;
+  padding: 9px 16px;
+  min-height: 40px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.aviso-cookies button.aceptar { background: var(--camel); border-color: var(--camel); color: var(--marino); }
+.aviso-cookies button:focus-visible { outline: 2px solid var(--camel-light); outline-offset: 2px; }
+.boton-cookies {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

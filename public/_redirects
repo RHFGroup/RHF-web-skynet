@@ -1,0 +1,8 @@
+# Redirecciones de rhfliving.com (Cloudflare Workers con assets lee este
+# archivo, como lee _headers). Next lo copia a out/.
+#
+# 29-sep-2026: la sección de noticias pasó a llamarse «Inteligencia de
+# mercado» (informe de Luciano). Los enlaces viejos —el agente de atención,
+# redes, boletines— siguen funcionando.
+/noticias /inteligencia-de-mercado 301
+/noticias/ /inteligencia-de-mercado 301

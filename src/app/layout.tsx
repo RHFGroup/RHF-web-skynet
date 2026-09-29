@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Montserrat } from "next/font/google";
 import "./globals.css";
 import ChatDiferido from "@/components/ChatDiferido";
+import Analitica from "@/components/Analitica";
+import ReferenciaDolares from "@/components/ReferenciaDolares";
+import { MONEDA_ANTES_DE_PINTAR } from "@/lib/moneda";
 import Script from "next/script";
 
 const cormorant = Cormorant_Garamond({
@@ -115,11 +118,13 @@ export default function RootLayout({
     <html
       lang="es"
       className={`${cormorant.variable} ${montserrat.variable} scroll-smooth`}
-      // El script de abajo puede agregar data-mov antes de que React hidrate.
+      // Los scripts de abajo pueden agregar data-mov y data-moneda antes de que React hidrate.
       suppressHydrationWarning
     >
       <head>
         <script id="movimiento" dangerouslySetInnerHTML={{ __html: MOVIMIENTO_ANTES_DE_PINTAR }} />
+        {/* La moneda de la referencia de precio (src/lib/moneda.ts), antes de pintar. */}
+        <script id="moneda" dangerouslySetInnerHTML={{ __html: MONEDA_ANTES_DE_PINTAR }} />
         <Script
           id="json-ld"
           type="application/ld+json"
@@ -129,6 +134,8 @@ export default function RootLayout({
       <body className="min-h-dvh font-sans antialiased">
         {children}
         <ChatDiferido />
+        <ReferenciaDolares />
+        <Analitica />
       </body>
     </html>
   );

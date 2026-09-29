@@ -86,6 +86,7 @@ function tipologiasVista(p: Proyecto): TipologiaVista[] {
             detalle: `${t.precio.unidades} ${
               t.precio.unidades === 1 ? "unidad disponible" : "unidades disponibles"
             } · corte ${p.precio.corte}`,
+            cop: { desde: t.precio.desde, hasta: t.precio.hasta },
           }
         : null,
   }));
