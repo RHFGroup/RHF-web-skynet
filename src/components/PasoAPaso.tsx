@@ -28,7 +28,7 @@ import { IconoEscudo, IconoPersona, IconoWhatsApp } from "@/components/Iconos";
 import { enlaceWhatsApp } from "@/data/contacto";
 import type { Quien } from "@/data/proceso";
 import type { Idioma } from "@/i18n/idioma";
-import { proceso } from "@/i18n/datos";
+import { proceso } from "@/i18n/modulos/proceso";
 import { MODO_REVISION, seMuestra } from "@/lib/revision";
 import { usePrefersReducedMotion } from "@/lib/motion";
 import "@/styles/proceso.css";

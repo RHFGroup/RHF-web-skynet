@@ -8,7 +8,7 @@
  */
 import type { Noticia } from "@/data/noticias";
 import type { Idioma } from "@/i18n/idioma";
-import { noticias } from "@/i18n/datos";
+import { noticias } from "@/i18n/modulos/noticias";
 
 /**
  * Los textos, en los dos idiomas (docs/i18n.md). Cada uno es un nodo de texto

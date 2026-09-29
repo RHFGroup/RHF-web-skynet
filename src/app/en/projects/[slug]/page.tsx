@@ -1,9 +1,6 @@
 import PaginaProyecto, { metadataProyecto, slugsProyectos } from "@/components/paginas/PaginaProyecto";
 
-/**
- * /proyectos/<slug> — la página vive en src/components/paginas/PaginaProyecto.tsx,
- * compartida con /en/projects/<slug>.
- */
+/** /en/projects/<slug> — la misma página que /proyectos/<slug>, en inglés. */
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -12,10 +9,10 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  return metadataProyecto(slug, "es");
+  return metadataProyecto(slug, "en");
 }
 
 export default async function Pagina({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  return <PaginaProyecto slug={slug} idioma="es" />;
+  return <PaginaProyecto slug={slug} idioma="en" />;
 }

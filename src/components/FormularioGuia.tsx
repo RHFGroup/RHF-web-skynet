@@ -19,7 +19,7 @@ import Script from "next/script";
 import { AVISO_VERSION, TURNSTILE_SITE_KEY } from "@/components/ContactForm";
 import { CORREO, RESPONSABLE, enlaceWhatsApp } from "@/data/contacto";
 import { ruta, type Idioma } from "@/i18n/idioma";
-import { proceso } from "@/i18n/datos";
+import { proceso } from "@/i18n/modulos/proceso";
 
 /**
  * Los textos, en los dos idiomas (docs/i18n.md). Cada uno es un nodo de texto

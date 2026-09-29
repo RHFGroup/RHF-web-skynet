@@ -44,7 +44,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import RevealGrupo from "@/components/RevealGrupo";
 import TarjetaGiro from "@/components/TarjetaGiro";
-import { etiquetaEstado, etiquetaTipo } from "@/i18n/datos";
+import { etiquetaEstado, etiquetaTipo } from "@/i18n/etiquetas";
 import type { Idioma } from "@/i18n/idioma";
 import type { Ficha } from "@/lib/ficha";
 import { useCalesita } from "@/lib/calesita";

@@ -1,9 +1,6 @@
 import PaginaInmueble, { metadataInmueble, slugsInmuebles } from "@/components/paginas/PaginaInmueble";
 
-/**
- * /inmuebles/<slug> — la página vive en src/components/paginas/PaginaInmueble.tsx,
- * compartida con /en/properties/<slug>.
- */
+/** /en/properties/<slug> — la misma página que /inmuebles/<slug>, en inglés. */
 export const dynamicParams = false;
 
 export function generateStaticParams() {
@@ -12,10 +9,10 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  return metadataInmueble(slug, "es");
+  return metadataInmueble(slug, "en");
 }
 
 export default async function Pagina({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  return <PaginaInmueble slug={slug} idioma="es" />;
+  return <PaginaInmueble slug={slug} idioma="en" />;
 }

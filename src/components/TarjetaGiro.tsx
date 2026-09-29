@@ -44,7 +44,7 @@ import {
   IconoWhatsApp,
 } from "@/components/Iconos";
 import { enlaceWhatsApp } from "@/data/contacto";
-import { etiquetaEstado } from "@/i18n/datos";
+import { etiquetaEstado } from "@/i18n/etiquetas";
 import { ruta, type Idioma } from "@/i18n/idioma";
 import type { Ficha } from "@/lib/ficha";
 import { SIZES_TARJETA, srcSetTarjeta } from "@/lib/imagenes";

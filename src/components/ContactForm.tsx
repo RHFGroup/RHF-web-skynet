@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
 import { ruta, type Idioma } from "@/i18n/idioma";
-import { inmuebles, proyectos } from "@/i18n/datos";
+import { inmuebles } from "@/i18n/modulos/inmuebles";
+import { proyectos } from "@/i18n/modulos/proyectos";
 
 /**
  * Formulario de contacto.

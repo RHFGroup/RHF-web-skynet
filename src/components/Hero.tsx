@@ -41,7 +41,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IconoFlecha, IconoWhatsApp } from "@/components/Iconos";
-import { etiquetaEstado, zona } from "@/i18n/datos";
+import { etiquetaEstado } from "@/i18n/etiquetas";
+import { zona } from "@/i18n/modulos/zona";
 import { ruta, type Idioma } from "@/i18n/idioma";
 import type { Ficha } from "@/lib/ficha";
 import { avifDe } from "@/lib/imagenes";
