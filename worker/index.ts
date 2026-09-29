@@ -265,7 +265,7 @@ async function guardarConsulta(
     }
 
     if (!aviso.ok) console.error("[consulta] aviso pendiente", id, aviso.motivo);
-    return json(respuestaConsulta(request, id, aviso), 201, request);
+    return json(respuestaConsulta(request, id ?? 0, aviso), 201, request);
   } catch (e) {
     // Ahora el navegador SÍ está esperando: devolver 500 hace que el
     // formulario muestre el error y le ofrezca WhatsApp a la persona, en vez
