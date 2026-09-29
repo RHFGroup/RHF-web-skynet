@@ -23,6 +23,17 @@
 export const LEAFLET_CSS = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css";
 export const LEAFLET_JS = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js";
 
+/**
+ * Integridad de Leaflet (29-sep-2026, auditoría AS-10): los hashes que publica
+ * cdnjs para la 1.9.4, verificados contra los archivos descargados ese día. Si
+ * alguien altera el archivo en el CDN, el navegador no lo ejecuta y el mapa
+ * muestra su texto de respaldo.
+ */
+const LEAFLET_CSS_SRI =
+  "sha512-Zcn6bjR/8RZbLEpLIeOwNtzREBAJnUKESxces60Mpoj+2okopSAcSUIUOseddDm0cxnGQzxIR7vJgsLZbdLE3w==";
+const LEAFLET_JS_SRI =
+  "sha512-BwHfrr4c9kmRkLw6iXFdzcdWV/PGkVgiIyIWLLlTSXzWQzxuSg4DiQUCpauz/EWjgk5TYQqX/kvn9pG1NpYfqg==";
+
 const CLAVE_CARTO = process.env.NEXT_PUBLIC_CARTO_KEY ?? "";
 
 export const TESELAS: {
@@ -57,10 +68,14 @@ export function cargarLeaflet(): Promise<unknown> {
     const css = document.createElement("link");
     css.rel = "stylesheet";
     css.href = LEAFLET_CSS;
+    css.integrity = LEAFLET_CSS_SRI;
+    css.crossOrigin = "anonymous";
     document.head.appendChild(css);
 
     const js = document.createElement("script");
     js.src = LEAFLET_JS;
+    js.integrity = LEAFLET_JS_SRI;
+    js.crossOrigin = "anonymous";
     js.async = true;
     js.onload = () => resolve(w.L);
     js.onerror = () => {

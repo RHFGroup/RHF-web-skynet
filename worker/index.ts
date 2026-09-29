@@ -159,10 +159,11 @@ async function guardarConsulta(
   }
 
   // Trampa para bots: un campo que una persona nunca ve ni llena. Si viene con
-  // algo, se responde 200 sin guardar — que el bot crea que funcionó y no
-  // pruebe otra cosa.
+  // algo, no se guarda, pero se responde exactamente como un envío real (29-sep,
+  // auditoría AS-8): antes respondía 200 y un envío real 201, y un bot podía
+  // distinguirlos.
   if (texto(cuerpo.sitio)) {
-    return json({ ok: true, guardado: false }, 200);
+    return json(respuestaConsulta(request, 0, { ok: true }), 201, request);
   }
 
   const nombre = texto(cuerpo.nombre).slice(0, LIMITES.nombre);
@@ -263,17 +264,8 @@ async function guardarConsulta(
       );
     }
 
-    return json(
-      {
-        ok: true,
-        guardado: true,
-        id,
-        notificado: aviso.ok,
-        ...(aviso.motivo ? { motivo_aviso: aviso.motivo } : {}),
-      },
-      201,
-      request,
-    );
+    if (!aviso.ok) console.error("[consulta] aviso pendiente", id, aviso.motivo);
+    return json(respuestaConsulta(request, id ?? 0, aviso), 201, request);
   } catch (e) {
     // Ahora el navegador SÍ está esperando: devolver 500 hace que el
     // formulario muestre el error y le ofrezca WhatsApp a la persona, en vez
@@ -345,9 +337,10 @@ async function guardarSuscripcion(request: Request, env: Env): Promise<Response>
     return json({ ok: false, error: "json_invalido" }, 400);
   }
 
-  // La misma trampa para bots del formulario de contacto.
+  // La misma trampa para bots del formulario de contacto, que responde igual
+  // que una suscripción real (29-sep, auditoría AS-8).
   if (texto(cuerpo.sitio)) {
-    return json({ ok: true, guardado: false }, 200);
+    return json({ ok: true, guardado: true }, 201, request);
   }
 
   // Sin autorización no se guarda (Ley 1581, y el CHECK de la tabla).
@@ -388,20 +381,16 @@ async function guardarSuscripcion(request: Request, env: Env): Promise<Response>
       `INSERT INTO suscriptores
          (creado_en, correo, autoriza, version_aviso, ip, user_agent, origen, estado, actualizado_en)
        VALUES (?, ?, 1, ?, ?, ?, ?, 'activa', ?)
-       ON CONFLICT(correo) DO UPDATE SET
-         autoriza = 1,
-         version_aviso = excluded.version_aviso,
-         ip = excluded.ip,
-         user_agent = excluded.user_agent,
-         origen = excluded.origen,
-         estado = 'activa',
-         baja_en = NULL,
-         actualizado_en = excluded.actualizado_en`,
+       ON CONFLICT(correo) DO NOTHING`,
     )
       .bind(ahora, correo, versionAviso, ip, userAgent || null, origen || null, ahora)
       .run();
 
-    // No se dice si el correo ya estaba: la respuesta es la misma para todos.
+    // Si el correo ya estaba, no se toca (29-sep-2026, auditoría AS-4): antes,
+    // cualquiera podía reactivar una baja ajena y reemplazar la constancia de
+    // autorización con su propia IP. Una persona que se dio de baja y quiere
+    // volver lo pide por los canales de contacto. No se dice si el correo ya
+    // estaba: la respuesta es la misma para todos.
     return json({ ok: true, guardado: true }, 201, request);
   } catch (e) {
     console.error("[suscripcion] fallo al guardar:", e);
@@ -540,16 +529,24 @@ async function notificarTelegram(
  * El número de teléfono lo pone el plugin: en WhatsApp sale de la plataforma,
  * no del modelo. Acá solo se valida que tenga forma de número.
  *
- * Autorización (Ley 1581): el agente le da a la persona el aviso de datos con
- * el enlace a /privacidad en la misma respuesta en que confirma la llamada, y
- * la persona pidió la llamada ella misma. `version_aviso` dice qué texto fue.
+ * Autorización (Ley 1581): desde el 29-sep (auditoría AS-3) el agente le da a
+ * la persona el aviso de datos, con el enlace a /privacidad, en el mensaje en
+ * que le propone la llamada: antes de que ella dé el día, la hora o el número.
+ * Es la persona la que pide la llamada. `version_aviso` dice qué texto vio.
  */
 const TIPOS_SOLICITUD = new Set(["llamada_compra", "consignar"]);
 const CANALES_AGENTE = new Set(["whatsapp_cloud", "webchat", "api_server"]);
 const AVISO_AGENTE_POR_DEFECTO = "agente-2026-09-29";
 
-/** Tope global: más de esto por hora, desde el agente, es un bucle o un abuso. */
-const TOPE_AGENTE_POR_HORA = 60;
+/**
+ * Topes por hora (29-sep-2026, auditoría AS-2). Antes había uno solo para
+ * todos los canales: el chat de la web no lleva autenticación por mensaje, así
+ * que con 20 sesiones inventadas se llenaba el tope y también se bloqueaban
+ * las llamadas pedidas por WhatsApp. Ahora cada canal tiene su cupo, y un
+ * mismo número no puede pedir más de dos llamadas en una hora.
+ */
+const TOPE_AGENTE_POR_HORA: Record<string, number> = { whatsapp_cloud: 60, webchat: 15, api_server: 15 };
+const TOPE_AGENTE_POR_TELEFONO = 2;
 
 const LIMITES_AGENTE = {
   nombre: 120,
@@ -617,11 +614,16 @@ async function guardarSolicitudAgente(
   try {
     const desde = new Date(ahora.getTime() - 60 * 60_000).toISOString();
     const fila = await env.DB.prepare(
-      `SELECT COUNT(*) AS n FROM consultas WHERE origen LIKE 'agente:%' AND creado_en > ?`,
+      `SELECT SUM(CASE WHEN origen = ?1 THEN 1 ELSE 0 END) AS canal,
+              SUM(CASE WHEN contacto = ?2 THEN 1 ELSE 0 END) AS tel
+         FROM consultas WHERE origen LIKE 'agente:%' AND creado_en > ?3`,
     )
-      .bind(desde)
-      .first<{ n: number }>();
-    if ((fila?.n ?? 0) >= TOPE_AGENTE_POR_HORA) {
+      .bind(`agente:${canal}`, `+${telefono}`, desde)
+      .first<{ canal: number | null; tel: number | null }>();
+    if (
+      (fila?.canal ?? 0) >= (TOPE_AGENTE_POR_HORA[canal] ?? 15) ||
+      (fila?.tel ?? 0) >= TOPE_AGENTE_POR_TELEFONO
+    ) {
       return json({ ok: false, error: "demasiadas_solicitudes" }, 429);
     }
   } catch {
@@ -1028,6 +1030,27 @@ function cabecerasCors(request: Request): Record<string, string> {
 
 function texto(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
+}
+
+/**
+ * Lo que devuelve /api/consulta (29-sep-2026, auditoría AS-8).
+ *
+ * En rhfliving.com, solo `{ ok: true }`: el id secuencial dejaba medir el
+ * volumen de consultas y `motivo_aviso` decía si Rafael se había enterado, a
+ * cualquiera que fijara un Origin permitido. En las vistas previas
+ * (*.workers.dev) sigue el diagnóstico completo, que es donde hace falta: la
+ * lección del 19-sep (`wrangler tail` no sigue a los previews) sigue en pie.
+ */
+function respuestaConsulta(
+  request: Request,
+  id: number,
+  aviso: { ok: boolean; motivo?: string },
+): Record<string, unknown> {
+  const host = new URL(request.url).hostname;
+  if (!host.endsWith(".workers.dev") && host !== "localhost" && host !== "127.0.0.1") {
+    return { ok: true };
+  }
+  return { ok: true, guardado: id > 0, id, notificado: aviso.ok, ...(aviso.motivo ? { motivo_aviso: aviso.motivo } : {}) };
 }
 
 function json(
