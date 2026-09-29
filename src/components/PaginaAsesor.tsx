@@ -37,7 +37,7 @@ import { AvisoPropuesta, EtiquetaPropuesta } from "@/components/IconoProceso";
 import { IconoEscudo, IconoFlecha, IconoWhatsApp } from "@/components/Iconos";
 import { ICONO_PILAR } from "@/components/QuienTeAsesora";
 import { CORREO, TELEFONO_VISIBLE, WHATSAPP, enlaceWhatsApp } from "@/data/contacto";
-import { asesor, proceso } from "@/i18n/datos";
+import { asesor, proceso, nombresDeCartera } from "@/i18n/datos";
 import { ruta, type Idioma } from "@/i18n/idioma";
 import { seMuestra } from "@/lib/revision";
 import "@/styles/asesor.css";
@@ -386,7 +386,7 @@ export default function PaginaAsesor({ idioma = "es" }: { idioma?: Idioma }) {
               </div>
             </div>
             <div className="contacto-form-caja">
-              <ContactForm idioma={idioma} />
+              <ContactForm idioma={idioma} nombres={nombresDeCartera(idioma)} />
             </div>
           </div>
         </section>

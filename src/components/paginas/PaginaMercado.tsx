@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Animador from "@/components/Animador";
 import CabeceraSitio from "@/components/CabeceraSitio";
 import ContactForm from "@/components/ContactForm";
+import { nombresDeCartera } from "@/i18n/datos";
 import ListaNoticias from "@/components/ListaNoticias";
 import PieSitio from "@/components/PieSitio";
 import Suscripcion from "@/components/Suscripcion";
@@ -141,7 +142,7 @@ export default function PaginaMercado({ idioma = "es" }: { idioma?: Idioma }) {
               </div>
             </div>
             <div className="contacto-form-caja">
-              <ContactForm idioma={idioma} />
+              <ContactForm idioma={idioma} nombres={nombresDeCartera(idioma)} />
             </div>
           </div>
         </section>

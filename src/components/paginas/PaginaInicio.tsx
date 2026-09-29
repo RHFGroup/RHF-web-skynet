@@ -44,6 +44,7 @@
  */
 import type { Metadata } from "next";
 import ContactForm from "@/components/ContactForm";
+import { nombresDeCartera } from "@/i18n/datos";
 import MapaZona from "@/components/MapaZona";
 import Cartera from "@/components/Cartera";
 import Desarrolladores from "@/components/Desarrolladores";
@@ -289,7 +290,7 @@ function Contacto({ idioma, wa }: { idioma: Idioma; wa: string }) {
           </div>
         </Reveal>
         <Reveal variant="up" delay={140}>
-          <ContactForm idioma={idioma} />
+          <ContactForm idioma={idioma} nombres={nombresDeCartera(idioma)} />
         </Reveal>
       </div>
     </section>

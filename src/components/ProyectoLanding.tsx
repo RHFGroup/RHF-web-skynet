@@ -22,7 +22,7 @@ import {
 } from "@/components/Iconos";
 import { enlaceWhatsApp } from "@/data/contacto";
 import type { Proyecto } from "@/data/proyectos";
-import { amenidadEnEspanol, etiquetaEstado, proyectos } from "@/i18n/datos";
+import { amenidadEnEspanol, etiquetaEstado, proyectos, nombresDeCartera } from "@/i18n/datos";
 import { ruta, type Idioma } from "@/i18n/idioma";
 import { areaDe, fichaDe, precioDe, proyectosEnOrden } from "@/lib/ficha";
 import "@/styles/proyecto.css";
@@ -621,7 +621,7 @@ export default function ProyectoLanding({ p, idioma = "es" }: { p: Proyecto; idi
                 </a>
               </div>
             </div>
-            <ContactForm proyectoInicial={p.nombre} idioma={idioma} />
+            <ContactForm proyectoInicial={p.nombre} idioma={idioma} nombres={nombresDeCartera(idioma)} />
           </div>
         </section>
 

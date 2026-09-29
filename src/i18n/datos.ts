@@ -14,6 +14,7 @@
  * etiquetas desde `@/i18n/etiquetas`: así no carga en el navegador los datos
  * que no muestra.
  */
+import type { Idioma } from "@/i18n/idioma";
 import * as proyectosEs from "@/data/proyectos";
 import * as inmueblesEs from "@/data/inmuebles";
 import { modulo as proyectosEn } from "@/data/en/proyectos";
@@ -71,4 +72,17 @@ function mapaAmenidades(): Map<string, string> {
   );
   AMENIDAD_ES = mapa;
   return mapa;
+}
+
+/**
+ * Los nombres de los proyectos y de los inmuebles en el idioma de la página,
+ * por slug, para el selector del formulario (ContactForm). En español no hace
+ * falta: el formulario ya tiene los nombres de los datos en español.
+ */
+export function nombresDeCartera(idioma: Idioma): Record<string, string> | undefined {
+  if (idioma === "es") return undefined;
+  return Object.fromEntries([
+    ...proyectosEn.PROYECTOS.map((p) => [p.slug, p.nombre] as const),
+    ...inmueblesEn.INMUEBLES.map((i) => [i.slug, i.nombre] as const),
+  ]);
 }

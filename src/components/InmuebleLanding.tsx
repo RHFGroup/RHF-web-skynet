@@ -12,7 +12,7 @@ import WhatsAppFlotante from "@/components/WhatsAppFlotante";
 import { IconoAmenidad, IconoFlecha, IconoWhatsApp } from "@/components/Iconos";
 import { enlaceWhatsApp } from "@/data/contacto";
 import type { Inmueble } from "@/data/inmuebles";
-import { amenidadEnEspanol, etiquetaEstadoInmueble, inmuebles } from "@/i18n/datos";
+import { amenidadEnEspanol, etiquetaEstadoInmueble, inmuebles, nombresDeCartera } from "@/i18n/datos";
 import { ruta, type Idioma } from "@/i18n/idioma";
 import { fichaDeInmueble } from "@/lib/ficha";
 import "@/styles/proyecto.css";
@@ -355,7 +355,7 @@ export default function InmuebleLanding({ i, idioma = "es" }: { i: Inmueble; idi
                 </a>
               </div>
             </div>
-            <ContactForm proyectoInicial={i.nombre} idioma={idioma} />
+            <ContactForm proyectoInicial={i.nombre} idioma={idioma} nombres={nombresDeCartera(idioma)} />
           </div>
         </section>
 

@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
+import { PROYECTOS } from "@/data/proyectos";
+import { INMUEBLES } from "@/data/inmuebles";
 import { ruta, type Idioma } from "@/i18n/idioma";
-import { inmuebles } from "@/i18n/modulos/inmuebles";
-import { proyectos } from "@/i18n/modulos/proyectos";
 
 /**
  * Formulario de contacto.
@@ -247,6 +247,7 @@ export default function ContactForm({
   proyectoInicial = "",
   variante = "contacto",
   idioma = "es",
+  nombres,
 }: {
   /**
    * En la página de un proyecto, el formulario llega con ese proyecto elegido.
@@ -260,24 +261,26 @@ export default function ContactForm({
    */
   variante?: "contacto" | "consignar";
   idioma?: Idioma;
+  /** Los nombres de la cartera en el idioma de la página, por slug (solo en inglés). */
+  nombres?: Record<string, string>;
 } = {}) {
   const t = TEXTOS[idioma];
   const consignar = variante === "consignar";
 
   // El selector de proyecto muestra los nombres en el idioma de la página,
   // pero su valor —lo que se guarda y lo que Rafael lee en Telegram— es el
-  // nombre en español, como siempre.
-  const { PROYECTOS } = proyectos(idioma);
-  const { INMUEBLES } = inmuebles(idioma);
-  const opcionesProyectos = proyectos("es").PROYECTOS.map((p) => ({
+  // nombre en español, como siempre. Los nombres en inglés llegan por props
+  // (`nombres`, de nombresDeCartera en src/i18n/datos.ts): así este componente
+  // de cliente no carga en el navegador los datos en inglés de toda la cartera.
+  const opcionesProyectos = PROYECTOS.map((p) => ({
     slug: p.slug,
     valor: p.nombre,
-    texto: PROYECTOS.find((x) => x.slug === p.slug)?.nombre ?? p.nombre,
+    texto: nombres?.[p.slug] ?? p.nombre,
   }));
-  const opcionesInmuebles = inmuebles("es").INMUEBLES.map((i) => ({
+  const opcionesInmuebles = INMUEBLES.map((i) => ({
     slug: i.slug,
     valor: i.nombre,
-    texto: INMUEBLES.find((x) => x.slug === i.slug)?.nombre ?? i.nombre,
+    texto: nombres?.[i.slug] ?? i.nombre,
   }));
   const opciones = [...opcionesProyectos, ...opcionesInmuebles];
   /** El valor en español de un nombre que llega en cualquiera de los dos idiomas. */

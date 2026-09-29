@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Animador from "@/components/Animador";
 import CabeceraSitio from "@/components/CabeceraSitio";
 import ContactForm from "@/components/ContactForm";
+import { nombresDeCartera } from "@/i18n/datos";
 import PieSitio from "@/components/PieSitio";
 import WhatsAppFlotante from "@/components/WhatsAppFlotante";
 import { IconoWhatsApp } from "@/components/Iconos";
@@ -231,7 +232,7 @@ export default function PaginaVender({ idioma = "es" }: { idioma?: Idioma }) {
               </div>
             </div>
             <div className="contacto-form-caja">
-              <ContactForm variante="consignar" idioma={idioma} />
+              <ContactForm variante="consignar" idioma={idioma} nombres={nombresDeCartera(idioma)} />
             </div>
           </div>
         </section>
