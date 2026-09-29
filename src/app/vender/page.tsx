@@ -69,32 +69,62 @@ const PASOS = [
 export default function PaginaVender() {
   return (
     <>
-      <CabeceraSitio blanca mensaje={MENSAJE} />
+      <CabeceraSitio blanca mensaje={MENSAJE} actual="vender" />
 
       <main className="vd">
         <section className="vd-portada tono tono-claro tono-blanco-1" aria-labelledby="vd-titulo">
-          <div className="section-shell">
-            <p className="section-kicker">Vender o consignar</p>
-            <h1 id="vd-titulo">¿Quieres vender tu inmueble en Cartagena?</h1>
-            <p className="section-lede">
-              Cuéntanos dónde está y qué es. Rafael Hernández Franco te llama, revisa tu inmueble contigo y te da una
-              estimación de precio con comparables de mercado.
-            </p>
-            <div className="vd-acciones">
-              <a
-                className="btn-whatsapp"
-                href={enlaceWhatsApp(MENSAJE)}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-lead="consignar"
-                data-ubicacion="vender-portada"
-              >
-                <IconoWhatsApp /> Escribir por WhatsApp
-              </a>
-              <a className="btn-primary vd-al-formulario" href="#formulario">
-                Dejar los datos del inmueble
-              </a>
+          <div className="section-shell vd-portada-grid">
+            <div>
+              <p className="section-kicker">Vender o consignar</p>
+              <h1 id="vd-titulo">¿Quieres vender tu inmueble en Cartagena?</h1>
+              <p className="section-lede">
+                Cuéntanos dónde está y qué es. Rafael Hernández Franco te llama, revisa tu inmueble contigo y te da
+                una estimación de precio con comparables de mercado.
+              </p>
+              <div className="vd-acciones">
+                <a
+                  className="btn-whatsapp"
+                  href={enlaceWhatsApp(MENSAJE)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-lead="consignar"
+                  data-ubicacion="vender-portada"
+                >
+                  <IconoWhatsApp /> Escribir por WhatsApp
+                </a>
+                <a className="btn-primary vd-al-formulario" href="#formulario">
+                  Dejar los datos del inmueble
+                </a>
+              </div>
             </div>
+            {/* La promesa de la página es «Rafael te llama»: se ve quién llama. */}
+            <figure className="vd-retrato">
+              <picture>
+                <source
+                  type="image/avif"
+                  srcSet="/rafael/retrato-520.avif 520w, /rafael/retrato-1040.avif 1040w"
+                  sizes="(max-width: 860px) 70vw, 360px"
+                />
+                <source
+                  type="image/webp"
+                  srcSet="/rafael/retrato-520.webp 520w, /rafael/retrato-1040.webp 1040w"
+                  sizes="(max-width: 860px) 70vw, 360px"
+                />
+                <img
+                  src="/rafael/retrato-1040.jpg"
+                  srcSet="/rafael/retrato-520.jpg 520w, /rafael/retrato-1040.jpg 1040w"
+                  sizes="(max-width: 860px) 70vw, 360px"
+                  width={1040}
+                  height={1300}
+                  decoding="async"
+                  alt="Rafael Hernández Franco"
+                />
+              </picture>
+              <figcaption>
+                <strong>Rafael Hernández Franco</strong>
+                Asesor inmobiliario independiente · Cartagena
+              </figcaption>
+            </figure>
           </div>
         </section>
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import MenuMovil from "@/components/MenuMovil";
 import SelectorMoneda from "@/components/SelectorMoneda";
 import { enlaceWhatsApp, SALUDO_WHATSAPP } from "@/data/contacto";
-import { MENU_PRINCIPAL } from "@/data/navegacion";
+import { MENU_PRINCIPAL, type EntradaMenu } from "@/data/navegacion";
 import "@/styles/menu-principal.css";
 
 /**
@@ -15,14 +15,17 @@ import "@/styles/menu-principal.css";
  * página y el del menú del teléfono.
  *
  * `mensaje`: el texto ya escrito del WhatsApp del menú del teléfono, según la
- * página. `blanca`: fondo blanco en vez de marfil (hoy, /asesor).
+ * página. `blanca`: fondo blanco en vez de marfil (hoy, /asesor). `actual`:
+ * la entrada del menú de la página en la que se está (aria-current).
  */
 export default function CabeceraSitio({
   mensaje = SALUDO_WHATSAPP,
   blanca = false,
+  actual,
 }: {
   mensaje?: string;
   blanca?: boolean;
+  actual?: EntradaMenu["id"];
 }) {
   return (
     <header className={blanca ? "nav nav-blanca" : "nav"}>
@@ -36,6 +39,7 @@ export default function CabeceraSitio({
               key={e.id}
               href={e.href}
               className={e.destacado ? "nav-vender" : undefined}
+              aria-current={e.id === actual ? "page" : undefined}
               data-evento={e.id === "vender" ? "click_quiero_vender" : undefined}
               data-ubicacion="menu"
             >
@@ -47,7 +51,13 @@ export default function CabeceraSitio({
           <SelectorMoneda />
         </div>
         <MenuMovil
-          enlaces={MENU_PRINCIPAL.map((e) => ({ href: e.href, texto: e.texto, destacado: e.destacado, id: e.id }))}
+          enlaces={MENU_PRINCIPAL.map((e) => ({
+            href: e.href,
+            texto: e.texto,
+            destacado: e.destacado,
+            id: e.id,
+            actual: e.id === actual,
+          }))}
           whatsapp={enlaceWhatsApp(mensaje)}
         />
       </div>

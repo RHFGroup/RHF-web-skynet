@@ -15,8 +15,11 @@ import { IconoCerrar, IconoMenu, IconoWhatsApp } from "@/components/Iconos";
 import SelectorMoneda from "@/components/SelectorMoneda";
 import "@/styles/menu-movil.css";
 
-/** `destacado`: «Quiero vender / consignar», en otro color (29-sep-2026). */
-export type EnlaceMenu = { href: string; texto: string; destacado?: boolean; id?: string };
+/**
+ * `destacado`: «Quiero vender / consignar», en otro color (29-sep-2026).
+ * `actual`: la página en la que se está (aria-current).
+ */
+export type EnlaceMenu = { href: string; texto: string; destacado?: boolean; id?: string; actual?: boolean };
 
 export default function MenuMovil({ enlaces, whatsapp }: { enlaces: EnlaceMenu[]; whatsapp: string }) {
   const [abierto, setAbierto] = useState(false);
@@ -58,6 +61,7 @@ export default function MenuMovil({ enlaces, whatsapp }: { enlaces: EnlaceMenu[]
               key={e.href}
               href={e.href}
               className={e.destacado ? "menu-movil-vender" : undefined}
+              aria-current={e.actual ? "page" : undefined}
               data-evento={e.id === "vender" ? "click_quiero_vender" : undefined}
               data-ubicacion="menu-movil"
               style={{ "--i": i } as React.CSSProperties}

@@ -52,7 +52,7 @@ export default function InmuebleLanding({ i }: { i: Inmueble }) {
 
   return (
     <>
-      <CabeceraSitio mensaje={`Hola Rafael, vi ${i.nombre} en tu página y quiero más información.`} />
+      <CabeceraSitio mensaje={`Hola Rafael, vi ${i.nombre} en tu página y quiero más información.`} actual="proyectos" />
 
       <main className="pp pi">
         <div className="pp-migas">

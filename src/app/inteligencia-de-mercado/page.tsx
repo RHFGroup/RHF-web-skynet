@@ -59,7 +59,7 @@ const MENSAJE = "Hola Rafael, vi la inteligencia de mercado de la Zona Norte en 
 export default function PaginaInteligenciaDeMercado() {
   return (
     <>
-      <CabeceraSitio blanca mensaje={MENSAJE} />
+      <CabeceraSitio blanca mensaje={MENSAJE} actual="mercado" />
 
       <main className="np">
         <section className="np-portada tono tono-claro tono-blanco-1" aria-labelledby="np-titulo">

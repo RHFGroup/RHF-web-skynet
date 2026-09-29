@@ -139,7 +139,7 @@ export default function ProyectoLanding({ p }: { p: Proyecto }) {
 
   return (
     <>
-      <CabeceraSitio mensaje={`Hola Rafael, vi la página de ${p.nombre} y quiero más información.`} />
+      <CabeceraSitio mensaje={`Hola Rafael, vi la página de ${p.nombre} y quiero más información.`} actual="proyectos" />
 
       <main className="pp">
         <div className="pp-migas">
