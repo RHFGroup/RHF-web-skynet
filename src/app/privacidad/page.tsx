@@ -47,7 +47,7 @@ export default function Privacidad() {
           recogemos además los datos de identificación que exige el proceso de
           vinculación del constructor.
         </p>
-        <p>Los canales por los que entran esos datos son seis:</p>
+        <p>Los canales por los que entran esos datos son siete:</p>
         <ul className="ml-5 list-disc space-y-2">
           <li>
             <strong>El formulario de esta página.</strong> Guardamos lo que
