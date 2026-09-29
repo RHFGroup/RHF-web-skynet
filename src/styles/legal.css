@@ -1,0 +1,81 @@
+/* ─────────────────────────────────────────────────────────────
+   Páginas legales (/privacidad, /terminos y sus versiones en inglés).
+
+   29-sep-2026: LegalPage.tsx y el contenido de estas páginas se escribieron
+   con clases de Tailwind (mx-auto, max-w-3xl, px-5, text-4xl…), pero el sitio
+   no compila Tailwind: no hay configuración de PostCSS, así que
+   `@import "tailwindcss"` solo trae la base y ninguna de esas clases existía.
+   Las páginas legales salían pegadas al borde de la pantalla, sin márgenes ni
+   tamaños de letra. Encender Tailwind para todo el sitio cambiaría otras
+   páginas; aquí se reproducen solo las clases que usan estas, dentro de su
+   <main>, con los mismos valores de Tailwind.
+   ───────────────────────────────────────────────────────────── */
+
+main.bg-marfil {
+  min-height: 100vh;
+  background: var(--marfil);
+  color: var(--marino);
+}
+
+/* El contenedor: mx-auto w-full max-w-3xl px-5 py-16 sm:px-8 sm:py-24 */
+main.bg-marfil > .max-w-3xl {
+  width: 100%;
+  max-width: 48rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 4rem 1.25rem;
+}
+
+/* Tipografía */
+main.bg-marfil .font-serif { font-family: var(--font-serif), "Cormorant Garamond", serif; }
+main.bg-marfil .text-4xl { font-size: 2.25rem; line-height: 2.5rem; }
+main.bg-marfil .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+main.bg-marfil .text-base { font-size: 1rem; line-height: 1.5rem; }
+main.bg-marfil .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+main.bg-marfil .text-\[15px\] { font-size: 15px; }
+main.bg-marfil .leading-tight { line-height: 1.25; }
+main.bg-marfil .leading-snug { line-height: 1.375; }
+main.bg-marfil .leading-relaxed { line-height: 1.625; }
+main.bg-marfil .font-medium { font-weight: 500; }
+main.bg-marfil .tracking-wide { letter-spacing: 0.025em; }
+
+/* Color */
+main.bg-marfil .text-cuero { color: var(--cuero); }
+main.bg-marfil .text-marino\/85 { color: rgb(31 42 61 / 0.85); }
+main.bg-marfil .text-marino\/80 { color: rgb(31 42 61 / 0.8); }
+/* /60 queda en 0,72: con 0,6 la letra chica no llega a 4,5:1 de contraste sobre el marfil. */
+main.bg-marfil .text-marino\/60 { color: rgb(31 42 61 / 0.72); }
+main.bg-marfil .bg-blanco\/60 { background: rgb(255 255 255 / 0.6); }
+
+/* Márgenes y rellenos */
+main.bg-marfil .mt-3 { margin-top: 0.75rem; }
+main.bg-marfil .mt-4 { margin-top: 1rem; }
+main.bg-marfil .mt-6 { margin-top: 1.5rem; }
+main.bg-marfil .mt-8 { margin-top: 2rem; }
+main.bg-marfil .mt-10 { margin-top: 2.5rem; }
+main.bg-marfil .mt-16 { margin-top: 4rem; }
+main.bg-marfil .ml-5 { margin-left: 1.25rem; }
+main.bg-marfil .pt-6 { padding-top: 1.5rem; }
+main.bg-marfil .pt-8 { padding-top: 2rem; }
+main.bg-marfil .px-4 { padding-left: 1rem; padding-right: 1rem; }
+main.bg-marfil .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+main.bg-marfil .space-y-8 > * + * { margin-top: 2rem; }
+main.bg-marfil .space-y-4 > * + * { margin-top: 1rem; }
+main.bg-marfil .space-y-2 > * + * { margin-top: 0.5rem; }
+main.bg-marfil .scroll-mt-24 { scroll-margin-top: 6rem; }
+
+/* Bordes, listas y enlaces */
+main.bg-marfil .border { border: 1px solid; }
+main.bg-marfil .border-t { border-top: 1px solid; }
+main.bg-marfil .border-camel\/60 { border-color: rgb(194 165 120 / 0.6); }
+main.bg-marfil .border-marino\/15 { border-top-color: rgb(31 42 61 / 0.15); }
+main.bg-marfil .rounded-xl { border-radius: 0.75rem; }
+main.bg-marfil .list-disc { list-style: disc; }
+main.bg-marfil .underline { text-decoration: underline; }
+main.bg-marfil .hover\:underline:hover { text-decoration: underline; }
+
+@media (min-width: 640px) {
+  main.bg-marfil > .max-w-3xl { padding: 6rem 2rem; }
+  main.bg-marfil .sm\:text-5xl { font-size: 3rem; line-height: 1; }
+  main.bg-marfil .sm\:text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+}

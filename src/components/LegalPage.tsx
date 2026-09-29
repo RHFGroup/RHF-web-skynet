@@ -1,4 +1,5 @@
 import Link from "next/link";
+import "@/styles/legal.css";
 import type { ReactNode } from "react";
 
 export const RESPONSABLE = {
