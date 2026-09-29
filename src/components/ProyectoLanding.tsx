@@ -86,6 +86,7 @@ function tipologiasVista(p: Proyecto): TipologiaVista[] {
             detalle: `${t.precio.unidades} ${
               t.precio.unidades === 1 ? "unidad disponible" : "unidades disponibles"
             } · corte ${p.precio.corte}`,
+            cop: { desde: t.precio.desde, hasta: t.precio.hasta },
           }
         : null,
   }));
@@ -138,7 +139,7 @@ export default function ProyectoLanding({ p }: { p: Proyecto }) {
 
   return (
     <>
-      <CabeceraSitio mensaje={`Hola Rafael, vi la página de ${p.nombre} y quiero más información.`} />
+      <CabeceraSitio mensaje={`Hola Rafael, vi la página de ${p.nombre} y quiero más información.`} actual="proyectos" />
 
       <main className="pp">
         <div className="pp-migas">

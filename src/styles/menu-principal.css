@@ -1,0 +1,73 @@
+/* ─────────────────────────────────────────────────────────────
+   El menú principal (29-sep-2026, informe de Luciano): cuatro
+   entradas, «Quiero vender / consignar» como botón destacado en otro
+   color, y el selector de moneda a la derecha. Lo comparten la home
+   (NavInicio) y las páginas internas (CabeceraSitio).
+   ───────────────────────────────────────────────────────────── */
+
+/* El botón destacado: camel sobre el menú blanco o transparente. El
+   contraste camel/marino es de 6,2:1 (AA). */
+.nav-links a.nav-vender {
+  background: var(--camel);
+  color: var(--marino);
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.nav-links a.nav-vender:hover,
+.nav-links a.nav-vender:focus-visible {
+  background: var(--marino);
+  color: var(--white);
+}
+/* Sobre la foto de la portada los enlaces van en blanco; el botón no. */
+.nav-inicio:not(.nav-solida) .nav-links a.nav-vender { color: var(--marino); }
+.nav-inicio:not(.nav-solida) .nav-links a.nav-vender:hover { background: var(--white); color: var(--marino); }
+.nav-inicio .nav-links a.nav-vender::after { display: none; }
+
+.nav-herramientas {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--marino);
+}
+/* En el teléfono el selector se queda en la barra, compacto, junto al botón
+   del menú (Luciano lo pidió fijo en el header). Solo en pantallas muy
+   angostas pasa adentro del menú. */
+@media (max-width: 900px) {
+  .nav-herramientas { margin-left: auto; }
+  .nav-herramientas .selector-moneda button { padding: 6px 8px; min-height: 26px; font-size: 11px; }
+  .menu-movil .menu-movil-moneda { display: none; }
+}
+@media (max-width: 359px) {
+  .nav-herramientas { display: none; }
+  .menu-movil .menu-movil-moneda { display: inline-flex; }
+}
+
+/* La página en la que se está: subrayado camel (y aria-current para los
+   lectores de pantalla). */
+.nav-links a[aria-current="page"]:not(.nav-vender) {
+  color: var(--marino);
+  text-decoration: underline;
+  text-decoration-color: var(--camel);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 7px;
+}
+.nav-links a.nav-vender[aria-current="page"] { box-shadow: inset 0 0 0 2px var(--marino); }
+.menu-movil nav a[aria-current="page"]:not(.menu-movil-vender) { color: var(--marino); font-weight: 700; }
+
+/* En el teléfono: el botón destacado dentro del menú, y el selector debajo. */
+.menu-movil nav a.menu-movil-vender {
+  color: var(--marino);
+  background: var(--camel);
+  border-radius: 12px;
+  padding-left: 14px;
+  padding-right: 14px;
+  font-weight: 700;
+}
+.menu-movil .menu-movil-moneda {
+  align-self: flex-start;
+  margin: 14px 0 4px;
+  color: var(--marino);
+}

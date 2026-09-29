@@ -24,7 +24,7 @@ export type TipologiaVista = {
   exterior?: string;
   planos: Plano[];
   /** «$311.500.000 a $341.500.000 · 37 unidades · corte 23 de septiembre de 2026». */
-  precio: { cifra: string; detalle: string } | null;
+  precio: { cifra: string; detalle: string; cop?: { desde: number; hasta: number } } | null;
 };
 
 export default function TipologiasTabs({ tipologias }: { tipologias: TipologiaVista[] }) {
@@ -132,7 +132,14 @@ export default function TipologiasTabs({ tipologias }: { tipologias: TipologiaVi
                 <div>
                   <dt>Precio de referencia</dt>
                   <dd>
-                    <strong>{t.precio.cifra}</strong>
+                    <strong
+                      data-cop={t.precio.cop?.desde}
+                      data-cop-hasta={
+                        t.precio.cop && t.precio.cop.hasta !== t.precio.cop.desde ? t.precio.cop.hasta : undefined
+                      }
+                    >
+                      {t.precio.cifra}
+                    </strong>
                     <span>{t.precio.detalle}</span>
                   </dd>
                 </div>

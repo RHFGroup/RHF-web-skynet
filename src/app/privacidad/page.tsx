@@ -14,7 +14,7 @@ export default function Privacidad() {
     <LegalPage
       titulo="Política de Tratamiento de Datos Personales"
       bajada="Si nos escribes por WhatsApp, por el chat de esta página, por Instagram o por Facebook, si te suscribes al boletín o si dejas tus datos en una feria, quedamos con información tuya. Aquí decimos qué hacemos con ella, por cuánto tiempo, y cómo pedir que la borremos."
-      vigencia="28 de septiembre de 2026"
+      vigencia="29 de septiembre de 2026"
     >
       <Seccion titulo="1. Quién responde por tus datos">
         <p>
@@ -58,8 +58,9 @@ export default function Privacidad() {
             desde el que enviaste. Esa constancia existe por una razón: la ley
             nos exige poder demostrar que tu autorización fue previa, expresa e
             informada, y sin ella guardar tus datos sería peor que no
-            guardarlos. Al enviar también se abre WhatsApp con tu mensaje ya
-            escrito, para que la conversación empiece por donde te respondemos.
+            guardarlos. En la página «Quiero vender / consignar» el formulario
+            pide además la ubicación y el tipo del inmueble. Después del envío,
+            si prefieres, puedes seguir la conversación por WhatsApp.
           </li>
           <li>
             <strong>La suscripción al boletín.</strong> Si te suscribes al
@@ -69,13 +70,29 @@ export default function Privacidad() {
           </li>
           <li>
             <strong>WhatsApp Business.</strong> Cuando nos escribes, recibimos
-            tu número, tu nombre de perfil y los mensajes que envías.
+            tu número, tu nombre de perfil y los mensajes que envías. Si mandas
+            una nota de voz, se transcribe automáticamente en nuestro propio
+            servidor para que el asistente la entienda.
           </li>
           <li>
-            <strong>El chat de esta página.</strong> Lo atiende un asistente
-            automatizado que responde con información pública de nuestra
-            cartera y que traslada la conversación a un asesor cuando hace
-            falta.
+            <strong>El asistente de WhatsApp y del chat de esta página.</strong>{" "}
+            Te atiende primero un asistente automatizado que responde con
+            información pública de nuestra cartera. Si pides una llamada con
+            Rafael, el asistente registra tu nombre, la ciudad desde la que
+            escribes, tu número (en WhatsApp, el mismo desde el que escribes;
+            en el chat, el que nos des), el día y la hora que elegiste y un
+            resumen de lo que buscas, y a Rafael le llega el aviso.
+          </li>
+          <li>
+            <strong>Cookies de analítica y publicidad, solo si las
+            aceptas.</strong> Si nos lo autorizas en el aviso de cookies, esta
+            página carga Google Tag Manager y Google Analytics (Google LLC) y el
+            píxel de Meta (Meta Platforms), que registran cómo se usa la página
+            —páginas vistas, clics en WhatsApp, descargas de brochures, envíos
+            de formularios— para medir los resultados y mostrar anuncios de
+            nuestros proyectos. Sin tu autorización no se carga ninguno. Puedes
+            cambiar tu decisión cuando quieras en «Preferencias de cookies», al
+            pie de cada página.
           </li>
           <li>
             <strong>Instagram y Facebook.</strong> Mensajes directos y
@@ -138,9 +155,14 @@ export default function Privacidad() {
         </p>
         <p>
           Esos proveedores son Meta Platforms —que opera WhatsApp Business
-          Platform, Instagram y Facebook—, el proveedor de infraestructura que
-          aloja esta página y el canal de atención, y las herramientas de
-          correo y de gestión comercial que usamos. Algunos de ellos procesan
+          Platform, Instagram, Facebook y, si aceptas las cookies, su píxel—;
+          Google LLC —Tag Manager y Analytics, solo si aceptas las cookies—;
+          el proveedor de infraestructura que aloja esta página y el canal de
+          atención; el proveedor del modelo de lenguaje con el que funciona el
+          asistente, que procesa el texto de la conversación para responderte;
+          Telegram, por donde le llega a Rafael el aviso de cada consulta o
+          llamada pedida; y las herramientas de correo y de gestión comercial
+          que usamos. Algunos de ellos procesan
           información fuera de Colombia, lo que constituye una transferencia
           internacional; al aceptar esta política autorizas esa transferencia
           en los términos de los Arts. 26 y 27 de la Ley 1581 de 2012.

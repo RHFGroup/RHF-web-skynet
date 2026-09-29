@@ -12,6 +12,9 @@
  * /api/solicitud-agente (desde el 29-sep-2026), por donde el agente de
  * atención (WhatsApp y chat de la web) deja la llamada que alguien pidió con
  * Rafael. Los tres caen al mismo buzón de leads y al mismo aviso de Telegram.
+ * Y GET /api/trm (desde el 29-sep-2026): la tasa representativa del mercado
+ * del día, para la referencia en dólares que muestra la web junto al precio
+ * en pesos. El cron la mantiene al día en D1.
  *
  * Y desde el 23-sep-2026, un cron: cada 5 minutos el vigía de worker/vigia.ts
  * mira que el agente (chat de la web y WhatsApp) responda, y avisa por
@@ -109,6 +112,10 @@ export default {
       return guardarSolicitudAgente(request, env, ctx);
     }
 
+    if (url.pathname === "/api/trm") {
+      return trmDelDia(request, env, ctx);
+    }
+
     if (url.pathname.startsWith("/api/")) {
       return json({ ok: false, error: "no_encontrado" }, 404);
     }
@@ -121,6 +128,7 @@ export default {
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
     ctx.waitUntil(vigilar(env, new Date(controller.scheduledTime)));
     ctx.waitUntil(reintentarAvisos(env));
+    ctx.waitUntil(refrescarTRMSiHaceFalta(env));
   },
 } satisfies ExportedHandler<Env>;
 
@@ -164,6 +172,10 @@ async function guardarConsulta(
   const origen = texto(cuerpo.origen).slice(0, LIMITES.origen);
   const versionAviso =
     texto(cuerpo.version_aviso).slice(0, LIMITES.version) || AVISO_POR_DEFECTO;
+  // Desde el 29-sep-2026 el formulario de /vender manda `tipo: "consignar"`:
+  // cambia el título del aviso, para que Rafael sepa de un vistazo que es un
+  // propietario y no un comprador. Cualquier otro valor es una consulta.
+  const consignar = texto(cuerpo.tipo) === "consignar";
 
   // Sin autorización no se guarda. Es la condición de la Ley 1581 y también la
   // del CHECK de la tabla: acá se rechaza con un mensaje claro en vez de
@@ -223,15 +235,19 @@ async function guardarConsulta(
     // la persona ya está viendo un spinner y Telegram responde en ~300 ms.
     // Si tarda más de 5 s se corta — vale más una respuesta rápida con el
     // dato guardado que una espera larga por una notificación.
-    const aviso = await notificarTelegram(env, {
-      id,
-      nombre,
-      contacto,
-      proyecto,
-      mensaje,
-      origen,
-      creado: ahora,
-    });
+    const aviso = await notificarTelegram(
+      env,
+      {
+        id,
+        nombre,
+        contacto,
+        proyecto,
+        mensaje,
+        origen,
+        creado: ahora,
+      },
+      consignar ? "🏷️ <b>Quiere consignar su inmueble</b> · formulario de la web" : undefined,
+    );
 
     // La marca de que se avisó no bloquea la respuesta: si esta escritura
     // falla, el lead ya está guardado y Rafael ya recibió el mensaje.
@@ -804,6 +820,137 @@ async function reintentarAvisos(env: Env): Promise<void> {
       return;
     }
   }
+}
+
+// ── La TRM del día ────────────────────────────────────────────────────────
+
+/**
+ * GET /api/trm — la tasa representativa del mercado vigente (29-sep-2026).
+ *
+ * La web muestra el precio en pesos colombianos (Ley 1480, art. 26: el precio
+ * se informa en pesos) y, si la persona lo pide con el selector de moneda, una
+ * referencia aproximada en dólares. Esa referencia sale de la TRM que certifica
+ * la Superintendencia Financiera y publica datos.gov.co (conjunto 32sa-8pi3).
+ *
+ * datos.gov.co es inestable: medido el 29-sep, de cuatro consultas seguidas
+ * una tardó 8 s y otra respondió 503. Por eso la web NO depende de él en cada
+ * visita:
+ *  · El cron (cada 5 min) la refresca en D1 (tabla `trm`, una fila) cuando la
+ *    guardada tiene más de 6 horas, con dos intentos cortos.
+ *  · /api/trm lee de D1 y la respuesta se guarda 1 hora en la caché de
+ *    Cloudflare. Solo si D1 todavía no tiene ninguna (el primer uso), la pide
+ *    en el momento.
+ *  · Si nunca se pudo leer, responde 503 y la web muestra solo pesos. La
+ *    respuesta lleva la fecha de vigencia, y la web la dice junto al dólar: una
+ *    TRM de ayer se ve como de ayer.
+ */
+const URL_TRM =
+  "https://www.datos.gov.co/resource/32sa-8pi3.json?$order=vigenciadesde%20DESC&$limit=1";
+const HORAS_REFRESCO_TRM = 6;
+const CREAR_TRM = `CREATE TABLE IF NOT EXISTS trm (
+  id             INTEGER PRIMARY KEY CHECK (id = 1),
+  valor          REAL    NOT NULL,
+  vigente_desde  TEXT    NOT NULL,
+  vigente_hasta  TEXT,
+  actualizado_en TEXT    NOT NULL
+)`;
+let trmLista = false;
+
+type FilaTRM = { valor: number; vigente_desde: string; vigente_hasta: string | null; actualizado_en: string };
+
+async function tablaTRM(env: Env): Promise<void> {
+  if (trmLista) return;
+  await env.DB.prepare(CREAR_TRM).run();
+  trmLista = true;
+}
+
+async function leerTRMGuardada(env: Env): Promise<FilaTRM | null> {
+  await tablaTRM(env);
+  return env.DB.prepare(`SELECT valor, vigente_desde, vigente_hasta, actualizado_en FROM trm WHERE id = 1`).first<FilaTRM>();
+}
+
+/** Consulta datos.gov.co (dos intentos cortos) y guarda la TRM en D1. */
+async function refrescarTRM(env: Env): Promise<FilaTRM | null> {
+  for (let intento = 0; intento < 2; intento++) {
+    try {
+      const r = await fetch(URL_TRM, { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) throw new Error(`datos.gov.co respondió ${r.status}`);
+      const filas = (await r.json()) as { valor?: string; vigenciadesde?: string; vigenciahasta?: string }[];
+      const fila = filas[0];
+      const valor = Number(fila?.valor);
+      // Una TRM fuera de este rango es un dato roto, no una devaluación.
+      if (!fila || !Number.isFinite(valor) || valor < 1000 || valor > 20000 || !fila.vigenciadesde) {
+        throw new Error("TRM fuera de rango o vacía");
+      }
+      const nueva: FilaTRM = {
+        valor,
+        vigente_desde: fila.vigenciadesde.slice(0, 10),
+        vigente_hasta: fila.vigenciahasta ? fila.vigenciahasta.slice(0, 10) : null,
+        actualizado_en: new Date().toISOString(),
+      };
+      await tablaTRM(env);
+      await env.DB.prepare(
+        `INSERT INTO trm (id, valor, vigente_desde, vigente_hasta, actualizado_en) VALUES (1, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET valor = excluded.valor, vigente_desde = excluded.vigente_desde,
+           vigente_hasta = excluded.vigente_hasta, actualizado_en = excluded.actualizado_en`,
+      )
+        .bind(nueva.valor, nueva.vigente_desde, nueva.vigente_hasta, nueva.actualizado_en)
+        .run();
+      return nueva;
+    } catch (e) {
+      console.error(`[trm] intento ${intento + 1} fallido:`, e);
+      if (intento === 0) await new Promise((ok) => setTimeout(ok, 800));
+    }
+  }
+  return null;
+}
+
+/** Desde el cron: refresca solo si la guardada tiene más de 6 horas. */
+async function refrescarTRMSiHaceFalta(env: Env): Promise<void> {
+  try {
+    const guardada = await leerTRMGuardada(env);
+    const edad = guardada ? Date.now() - Date.parse(guardada.actualizado_en) : Infinity;
+    if (edad > HORAS_REFRESCO_TRM * 3600_000) await refrescarTRM(env);
+  } catch (e) {
+    console.error("[trm] el cron no pudo refrescar la TRM:", e);
+  }
+}
+
+async function trmDelDia(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return json({ ok: false, error: "metodo_no_permitido" }, 405);
+  }
+  const cache = caches.default;
+  const clave = new Request(new URL("/api/trm?v=2", request.url).toString(), { method: "GET" });
+  const enCache = await cache.match(clave);
+  if (enCache) return enCache;
+
+  let fila: FilaTRM | null = null;
+  try {
+    fila = (await leerTRMGuardada(env)) ?? (await refrescarTRM(env));
+  } catch (e) {
+    console.error("[trm] no se pudo leer la TRM:", e);
+  }
+  if (!fila) return json({ ok: false, error: "trm_no_disponible" }, 503);
+
+  const respuesta = new Response(
+    JSON.stringify({
+      ok: true,
+      valor: fila.valor,
+      vigente_desde: fila.vigente_desde,
+      vigente_hasta: fila.vigente_hasta,
+      fuente: "Superintendencia Financiera de Colombia (datos.gov.co)",
+    }),
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "public, max-age=3600",
+      },
+    },
+  );
+  ctx.waitUntil(cache.put(clave, respuesta.clone()));
+  return respuesta;
 }
 
 /** Escapa lo que Telegram interpreta como HTML. */

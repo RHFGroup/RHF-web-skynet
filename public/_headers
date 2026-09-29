@@ -28,6 +28,10 @@
 #               de Leaflet.
 #   connect-src el chat (atencion-hrf.syberloop.com) y la analítica.
 #   frame-src   el recuadro de Turnstile.
+#   29-sep-2026 (informe de Luciano): Google Tag Manager, Google Analytics 4 y
+#   el píxel de Meta, que solo cargan si la persona acepta las cookies
+#   (src/components/Analitica.tsx): googletagmanager.com, google-analytics.com,
+#   analytics.google.com, connect.facebook.net y facebook.com.
 # Un origen nuevo en el sitio (un mapa, un video, un widget) se agrega aquí.
 
 /*
@@ -36,4 +40,4 @@
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdnjs.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://cdnjs.cloudflare.com; font-src 'self' data:; connect-src 'self' https://atencion-hrf.syberloop.com wss://atencion-hrf.syberloop.com https://cloudflareinsights.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; media-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://cdnjs.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://*.google-analytics.com https://www.facebook.com; font-src 'self' data:; connect-src 'self' https://atencion-hrf.syberloop.com wss://atencion-hrf.syberloop.com https://cloudflareinsights.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://www.facebook.com https://connect.facebook.net; frame-src https://challenges.cloudflare.com https://www.googletagmanager.com; worker-src 'self' blob:; media-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'

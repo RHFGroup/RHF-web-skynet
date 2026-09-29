@@ -50,6 +50,25 @@ import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
 /** Versión del texto de autorización de abajo. Cambiarla al cambiar el texto. */
 export const AVISO_VERSION = "2026-09-18";
 
+/** La del formulario de /vender, cuyo texto de autorización nombra el inmueble. */
+export const AVISO_VERSION_CONSIGNAR = "2026-09-29-consignar";
+
+/** Los tipos de inmueble que se pueden consignar, para el selector de /vender. */
+const TIPOS_INMUEBLE = ["Apartamento", "Casa", "Lote", "Local comercial", "Otro"];
+const CON_ARTICULO: Record<string, string> = {
+  Apartamento: "un apartamento",
+  Casa: "una casa",
+  Lote: "un lote",
+  "Local comercial": "un local comercial",
+  Otro: "un inmueble",
+};
+
+/** Empuja un evento a la capa de datos de la analítica (src/components/Analitica.tsx). */
+function registrarEvento(datos: Record<string, unknown>) {
+  const w = window as unknown as { dataLayer?: unknown[] };
+  (w.dataLayer ||= []).push(datos);
+}
+
 /**
  * Turnstile — la verificación antibot de Cloudflare.
  *
@@ -78,10 +97,19 @@ declare global {
 }
 export default function ContactForm({
   proyectoInicial = "",
+  variante = "contacto",
 }: {
   /** En la página de un proyecto, el formulario llega con ese proyecto elegido. */
   proyectoInicial?: string;
+  /**
+   * «consignar» (29-sep-2026, /vender): en vez del proyecto de interés pide la
+   * ubicación y el tipo del inmueble, y el Worker avisa con otro título.
+   */
+  variante?: "contacto" | "consignar";
 } = {}) {
+  const consignar = variante === "consignar";
+  const [ubicacion, setUbicacion] = useState("");
+  const [tipoInmueble, setTipoInmueble] = useState("");
   const [nombre, setNombre] = useState("");
   const [contacto, setContacto] = useState("");
   const [proyecto, setProyecto] = useState(proyectoInicial);
@@ -126,6 +154,21 @@ export default function ContactForm({
 
   /** El mensaje que se le manda a WhatsApp si la persona elige ese camino. */
   function textoWhatsApp(): string {
+    if (consignar) {
+      return [
+        "Hola, quiero consignar mi propiedad...",
+        nombre.trim() ? `Soy ${nombre.trim()}.` : null,
+        tipoInmueble || ubicacion.trim()
+          ? `Es ${CON_ARTICULO[tipoInmueble] ?? "un inmueble"}${ubicacion.trim() ? ` en ${ubicacion.trim()}` : ""}.`
+          : null,
+        mensaje.trim() ? mensaje.trim() : null,
+        contacto.trim() ? `Me contactas en: ${contacto.trim()}` : null,
+        "",
+        "Autorizo el tratamiento de mis datos según la política publicada en rhfliving.com/privacidad.",
+      ]
+        .filter((l) => l !== null)
+        .join("\n");
+    }
     return [
       `Hola Rafael, soy ${nombre.trim()}.`,
       proyecto ? `Me interesa ${proyecto}.` : "Me interesa tu asesoría inmobiliaria.",
@@ -160,16 +203,30 @@ export default function ContactForm({
         body: JSON.stringify({
           nombre: nombre.trim(),
           contacto: contacto.trim(),
-          proyecto,
-          mensaje: mensaje.trim(),
+          proyecto: consignar ? `Consignación · ${tipoInmueble || "inmueble"}` : proyecto,
+          mensaje: consignar
+            ? [`Ubicación del inmueble: ${ubicacion.trim()}`, `Tipo: ${tipoInmueble || "sin indicar"}`, mensaje.trim()]
+                .filter(Boolean)
+                .join("\n")
+            : mensaje.trim(),
+          tipo: consignar ? "consignar" : "consulta",
           autoriza: true,
-          version_aviso: AVISO_VERSION,
+          version_aviso: consignar ? AVISO_VERSION_CONSIGNAR : AVISO_VERSION,
           origen: typeof window !== "undefined" ? window.location.pathname : "",
           sitio,
           turnstile: turnstileToken,
         }),
       });
       setEstado(r.ok ? "ok" : "error");
+      if (r.ok) {
+        // La conversión, para GA4 y Meta (src/components/Analitica.tsx). En
+        // /vender es el «Lead» de captación de propietarios.
+        registrarEvento(
+          consignar
+            ? { event: "lead_consignar", metodo: "formulario", tipo_inmueble: tipoInmueble || "sin indicar" }
+            : { event: "generate_lead", formulario: "contacto", proyecto: proyecto || "sin indicar" },
+        );
+      }
     } catch {
       // Red caída, endpoint fuera, bloqueador: todo cae acá y todo se trata
       // igual, porque para quien escribió el desenlace es el mismo.
@@ -194,8 +251,10 @@ export default function ContactForm({
         <span className="form-enviado-marca" aria-hidden="true">✓</span>
         <h3>Mensaje enviado</h3>
         <p>
-          Gracias{nombre.trim() ? `, ${nombre.trim().split(" ")[0]}` : ""}. Tu
-          consulta ya nos llegó y te escribimos al contacto que nos dejaste.
+          Gracias{nombre.trim() ? `, ${nombre.trim().split(" ")[0]}` : ""}.{" "}
+          {consignar
+            ? "Los datos de tu inmueble ya nos llegaron. Rafael te escribe al contacto que nos dejaste para agendar la llamada."
+            : "Tu consulta ya nos llegó y te escribimos al contacto que nos dejaste."}
         </p>
         <a
           className="btn-whatsapp"
@@ -214,7 +273,7 @@ export default function ContactForm({
       {cargarTurnstile && (
         <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
       )}
-      <h3>Déjanos tus datos</h3>
+      <h3>{consignar ? "Cuéntanos de tu inmueble" : "Déjanos tus datos"}</h3>
 
       <label>
         Nombre
@@ -242,6 +301,33 @@ export default function ContactForm({
         />
       </label>
 
+      {consignar ? (
+        <>
+          <label>
+            Ubicación del inmueble
+            <input
+              type="text"
+              name="ubicacion"
+              autoComplete="off"
+              placeholder="Barrio o conjunto, y ciudad"
+              value={ubicacion}
+              onChange={(e) => setUbicacion(e.target.value)}
+              required
+            />
+          </label>
+          <label>
+            Tipo de inmueble
+            <select name="tipo_inmueble" value={tipoInmueble} onChange={(e) => setTipoInmueble(e.target.value)} required>
+              <option value="">Selecciona el tipo</option>
+              {TIPOS_INMUEBLE.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
+      ) : (
       <label>
         Proyecto de interés
         <select
@@ -267,13 +353,14 @@ export default function ContactForm({
           <option value="Otro / No estoy seguro">Otro / No estoy seguro</option>
         </select>
       </label>
+      )}
 
       <label>
         Mensaje
         <textarea
           name="mensaje"
           rows={3}
-          placeholder="Cuéntanos qué buscas..."
+          placeholder={consignar ? "Área aproximada, estado, lo que quieras contarnos (opcional)" : "Cuéntanos qué buscas..."}
           value={mensaje}
           onChange={(e) => setMensaje(e.target.value)}
         />
@@ -310,7 +397,7 @@ export default function ContactForm({
         />
         <span>
           Autorizo a {RESPONSABLE} a tratar mis datos personales para contactarme
-          sobre esta consulta, conforme a la{" "}
+          sobre {consignar ? "la venta o consignación de mi inmueble" : "esta consulta"}, conforme a la{" "}
           <a href="/privacidad" target="_blank" rel="noopener noreferrer">
             política de tratamiento de datos
           </a>
@@ -339,7 +426,7 @@ export default function ContactForm({
         type="submit"
         disabled={estado === "enviando"}
       >
-        {estado === "enviando" ? "Enviando…" : "Enviar mensaje"}
+        {estado === "enviando" ? "Enviando…" : consignar ? "Quiero que Rafael me llame" : "Enviar mensaje"}
       </button>
 
       {/* El fallo se dice, y con salida. Quien llenó el formulario tiene el

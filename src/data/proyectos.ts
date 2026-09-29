@@ -618,7 +618,9 @@ export const PROYECTOS: Proyecto[] = [
       },
     ],
     brochurePaginas: 0,
-    brochurePdf: null,
+    // El brochure oficial de Doral (15 p., mar-2026, sin precios), publicado el
+    // 23-sep-2026 para el agente de atención: la página lo ofrece también.
+    brochurePdf: "/proyectos/doral-west/brochure.pdf",
     precio: {
       desde: 525_000_000,
       hasta: 835_000_000,
