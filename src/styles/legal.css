@@ -3,8 +3,8 @@
 
    29-sep-2026: LegalPage.tsx y el contenido de estas páginas se escribieron
    con clases de Tailwind (mx-auto, max-w-3xl, px-5, text-4xl…), pero el sitio
-   no compila Tailwind: no hay configuración de PostCSS, así que
-   `@import "tailwindcss"` solo trae la base y ninguna de esas clases existía.
+   no compila Tailwind (no hay configuración de PostCSS) y ninguna de esas
+   clases existía.
    Las páginas legales salían pegadas al borde de la pantalla, sin márgenes ni
    tamaños de letra. Encender Tailwind para todo el sitio cambiaría otras
    páginas; aquí se reproducen solo las clases que usan estas, dentro de su

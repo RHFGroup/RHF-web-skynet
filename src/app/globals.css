@@ -1,4 +1,6 @@
-@import "tailwindcss";
+/* 29-sep-2026: aquí iba `@import "tailwindcss";`. Sin configuración de PostCSS
+   no aportaba ni una regla de CSS, y en cambio metía la librería de Tailwind
+   en el JavaScript de cada página (138 KB gzip). El sitio usa CSS propio. */
 
 /* ─────────────────────────────────────────────
    RHF — Asesoría Inmobiliaria
