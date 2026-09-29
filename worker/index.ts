@@ -677,6 +677,10 @@ async function guardarSolicitudAgente(
           .catch((e) => console.error("[agente] no se pudo marcar notificado_en:", e)),
       );
     }
+    // Si el aviso falló, se dice qué bot es el que avisa: con «chat not found»
+    // la persona que debe recibir los avisos tiene que abrir ESE bot y darle
+    // /start. Solo sale en esta respuesta, que exige el token del agente.
+    const bot = aviso.ok ? null : await nombreDelBot(env);
     return json(
       {
         ok: true,
@@ -684,12 +688,27 @@ async function guardarSolicitudAgente(
         id,
         notificado: aviso.ok,
         ...(aviso.motivo ? { motivo_aviso: aviso.motivo } : {}),
+        ...(bot ? { bot_de_avisos: bot } : {}),
       },
       201,
     );
   } catch (e) {
     console.error("[agente] fallo al guardar:", e);
     return json({ ok: false, error: "fallo_al_guardar" }, 500);
+  }
+}
+
+/** El @usuario del bot de avisos, o null. Nunca devuelve el token. */
+async function nombreDelBot(env: Env): Promise<string | null> {
+  if (!env.TELEGRAM_BOT_TOKEN) return null;
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/getMe`, {
+      signal: AbortSignal.timeout(4000),
+    });
+    const j = (await r.json()) as { ok?: boolean; result?: { username?: string } };
+    return j.ok && j.result?.username ? `@${j.result.username}` : null;
+  } catch {
+    return null;
   }
 }
 
