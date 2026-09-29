@@ -85,7 +85,7 @@ export default function Privacy() {
           toward a purchase, we also collect the identification details
           required by the builder’s client onboarding process.
         </p>
-        <p>That data reaches us through six channels:</p>
+        <p>That data reaches us through seven channels:</p>
         <ul className="ml-5 list-disc space-y-2">
           <li>
             <strong>The form on this website.</strong> We store what you
