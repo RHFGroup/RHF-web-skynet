@@ -9,10 +9,16 @@
  * nivel móvil». Los enlaces entran uno detrás de otro al abrir; se cierra con
  * el mismo botón, con Escape o al elegir una sección. Mientras está abierto,
  * la página de atrás no se desplaza.
+ *
+ * 29-sep-2026 (sitio en inglés): los textos van en el idioma de la página y,
+ * junto al selector de moneda, va el de idioma (en la barra del teléfono no
+ * cabe). `rutaEs` es la ruta en español de la página en la que se está.
  */
 import { useEffect, useState } from "react";
 import { IconoCerrar, IconoMenu, IconoWhatsApp } from "@/components/Iconos";
+import SelectorIdioma from "@/components/SelectorIdioma";
 import SelectorMoneda from "@/components/SelectorMoneda";
+import type { Idioma } from "@/i18n/idioma";
 import "@/styles/menu-movil.css";
 
 /**
@@ -21,8 +27,35 @@ import "@/styles/menu-movil.css";
  */
 export type EnlaceMenu = { href: string; texto: string; destacado?: boolean; id?: string; actual?: boolean };
 
-export default function MenuMovil({ enlaces, whatsapp }: { enlaces: EnlaceMenu[]; whatsapp: string }) {
+const TEXTOS = {
+  es: {
+    abrir: "Abrir el menú",
+    cerrar: "Cerrar el menú",
+    secciones: "Secciones",
+    whatsapp: "Escríbenos por WhatsApp",
+  },
+  en: {
+    abrir: "Open menu",
+    cerrar: "Close menu",
+    secciones: "Sections",
+    whatsapp: "Message us on WhatsApp",
+  },
+} satisfies Record<Idioma, Record<string, string>>;
+
+export default function MenuMovil({
+  enlaces,
+  whatsapp,
+  idioma = "es",
+  rutaEs = "/",
+}: {
+  enlaces: EnlaceMenu[];
+  whatsapp: string;
+  idioma?: Idioma;
+  /** La ruta en español de la página actual, para el selector de idioma. */
+  rutaEs?: string;
+}) {
   const [abierto, setAbierto] = useState(false);
+  const t = TEXTOS[idioma];
 
   useEffect(() => {
     if (!abierto) return;
@@ -49,13 +82,13 @@ export default function MenuMovil({ enlaces, whatsapp }: { enlaces: EnlaceMenu[]
         className={"menu-movil-boton" + (abierto ? " abierto" : "")}
         aria-expanded={abierto}
         aria-controls="menu-movil"
-        aria-label={abierto ? "Cerrar el menú" : "Abrir el menú"}
+        aria-label={abierto ? t.cerrar : t.abrir}
         onClick={() => setAbierto((a) => !a)}
       >
         {abierto ? <IconoCerrar size={22} /> : <IconoMenu size={22} />}
       </button>
       <div id="menu-movil" className={"menu-movil" + (abierto ? " abierto" : "")} inert={!abierto}>
-        <nav aria-label="Secciones">
+        <nav aria-label={t.secciones}>
           {enlaces.map((e, i) => (
             <a
               key={e.href}
@@ -71,7 +104,8 @@ export default function MenuMovil({ enlaces, whatsapp }: { enlaces: EnlaceMenu[]
             </a>
           ))}
         </nav>
-        <SelectorMoneda className="menu-movil-moneda" />
+        <SelectorMoneda className="menu-movil-moneda" idioma={idioma} />
+        <SelectorIdioma className="menu-movil-idioma" idioma={idioma} rutaEs={rutaEs} />
         <a
           className="menu-movil-wa"
           href={whatsapp}
@@ -79,7 +113,8 @@ export default function MenuMovil({ enlaces, whatsapp }: { enlaces: EnlaceMenu[]
           rel="noopener noreferrer"
           onClick={() => setAbierto(false)}
         >
-          <IconoWhatsApp size={20} /> Escríbenos por WhatsApp
+          <IconoWhatsApp size={20} />
+          {` ${t.whatsapp}`}
         </a>
       </div>
     </>

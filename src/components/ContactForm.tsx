@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import { PROYECTOS } from "@/data/proyectos";
-import { INMUEBLES } from "@/data/inmuebles";
 import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
+import { ruta, type Idioma } from "@/i18n/idioma";
+import { inmuebles, proyectos } from "@/i18n/datos";
 
 /**
  * Formulario de contacto.
@@ -45,6 +45,13 @@ import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
  * guarda, que es lo que la Ley 1581 de 2012 exige (previa, expresa e
  * informada). `AVISO_VERSION` viaja con cada envío para poder demostrar
  * después CUÁL texto aceptó cada persona.
+ *
+ * En inglés (29-sep-2026) cambian los textos, no lo que se envía: los nombres
+ * de los campos, las claves (`tipo`, el tipo de inmueble, el proyecto elegido)
+ * y los rótulos que el formulario arma para Rafael («Ubicación del inmueble:»,
+ * «Consignación ·») viajan en español desde cualquier idioma, y la analítica
+ * recibe los mismos eventos. El `origen` es la ruta de la página: una consulta
+ * hecha en /en llega con /en/…, y Rafael sabe en qué idioma responder.
  */
 
 /** Versión del texto de autorización de abajo. Cambiarla al cambiar el texto. */
@@ -53,15 +60,155 @@ export const AVISO_VERSION = "2026-09-18";
 /** La del formulario de /vender, cuyo texto de autorización nombra el inmueble. */
 export const AVISO_VERSION_CONSIGNAR = "2026-09-29-consignar";
 
-/** Los tipos de inmueble que se pueden consignar, para el selector de /vender. */
+/**
+ * Los tipos de inmueble que se pueden consignar, para el selector de /vender.
+ * Son claves: viajan en español al Worker y a la analítica desde cualquier
+ * idioma; la persona ve el nombre de `TEXTOS`.
+ */
 const TIPOS_INMUEBLE = ["Apartamento", "Casa", "Lote", "Local comercial", "Otro"];
-const CON_ARTICULO: Record<string, string> = {
-  Apartamento: "un apartamento",
-  Casa: "una casa",
-  Lote: "un lote",
-  "Local comercial": "un local comercial",
-  Otro: "un inmueble",
-};
+
+/** El valor de «Otro» en el selector de proyecto: también es una clave. */
+const OTRO_PROYECTO = "Otro / No estoy seguro";
+
+/**
+ * Los textos, en los dos idiomas (docs/i18n.md). Cada uno es un nodo de texto
+ * tal como queda en el HTML, con sus espacios de borde: así el español sale
+ * idéntico. Los `wa…` arman el mensaje de WhatsApp, que escribe la persona y
+ * va en su idioma.
+ */
+const TEXTOS = {
+  es: {
+    tipos: {
+      Apartamento: "Apartamento",
+      Casa: "Casa",
+      Lote: "Lote",
+      "Local comercial": "Local comercial",
+      Otro: "Otro",
+    } as Record<string, string>,
+    conArticulo: {
+      Apartamento: "un apartamento",
+      Casa: "una casa",
+      Lote: "un lote",
+      "Local comercial": "un local comercial",
+      Otro: "un inmueble",
+    } as Record<string, string>,
+    unInmueble: "un inmueble",
+    waConsignar: "Hola, quiero consignar mi propiedad...",
+    waSoy: (nombre: string) => `Soy ${nombre}.`,
+    waEs: (inmueble: string, ubicacion: string) => `Es ${inmueble}${ubicacion ? ` en ${ubicacion}` : ""}.`,
+    waHola: (nombre: string) => `Hola Rafael, soy ${nombre}.`,
+    waMeInteresa: (proyecto: string) => `Me interesa ${proyecto}.`,
+    waAsesoria: "Me interesa tu asesoría inmobiliaria.",
+    waContacto: (contacto: string) => `Me contactas en: ${contacto}`,
+    waAutorizo: "Autorizo el tratamiento de mis datos según la política publicada en rhfliving.com/privacidad.",
+    faltaAutorizacion: "Necesitamos tu autorización para tratar tus datos antes de continuar.",
+    enviado: "Mensaje enviado",
+    gracias: "Gracias",
+    okConsignar:
+      "Los datos de tu inmueble ya nos llegaron. Rafael te escribe al contacto que nos dejaste para agendar la llamada.",
+    okConsulta: "Tu consulta ya nos llegó y te escribimos al contacto que nos dejaste.",
+    prefieroWhatsApp: "Prefiero escribir por WhatsApp",
+    tituloConsignar: "Cuéntanos de tu inmueble",
+    tituloContacto: "Déjanos tus datos",
+    nombre: "Nombre",
+    nombrePlaceholder: "Tu nombre completo",
+    contacto: "Teléfono o email",
+    contactoPlaceholder: "¿Cómo te contactamos?",
+    ubicacion: "Ubicación del inmueble",
+    ubicacionPlaceholder: "Barrio o conjunto, y ciudad",
+    tipoInmueble: "Tipo de inmueble",
+    tipoPlaceholder: "Selecciona el tipo",
+    proyecto: "Proyecto de interés",
+    proyectoPlaceholder: "Selecciona un proyecto",
+    grupoProyectos: "Proyectos de la cartera",
+    grupoInmuebles: "Inmuebles disponibles",
+    otro: "Otro / No estoy seguro",
+    mensaje: "Mensaje",
+    mensajePlaceholderConsignar: "Área aproximada, estado, lo que quieras contarnos (opcional)",
+    mensajePlaceholder: "Cuéntanos qué buscas...",
+    autorizo: "Autorizo a ",
+    tratar: " a tratar mis datos personales para contactarme sobre ",
+    sobreConsignar: "la venta o consignación de mi inmueble",
+    sobreConsulta: "esta consulta",
+    conforme: ", conforme a la",
+    politica: "política de tratamiento de datos",
+    derechos: ". Puedo conocer, actualizar, rectificar o suprimir mis datos escribiendo a ",
+    enviando: "Enviando…",
+    llamame: "Quiero que Rafael me llame",
+    enviar: "Enviar mensaje",
+    falloTitulo: "El envío falló.",
+    falloTexto:
+      " Tu mensaje ya está escrito y listo para mandarlo por WhatsApp, o vuelve a intentarlo en un momento.",
+    escribirWhatsApp: "Escribir por WhatsApp",
+    disclaimer:
+      "Guardamos tu consulta para responderte. La conservamos hasta dos años desde nuestro último contacto, y la borramos antes si nos lo pides.",
+  },
+  en: {
+    tipos: {
+      Apartamento: "Apartment",
+      Casa: "House",
+      Lote: "Lot",
+      "Local comercial": "Commercial space",
+      Otro: "Other",
+    } as Record<string, string>,
+    conArticulo: {
+      Apartamento: "an apartment",
+      Casa: "a house",
+      Lote: "a lot",
+      "Local comercial": "a commercial space",
+      Otro: "a property",
+    } as Record<string, string>,
+    unInmueble: "a property",
+    waConsignar: "Hi, I'd like to list my property...",
+    waSoy: (nombre: string) => `I'm ${nombre}.`,
+    waEs: (inmueble: string, ubicacion: string) => `It's ${inmueble}${ubicacion ? ` in ${ubicacion}` : ""}.`,
+    waHola: (nombre: string) => `Hi Rafael, I'm ${nombre}.`,
+    waMeInteresa: (proyecto: string) => `I'm interested in ${proyecto}.`,
+    waAsesoria: "I'm interested in your real estate advisory services.",
+    waContacto: (contacto: string) => `You can reach me at: ${contacto}`,
+    waAutorizo: "I authorize the processing of my data under the policy published at rhfliving.com/en/privacy.",
+    faltaAutorizacion: "We need your consent to process your data before continuing.",
+    enviado: "Message sent",
+    gracias: "Thank you",
+    okConsignar:
+      "We've received your property details. Rafael will contact you at the phone or email you gave us to schedule the call.",
+    okConsulta: "We've received your inquiry and we'll get back to you at the phone or email you gave us.",
+    prefieroWhatsApp: "I'd rather message on WhatsApp",
+    tituloConsignar: "Tell us about your property",
+    tituloContacto: "Leave us your details",
+    nombre: "Name",
+    nombrePlaceholder: "Your full name",
+    contacto: "Phone or email",
+    contactoPlaceholder: "How should we contact you?",
+    ubicacion: "Property location",
+    ubicacionPlaceholder: "Neighborhood or complex, and city",
+    tipoInmueble: "Property type",
+    tipoPlaceholder: "Select the type",
+    proyecto: "Project of interest",
+    proyectoPlaceholder: "Select a project",
+    grupoProyectos: "Portfolio projects",
+    grupoInmuebles: "Available properties",
+    otro: "Other / Not sure",
+    mensaje: "Message",
+    mensajePlaceholderConsignar: "Approximate area, condition, anything you'd like to tell us (optional)",
+    mensajePlaceholder: "Tell us what you're looking for...",
+    autorizo: "I authorize ",
+    tratar: " to process my personal data to contact me about ",
+    sobreConsignar: "the sale or listing of my property",
+    sobreConsulta: "this inquiry",
+    conforme: ", in accordance with the",
+    politica: "data processing policy",
+    derechos: ". I can access, update, correct or delete my data by writing to ",
+    enviando: "Sending…",
+    llamame: "I'd like Rafael to call me",
+    enviar: "Send message",
+    falloTitulo: "Your message didn't go through.",
+    falloTexto: " It's already written and ready to send on WhatsApp, or you can try again in a moment.",
+    escribirWhatsApp: "Message on WhatsApp",
+    disclaimer:
+      "We keep your inquiry so we can reply. We retain it for up to two years after our last contact, and delete it sooner if you ask us to.",
+  },
+} satisfies Record<Idioma, Record<string, unknown>>;
 
 /** Empuja un evento a la capa de datos de la analítica (src/components/Analitica.tsx). */
 function registrarEvento(datos: Record<string, unknown>) {
@@ -98,21 +245,52 @@ declare global {
 export default function ContactForm({
   proyectoInicial = "",
   variante = "contacto",
+  idioma = "es",
 }: {
-  /** En la página de un proyecto, el formulario llega con ese proyecto elegido. */
+  /**
+   * En la página de un proyecto, el formulario llega con ese proyecto elegido.
+   * Puede llegar con el nombre en cualquiera de los dos idiomas: se guarda el
+   * valor en español.
+   */
   proyectoInicial?: string;
   /**
    * «consignar» (29-sep-2026, /vender): en vez del proyecto de interés pide la
    * ubicación y el tipo del inmueble, y el Worker avisa con otro título.
    */
   variante?: "contacto" | "consignar";
+  idioma?: Idioma;
 } = {}) {
+  const t = TEXTOS[idioma];
   const consignar = variante === "consignar";
+
+  // El selector de proyecto muestra los nombres en el idioma de la página,
+  // pero su valor —lo que se guarda y lo que Rafael lee en Telegram— es el
+  // nombre en español, como siempre.
+  const { PROYECTOS } = proyectos(idioma);
+  const { INMUEBLES } = inmuebles(idioma);
+  const opcionesProyectos = proyectos("es").PROYECTOS.map((p) => ({
+    slug: p.slug,
+    valor: p.nombre,
+    texto: PROYECTOS.find((x) => x.slug === p.slug)?.nombre ?? p.nombre,
+  }));
+  const opcionesInmuebles = inmuebles("es").INMUEBLES.map((i) => ({
+    slug: i.slug,
+    valor: i.nombre,
+    texto: INMUEBLES.find((x) => x.slug === i.slug)?.nombre ?? i.nombre,
+  }));
+  const opciones = [...opcionesProyectos, ...opcionesInmuebles];
+  /** El valor en español de un nombre que llega en cualquiera de los dos idiomas. */
+  const valorDe = (nombre: string) =>
+    opciones.find((o) => o.valor === nombre || o.texto === nombre)?.valor ?? nombre;
+  /** El nombre que ve la persona para un valor del selector. */
+  const textoDe = (valor: string) =>
+    valor === OTRO_PROYECTO ? t.otro : opciones.find((o) => o.valor === valor)?.texto ?? valor;
+
   const [ubicacion, setUbicacion] = useState("");
   const [tipoInmueble, setTipoInmueble] = useState("");
   const [nombre, setNombre] = useState("");
   const [contacto, setContacto] = useState("");
-  const [proyecto, setProyecto] = useState(proyectoInicial);
+  const [proyecto, setProyecto] = useState(() => valorDe(proyectoInicial));
   const [mensaje, setMensaje] = useState("");
   const [autoriza, setAutoriza] = useState(false);
   const [error, setError] = useState("");
@@ -156,26 +334,24 @@ export default function ContactForm({
   function textoWhatsApp(): string {
     if (consignar) {
       return [
-        "Hola, quiero consignar mi propiedad...",
-        nombre.trim() ? `Soy ${nombre.trim()}.` : null,
-        tipoInmueble || ubicacion.trim()
-          ? `Es ${CON_ARTICULO[tipoInmueble] ?? "un inmueble"}${ubicacion.trim() ? ` en ${ubicacion.trim()}` : ""}.`
-          : null,
+        t.waConsignar,
+        nombre.trim() ? t.waSoy(nombre.trim()) : null,
+        tipoInmueble || ubicacion.trim() ? t.waEs(t.conArticulo[tipoInmueble] ?? t.unInmueble, ubicacion.trim()) : null,
         mensaje.trim() ? mensaje.trim() : null,
-        contacto.trim() ? `Me contactas en: ${contacto.trim()}` : null,
+        contacto.trim() ? t.waContacto(contacto.trim()) : null,
         "",
-        "Autorizo el tratamiento de mis datos según la política publicada en rhfliving.com/privacidad.",
+        t.waAutorizo,
       ]
         .filter((l) => l !== null)
         .join("\n");
     }
     return [
-      `Hola Rafael, soy ${nombre.trim()}.`,
-      proyecto ? `Me interesa ${proyecto}.` : "Me interesa tu asesoría inmobiliaria.",
+      t.waHola(nombre.trim()),
+      proyecto ? t.waMeInteresa(textoDe(proyecto)) : t.waAsesoria,
       mensaje.trim() ? mensaje.trim() : null,
-      `Me contactas en: ${contacto.trim()}`,
+      t.waContacto(contacto.trim()),
       "",
-      "Autorizo el tratamiento de mis datos según la política publicada en rhfliving.com/privacidad.",
+      t.waAutorizo,
     ]
       .filter(Boolean)
       .join("\n");
@@ -184,7 +360,7 @@ export default function ContactForm({
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     if (!autoriza) {
-      setError("Necesitamos tu autorización para tratar tus datos antes de continuar.");
+      setError(t.faltaAutorizacion);
       return;
     }
     setError("");
@@ -197,6 +373,8 @@ export default function ContactForm({
     const turnstileToken = campoToken?.value ?? "";
 
     try {
+      // Lo que va al Worker no cambia con el idioma: claves y rótulos en
+      // español; lo que escribió la persona, tal cual.
       const r = await fetch("/api/consulta", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -249,12 +427,11 @@ export default function ContactForm({
     return (
       <div className="contacto-form form-enviado" role="status">
         <span className="form-enviado-marca" aria-hidden="true">✓</span>
-        <h3>Mensaje enviado</h3>
+        <h3>{t.enviado}</h3>
         <p>
-          Gracias{nombre.trim() ? `, ${nombre.trim().split(" ")[0]}` : ""}.{" "}
-          {consignar
-            ? "Los datos de tu inmueble ya nos llegaron. Rafael te escribe al contacto que nos dejaste para agendar la llamada."
-            : "Tu consulta ya nos llegó y te escribimos al contacto que nos dejaste."}
+          {t.gracias}
+          {nombre.trim() ? `, ${nombre.trim().split(" ")[0]}` : ""}.{" "}
+          {consignar ? t.okConsignar : t.okConsulta}
         </p>
         <a
           className="btn-whatsapp"
@@ -262,7 +439,7 @@ export default function ContactForm({
           target="_blank"
           rel="noopener noreferrer"
         >
-          Prefiero escribir por WhatsApp
+          {t.prefieroWhatsApp}
         </a>
       </div>
     );
@@ -273,15 +450,15 @@ export default function ContactForm({
       {cargarTurnstile && (
         <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
       )}
-      <h3>{consignar ? "Cuéntanos de tu inmueble" : "Déjanos tus datos"}</h3>
+      <h3>{consignar ? t.tituloConsignar : t.tituloContacto}</h3>
 
       <label>
-        Nombre
+        {t.nombre}
         <input
           type="text"
           name="nombre"
           autoComplete="name"
-          placeholder="Tu nombre completo"
+          placeholder={t.nombrePlaceholder}
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
@@ -289,12 +466,12 @@ export default function ContactForm({
       </label>
 
       <label>
-        Teléfono o email
+        {t.contacto}
         <input
           type="text"
           name="contacto"
           autoComplete="tel"
-          placeholder="¿Cómo te contactamos?"
+          placeholder={t.contactoPlaceholder}
           value={contacto}
           onChange={(e) => setContacto(e.target.value)}
           required
@@ -304,63 +481,59 @@ export default function ContactForm({
       {consignar ? (
         <>
           <label>
-            Ubicación del inmueble
+            {t.ubicacion}
             <input
               type="text"
               name="ubicacion"
               autoComplete="off"
-              placeholder="Barrio o conjunto, y ciudad"
+              placeholder={t.ubicacionPlaceholder}
               value={ubicacion}
               onChange={(e) => setUbicacion(e.target.value)}
               required
             />
           </label>
           <label>
-            Tipo de inmueble
+            {t.tipoInmueble}
             <select name="tipo_inmueble" value={tipoInmueble} onChange={(e) => setTipoInmueble(e.target.value)} required>
-              <option value="">Selecciona el tipo</option>
-              {TIPOS_INMUEBLE.map((t) => (
-                <option key={t} value={t}>
-                  {t}
+              <option value="">{t.tipoPlaceholder}</option>
+              {TIPOS_INMUEBLE.map((tipo) => (
+                <option key={tipo} value={tipo}>
+                  {t.tipos[tipo]}
                 </option>
               ))}
             </select>
           </label>
         </>
       ) : (
-      <label>
-        Proyecto de interés
-        <select
-          name="proyecto"
-          value={proyecto}
-          onChange={(e) => setProyecto(e.target.value)}
-        >
-          <option value="">Selecciona un proyecto</option>
-          <optgroup label="Proyectos de la cartera">
-            {PROYECTOS.map((p) => (
-              <option key={p.slug} value={p.nombre}>
-                {p.nombre}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Inmuebles disponibles">
-            {INMUEBLES.map((i) => (
-              <option key={i.slug} value={i.nombre}>
-                {i.nombre}
-              </option>
-            ))}
-          </optgroup>
-          <option value="Otro / No estoy seguro">Otro / No estoy seguro</option>
-        </select>
-      </label>
+        <label>
+          {t.proyecto}
+          <select name="proyecto" value={proyecto} onChange={(e) => setProyecto(e.target.value)}>
+            <option value="">{t.proyectoPlaceholder}</option>
+            <optgroup label={t.grupoProyectos}>
+              {opcionesProyectos.map((o) => (
+                <option key={o.slug} value={o.valor}>
+                  {o.texto}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label={t.grupoInmuebles}>
+              {opcionesInmuebles.map((o) => (
+                <option key={o.slug} value={o.valor}>
+                  {o.texto}
+                </option>
+              ))}
+            </optgroup>
+            <option value={OTRO_PROYECTO}>{t.otro}</option>
+          </select>
+        </label>
       )}
 
       <label>
-        Mensaje
+        {t.mensaje}
         <textarea
           name="mensaje"
           rows={3}
-          placeholder={consignar ? "Área aproximada, estado, lo que quieras contarnos (opcional)" : "Cuéntanos qué buscas..."}
+          placeholder={consignar ? t.mensajePlaceholderConsignar : t.mensajePlaceholder}
           value={mensaje}
           onChange={(e) => setMensaje(e.target.value)}
         />
@@ -396,13 +569,16 @@ export default function ContactForm({
           onChange={(e) => setAutoriza(e.target.checked)}
         />
         <span>
-          Autorizo a {RESPONSABLE} a tratar mis datos personales para contactarme
-          sobre {consignar ? "la venta o consignación de mi inmueble" : "esta consulta"}, conforme a la{" "}
-          <a href="/privacidad" target="_blank" rel="noopener noreferrer">
-            política de tratamiento de datos
+          {t.autorizo}
+          {RESPONSABLE}
+          {t.tratar}
+          {consignar ? t.sobreConsignar : t.sobreConsulta}
+          {t.conforme}{" "}
+          <a href={ruta(idioma, "/privacidad")} target="_blank" rel="noopener noreferrer">
+            {t.politica}
           </a>
-          . Puedo conocer, actualizar, rectificar o suprimir mis datos escribiendo
-          a {CORREO}.
+          {t.derechos}
+          {CORREO}.
         </span>
       </label>
 
@@ -411,7 +587,7 @@ export default function ContactForm({
         className="cf-turnstile"
         data-sitekey={TURNSTILE_SITE_KEY}
         data-appearance="interaction-only"
-        data-language="es"
+        data-language={idioma}
         data-theme="light"
       />
 
@@ -426,7 +602,7 @@ export default function ContactForm({
         type="submit"
         disabled={estado === "enviando"}
       >
-        {estado === "enviando" ? "Enviando…" : consignar ? "Quiero que Rafael me llame" : "Enviar mensaje"}
+        {estado === "enviando" ? t.enviando : consignar ? t.llamame : t.enviar}
       </button>
 
       {/* El fallo se dice, y con salida. Quien llenó el formulario tiene el
@@ -435,8 +611,8 @@ export default function ContactForm({
       {estado === "error" && (
         <div className="form-fallo" role="alert">
           <p>
-            <strong>El envío falló.</strong> Tu mensaje ya está escrito y listo
-            para mandarlo por WhatsApp, o vuelve a intentarlo en un momento.
+            <strong>{t.falloTitulo}</strong>
+            {t.falloTexto}
           </p>
           <a
             className="btn-whatsapp"
@@ -444,15 +620,12 @@ export default function ContactForm({
             target="_blank"
             rel="noopener noreferrer"
           >
-            Escribir por WhatsApp
+            {t.escribirWhatsApp}
           </a>
         </div>
       )}
 
-      <p className="form-disclaimer">
-        Guardamos tu consulta para responderte. La conservamos hasta dos años
-        desde nuestro último contacto, y la borramos antes si nos lo pides.
-      </p>
+      <p className="form-disclaimer">{t.disclaimer}</p>
     </form>
   );
 }

@@ -9,23 +9,84 @@
  * casilla de autorización no se envía nada (Ley 1581 de 2012). Si el envío
  * falla se dice, y queda WhatsApp como salida; la descarga se entrega solo
  * cuando la consulta quedó guardada.
+ *
+ * En inglés (29-sep-2026) cambian los textos, no lo que se envía: el mensaje
+ * que Rafael lee en Telegram sigue en español, con el título de la guía en
+ * español (se busca por su `origen`).
  */
 import { useRef, useState } from "react";
 import Script from "next/script";
 import { AVISO_VERSION, TURNSTILE_SITE_KEY } from "@/components/ContactForm";
 import { CORREO, RESPONSABLE, enlaceWhatsApp } from "@/data/contacto";
+import { ruta, type Idioma } from "@/i18n/idioma";
+import { proceso } from "@/i18n/datos";
+
+/**
+ * Los textos, en los dos idiomas (docs/i18n.md). Cada uno es un nodo de texto
+ * tal como queda en el HTML, con sus espacios de borde: así el español sale
+ * idéntico.
+ */
+const TEXTOS = {
+  es: {
+    faltaAutorizacion: "Necesitamos tu autorización para tratar tus datos antes de enviarte la guía.",
+    listaAntes: "Tu ",
+    listaDespues: " está lista",
+    descargar: "Descargar la guía (PDF)",
+    cerrar: "Cerrar",
+    recibe: "Recibe la ",
+    nombre: "Nombre",
+    correo: "Correo",
+    telefono: "Teléfono",
+    autorizo: "Autorizo a ",
+    tratar:
+      " a tratar mis datos personales para enviarme esta guía y contactarme sobre ella, conforme a la",
+    politica: "política de tratamiento de datos",
+    derechos: ". Puedo conocer, actualizar, rectificar o suprimir mis datos escribiendo a ",
+    enviando: "Enviando…",
+    enviar: "Enviarme la guía",
+    falloTitulo: "El envío falló.",
+    falloTexto: " Pídenos la guía por WhatsApp y te la mandamos por ahí.",
+    whatsapp: (titulo: string) => `Hola Rafael, quiero recibir la ${titulo}.`,
+    pedirla: "Pedirla por WhatsApp",
+  },
+  en: {
+    faltaAutorizacion: "We need your consent to process your data before we send you the guide.",
+    listaAntes: "Your ",
+    listaDespues: " is ready",
+    descargar: "Download the guide (PDF)",
+    cerrar: "Close",
+    recibe: "Get the ",
+    nombre: "Name",
+    correo: "Email",
+    telefono: "Phone",
+    autorizo: "I authorize ",
+    tratar:
+      " to process my personal data to send me this guide and contact me about it, in accordance with the",
+    politica: "data processing policy",
+    derechos: ". I can access, update, correct or delete my data by writing to ",
+    enviando: "Sending…",
+    enviar: "Send me the guide",
+    falloTitulo: "Your request didn't go through.",
+    falloTexto: " Ask us for the guide on WhatsApp and we'll send it to you there.",
+    whatsapp: (titulo: string) => `Hi Rafael, I'd like to get the ${titulo}.`,
+    pedirla: "Request it on WhatsApp",
+  },
+} satisfies Record<Idioma, Record<string, string | ((titulo: string) => string)>>;
 
 export default function FormularioGuia({
   titulo,
   pdf,
   origen,
   alCerrar,
+  idioma = "es",
 }: {
   titulo: string;
   pdf: string;
   origen: string;
   alCerrar?: () => void;
+  idioma?: Idioma;
 }) {
+  const t = TEXTOS[idioma];
   const [nombre, setNombre] = useState("");
   const [correo, setCorreo] = useState("");
   const [telefono, setTelefono] = useState("");
@@ -38,13 +99,16 @@ export default function FormularioGuia({
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     if (!autoriza) {
-      setAviso("Necesitamos tu autorización para tratar tus datos antes de enviarte la guía.");
+      setAviso(t.faltaAutorizacion);
       return;
     }
     setAviso("");
     setEstado("enviando");
     const token =
       form.current?.querySelector<HTMLInputElement>('input[name="cf-turnstile-response"]')?.value ?? "";
+    // El título en español para el mensaje que lee Rafael: lo que va al
+    // Worker no cambia con el idioma de la página.
+    const tituloAviso = Object.values(proceso("es").GUIAS).find((g) => g.origen === origen)?.titulo ?? titulo;
     try {
       const r = await fetch("/api/consulta", {
         method: "POST",
@@ -53,7 +117,7 @@ export default function FormularioGuia({
           nombre: nombre.trim(),
           contacto: [correo.trim(), telefono.trim()].filter(Boolean).join(" · "),
           proyecto: "",
-          mensaje: `Pidió la ${titulo.toLowerCase()} en PDF.`,
+          mensaje: `Pidió la ${tituloAviso.toLowerCase()} en PDF.`,
           autoriza: true,
           version_aviso: AVISO_VERSION,
           origen,
@@ -70,13 +134,17 @@ export default function FormularioGuia({
   if (estado === "ok") {
     return (
       <div className="guia-form guia-lista" role="status">
-        <h3>Tu {titulo.toLowerCase()} está lista</h3>
+        <h3>
+          {t.listaAntes}
+          {titulo.toLowerCase()}
+          {t.listaDespues}
+        </h3>
         <a className="btn-primary" href={pdf} target="_blank" rel="noopener noreferrer" download>
-          Descargar la guía (PDF)
+          {t.descargar}
         </a>
         {alCerrar && (
           <button type="button" className="guia-cerrar" onClick={alCerrar}>
-            Cerrar
+            {t.cerrar}
           </button>
         )}
       </div>
@@ -86,17 +154,20 @@ export default function FormularioGuia({
   return (
     <form className="guia-form" onSubmit={enviar} ref={form}>
       <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="lazyOnload" />
-      <h3>Recibe la {titulo.toLowerCase()}</h3>
+      <h3>
+        {t.recibe}
+        {titulo.toLowerCase()}
+      </h3>
       <label>
-        Nombre
+        {t.nombre}
         <input value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="name" required />
       </label>
       <label>
-        Correo
+        {t.correo}
         <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} autoComplete="email" required />
       </label>
       <label>
-        Teléfono
+        {t.telefono}
         <input type="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} autoComplete="tel" />
       </label>
       <input
@@ -112,35 +183,38 @@ export default function FormularioGuia({
       <label className="form-consentimiento">
         <input type="checkbox" checked={autoriza} onChange={(e) => setAutoriza(e.target.checked)} />
         <span>
-          Autorizo a {RESPONSABLE} a tratar mis datos personales para enviarme esta guía y
-          contactarme sobre ella, conforme a la{" "}
-          <a href="/privacidad" target="_blank" rel="noopener noreferrer">
-            política de tratamiento de datos
+          {t.autorizo}
+          {RESPONSABLE}
+          {t.tratar}{" "}
+          <a href={ruta(idioma, "/privacidad")} target="_blank" rel="noopener noreferrer">
+            {t.politica}
           </a>
-          . Puedo conocer, actualizar, rectificar o suprimir mis datos escribiendo a {CORREO}.
+          {t.derechos}
+          {CORREO}.
         </span>
       </label>
-      <div className="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-appearance="interaction-only" data-language="es" />
+      <div className="cf-turnstile" data-sitekey={TURNSTILE_SITE_KEY} data-appearance="interaction-only" data-language={idioma} />
       {aviso && (
         <p className="form-error" role="alert">
           {aviso}
         </p>
       )}
       <button className="btn-primary" type="submit" disabled={estado === "enviando"}>
-        {estado === "enviando" ? "Enviando…" : "Enviarme la guía"}
+        {estado === "enviando" ? t.enviando : t.enviar}
       </button>
       {estado === "error" && (
         <div className="form-fallo" role="alert">
           <p>
-            <strong>El envío falló.</strong> Pídenos la guía por WhatsApp y te la mandamos por ahí.
+            <strong>{t.falloTitulo}</strong>
+            {t.falloTexto}
           </p>
           <a
             className="btn-whatsapp"
-            href={enlaceWhatsApp(`Hola Rafael, quiero recibir la ${titulo.toLowerCase()}.`)}
+            href={enlaceWhatsApp(t.whatsapp(titulo.toLowerCase()))}
             target="_blank"
             rel="noopener noreferrer"
           >
-            Pedirla por WhatsApp
+            {t.pedirla}
           </a>
         </div>
       )}

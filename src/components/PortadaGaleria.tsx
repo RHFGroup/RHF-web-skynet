@@ -18,18 +18,37 @@
 import { useRef, useState, type ReactNode } from "react";
 import type { Foto } from "@/data/proyectos";
 import { IconoFlecha, IconoFlechaIzq } from "@/components/Iconos";
+import type { Idioma } from "@/i18n/idioma";
 import { avifDe, MEDIA_MOVIL, movilDe } from "@/lib/imagenes";
+
+const TEXTOS = {
+  es: {
+    galeria: "galería",
+    fotosDe: (nombre: string) => `Fotos de ${nombre}`,
+    anterior: "Foto anterior",
+    siguiente: "Foto siguiente",
+  },
+  en: {
+    galeria: "gallery",
+    fotosDe: (nombre: string) => `Photos of ${nombre}`,
+    anterior: "Previous photo",
+    siguiente: "Next photo",
+  },
+} satisfies Record<Idioma, Record<string, string | ((...datos: never[]) => string)>>;
 
 export default function PortadaGaleria({
   fotos,
   nombre,
+  idioma = "es",
   children,
 }: {
   fotos: Foto[];
   nombre: string;
+  idioma?: Idioma;
   /** El texto de la portada: nombre, zona, estado y sello. */
   children: ReactNode;
 }) {
+  const t = TEXTOS[idioma];
   const [actual, setActual] = useState(0);
   // Solo se montan las fotos que ya se pidieron: la galería no descarga siete
   // imágenes para mostrar una.
@@ -61,8 +80,8 @@ export default function PortadaGaleria({
   return (
     <section
       className="pp-portada"
-      aria-roledescription="galería"
-      aria-label={`Fotos de ${nombre}`}
+      aria-roledescription={t.galeria}
+      aria-label={t.fotosDe(nombre)}
       onKeyDown={(e) => {
         if (total < 2) return;
         if (e.key === "ArrowRight") ir(actual + 1);
@@ -112,13 +131,13 @@ export default function PortadaGaleria({
 
       {total > 1 && (
         <div className="pp-portada-controles">
-          <button type="button" onClick={() => ir(actual - 1)} aria-label="Foto anterior">
+          <button type="button" onClick={() => ir(actual - 1)} aria-label={t.anterior}>
             <IconoFlechaIzq />
           </button>
           <span className="pp-portada-contador" aria-live="polite">
             {actual + 1} / {total}
           </span>
-          <button type="button" onClick={() => ir(actual + 1)} aria-label="Foto siguiente">
+          <button type="button" onClick={() => ir(actual + 1)} aria-label={t.siguiente}>
             <IconoFlecha />
           </button>
         </div>

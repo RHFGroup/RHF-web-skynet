@@ -25,3 +25,11 @@ export function enlaceWhatsApp(mensaje: string): string {
 }
 
 export const SALUDO_WHATSAPP = "Hola Rafael, vi tu página y me interesa: ";
+
+/** El mismo saludo, en inglés, para las páginas de /en (docs/i18n.md). */
+export const SALUDO_WHATSAPP_EN = "Hi Rafael, I saw your website and I'm interested in: ";
+
+/** El saludo de WhatsApp en el idioma de la página. */
+export function saludoWhatsApp(idioma: "es" | "en"): string {
+  return idioma === "en" ? SALUDO_WHATSAPP_EN : SALUDO_WHATSAPP;
+}

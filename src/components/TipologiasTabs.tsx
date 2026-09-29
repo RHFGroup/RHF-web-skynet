@@ -6,13 +6,14 @@
  * Cada pestaña dice lo que dice la fuente y nada más: el área con su rótulo
  * literal, habitaciones y baños solo si la fuente los da, el plano si el
  * brochure lo publica y el precio solo si el proyecto puede publicarlo (con su
- * corte). Los datos llegan armados del servidor.
+ * corte). Los datos llegan armados del servidor, ya en el idioma de la página.
  *
  * Accesibilidad: patrón de pestañas del WAI-ARIA, con flechas izquierda y
  * derecha para moverse entre pestañas.
  */
 import { useId, useRef, useState } from "react";
 import type { Plano } from "@/data/proyectos";
+import type { Idioma } from "@/i18n/idioma";
 
 export type TipologiaVista = {
   titulo: string;
@@ -23,11 +24,50 @@ export type TipologiaVista = {
   banos?: string;
   exterior?: string;
   planos: Plano[];
-  /** «$311.500.000 a $341.500.000 · 37 unidades · corte 23 de septiembre de 2026». */
+  /**
+   * «$311.500.000 a $341.500.000 · 37 unidades · corte 23 de septiembre de 2026».
+   * En inglés: «COP 311,500,000 to COP 341,500,000 · 37 units available ·
+   * price as of September 23, 2026».
+   */
   precio: { cifra: string; detalle: string; cop?: { desde: number; hasta: number } } | null;
 };
 
-export default function TipologiasTabs({ tipologias }: { tipologias: TipologiaVista[] }) {
+/** Los espacios al borde son parte del texto: lo separan del dato que va al lado. */
+const TEXTOS = {
+  es: {
+    pestanas: "Tipologías",
+    abrirEnGrande: (alt: string) => `Abrir en grande: ${alt}`,
+    area: "Área",
+    rotula: "La fuente la rotula «",
+    rotulaCierre: "». ",
+    habitaciones: "Habitaciones",
+    banos: "Baños",
+    exterior: "Exterior",
+    precio: "Precio de referencia",
+    fuente: "Fuente: ",
+  },
+  en: {
+    pestanas: "Unit types",
+    abrirEnGrande: (alt: string) => `Open full size: ${alt}`,
+    area: "Area",
+    rotula: "Source label: “",
+    rotulaCierre: "”. ",
+    habitaciones: "Bedrooms",
+    banos: "Bathrooms",
+    exterior: "Outdoor space",
+    precio: "Reference price",
+    fuente: "Source: ",
+  },
+} satisfies Record<Idioma, Record<string, string | ((...datos: never[]) => string)>>;
+
+export default function TipologiasTabs({
+  tipologias,
+  idioma = "es",
+}: {
+  tipologias: TipologiaVista[];
+  idioma?: Idioma;
+}) {
+  const t = TEXTOS[idioma];
   const [activa, setActiva] = useState(0);
   const base = useId();
   const pestañas = useRef<(HTMLButtonElement | null)[]>([]);
@@ -41,10 +81,10 @@ export default function TipologiasTabs({ tipologias }: { tipologias: TipologiaVi
   return (
     <div className="pp-tipos">
       {tipologias.length > 1 && (
-        <div className="pp-tipos-lista" role="tablist" aria-label="Tipologías">
-          {tipologias.map((t, i) => (
+        <div className="pp-tipos-lista" role="tablist" aria-label={t.pestanas}>
+          {tipologias.map((tipo, i) => (
             <button
-              key={t.titulo}
+              key={tipo.titulo}
               ref={(el) => {
                 pestañas.current[i] = el;
               }}
@@ -61,26 +101,26 @@ export default function TipologiasTabs({ tipologias }: { tipologias: TipologiaVi
                 if (e.key === "ArrowLeft") mover(i - 1);
               }}
             >
-              {t.titulo}
+              {tipo.titulo}
             </button>
           ))}
         </div>
       )}
 
-      {tipologias.map((t, i) => (
+      {tipologias.map((tipo, i) => (
         <div
-          key={t.titulo}
+          key={tipo.titulo}
           role={tipologias.length > 1 ? "tabpanel" : undefined}
           id={`${base}-panel-${i}`}
           aria-labelledby={tipologias.length > 1 ? `${base}-tab-${i}` : undefined}
           hidden={i !== activa}
-          className={"pp-tipo" + (t.planos.length > 0 ? " con-planos" : "")}
+          className={"pp-tipo" + (tipo.planos.length > 0 ? " con-planos" : "")}
         >
-          {t.planos.length > 0 && (
+          {tipo.planos.length > 0 && (
             <div className="pp-tipo-planos">
-              {t.planos.map((pl) => (
+              {tipo.planos.map((pl) => (
                 <figure key={pl.src}>
-                  <a href={pl.src} target="_blank" rel="noopener noreferrer" aria-label={`Abrir en grande: ${pl.alt}`}>
+                  <a href={pl.src} target="_blank" rel="noopener noreferrer" aria-label={t.abrirEnGrande(pl.alt)}>
                     <img src={pl.src} alt={pl.alt} width={pl.ancho} height={pl.alto} loading="lazy" decoding="async" />
                   </a>
                   <figcaption>
@@ -92,60 +132,68 @@ export default function TipologiasTabs({ tipologias }: { tipologias: TipologiaVi
           )}
 
           <div className="pp-tipo-datos">
-            {tipologias.length === 1 && <h3>{t.titulo}</h3>}
-            <p className="pp-tipo-detalle">{t.detalle}</p>
+            {tipologias.length === 1 && <h3>{tipo.titulo}</h3>}
+            <p className="pp-tipo-detalle">{tipo.detalle}</p>
             <dl>
               <div>
-                <dt>Área</dt>
+                <dt>{t.area}</dt>
                 <dd>
-                  <strong>{t.area.valor}</strong>
+                  <strong>{tipo.area.valor}</strong>
                   <span>
-                    La fuente la rotula «{t.area.etiqueta}». {t.area.fuente}
+                    {t.rotula}
+                    {tipo.area.etiqueta}
+                    {t.rotulaCierre}
+                    {tipo.area.fuente}
                   </span>
                 </dd>
               </div>
-              {t.alcobas && (
+              {tipo.alcobas && (
                 <div>
-                  <dt>Habitaciones</dt>
+                  <dt>{t.habitaciones}</dt>
                   <dd>
-                    <strong>{t.alcobas}</strong>
+                    <strong>{tipo.alcobas}</strong>
                   </dd>
                 </div>
               )}
-              {t.banos && (
+              {tipo.banos && (
                 <div>
-                  <dt>Baños</dt>
+                  <dt>{t.banos}</dt>
                   <dd>
-                    <strong>{t.banos}</strong>
+                    <strong>{tipo.banos}</strong>
                   </dd>
                 </div>
               )}
-              {t.exterior && (
+              {tipo.exterior && (
                 <div>
-                  <dt>Exterior</dt>
+                  <dt>{t.exterior}</dt>
                   <dd>
-                    <strong>{t.exterior}</strong>
+                    <strong>{tipo.exterior}</strong>
                   </dd>
                 </div>
               )}
-              {t.precio && (
+              {tipo.precio && (
                 <div>
-                  <dt>Precio de referencia</dt>
+                  <dt>{t.precio}</dt>
                   <dd>
                     <strong
-                      data-cop={t.precio.cop?.desde}
+                      data-cop={tipo.precio.cop?.desde}
                       data-cop-hasta={
-                        t.precio.cop && t.precio.cop.hasta !== t.precio.cop.desde ? t.precio.cop.hasta : undefined
+                        tipo.precio.cop && tipo.precio.cop.hasta !== tipo.precio.cop.desde
+                          ? tipo.precio.cop.hasta
+                          : undefined
                       }
                     >
-                      {t.precio.cifra}
+                      {tipo.precio.cifra}
                     </strong>
-                    <span>{t.precio.detalle}</span>
+                    <span>{tipo.precio.detalle}</span>
                   </dd>
                 </div>
               )}
             </dl>
-            <p className="pp-fuente">Fuente: {t.fuente}</p>
+            <p className="pp-fuente">
+              {t.fuente}
+              {tipo.fuente}
+            </p>
           </div>
         </div>
       ))}

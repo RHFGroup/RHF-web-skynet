@@ -9,9 +9,16 @@ import {
   IconoPin,
 } from "@/components/Iconos";
 import type { Icono } from "@/data/proceso";
+import type { Idioma } from "@/i18n/idioma";
 import { MODO_REVISION } from "@/lib/revision";
 // Las marcas de propuesta tienen su estilo aquí: cualquier página que las use lo trae.
 import "@/styles/proceso.css";
+
+/** Los textos, en los dos idiomas (docs/i18n.md). */
+const TEXTOS = {
+  es: { propuesta: "Propuesta · por confirmar" },
+  en: { propuesta: "Proposal · pending confirmation" },
+} satisfies Record<Idioma, Record<string, string>>;
 
 /** El ícono de un servicio o de un paso, por su nombre en proceso.ts. */
 export default function IconoProceso({ icono, size = 24 }: { icono: Icono; size?: number }) {
@@ -36,11 +43,19 @@ export default function IconoProceso({ icono, size = 24 }: { icono: Icono; size?
 }
 
 /** La marca de lo propuesto. Solo existe en las vistas previas. */
-export function EtiquetaPropuesta({ confirmado, nota }: { confirmado: boolean; nota?: string }) {
+export function EtiquetaPropuesta({
+  confirmado,
+  nota,
+  idioma = "es",
+}: {
+  confirmado: boolean;
+  nota?: string;
+  idioma?: Idioma;
+}) {
   if (confirmado) return null;
   return (
     <span className="propuesta" title={nota}>
-      Propuesta · por confirmar{nota ? ` · ${nota}` : ""}
+      {TEXTOS[idioma].propuesta}{nota ? ` · ${nota}` : ""}
     </span>
   );
 }
@@ -51,11 +66,19 @@ export function EtiquetaPropuesta({ confirmado, nota }: { confirmado: boolean; n
  * Solo existe en las vistas previas y solo si algo de la sección falta
  * confirmar.
  */
-export function AvisoPropuesta({ pendiente, nota }: { pendiente: boolean; nota?: string }) {
+export function AvisoPropuesta({
+  pendiente,
+  nota,
+  idioma = "es",
+}: {
+  pendiente: boolean;
+  nota?: string;
+  idioma?: Idioma;
+}) {
   if (!pendiente || !MODO_REVISION) return null;
   return (
     <p className="propuesta propuesta-seccion">
-      Propuesta · por confirmar{nota ? ` — ${nota}` : ""}
+      {TEXTOS[idioma].propuesta}{nota ? ` — ${nota}` : ""}
     </p>
   );
 }

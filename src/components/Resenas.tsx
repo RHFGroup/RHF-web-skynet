@@ -11,13 +11,36 @@
 import Reveal from "@/components/Reveal";
 import { IconoWhatsApp } from "@/components/Iconos";
 import { enlaceWhatsApp } from "@/data/contacto";
-import { fechaNoticia } from "@/data/noticias";
-import { RESENAS } from "@/data/resenas";
+import type { Idioma } from "@/i18n/idioma";
+import { noticias, resenas } from "@/i18n/datos";
 import "@/styles/resenas.css";
 
-const WA_RESENA = enlaceWhatsApp("Hola Rafael, quiero dejarte mi reseña sobre tu asesoría: ");
+/**
+ * Los textos, en los dos idiomas (docs/i18n.md). Cada uno es un nodo de texto
+ * tal como queda en el HTML, con sus espacios de borde: así el español sale
+ * idéntico.
+ */
+const TEXTOS = {
+  es: {
+    whatsapp: "Hola Rafael, quiero dejarte mi reseña sobre tu asesoría: ",
+    kicker: "Reseñas",
+    titulo: "¿Ya compraste con nosotros? Cuéntanos cómo te fue",
+    lede: "Tu experiencia ayuda a otras familias a decidir con calma. Escríbenos tu reseña por WhatsApp y, con tu permiso, la publicamos aquí.",
+    boton: " Dejar mi reseña",
+  },
+  en: {
+    whatsapp: "Hi Rafael, I'd like to leave you a review of your advisory service: ",
+    kicker: "Reviews",
+    titulo: "Already bought with us? Tell us how it went",
+    lede: "Your experience helps other families decide with peace of mind. Send us your review on WhatsApp and, with your permission, we'll publish it here.",
+    boton: " Leave my review",
+  },
+} satisfies Record<Idioma, Record<string, string>>;
 
-export default function Resenas() {
+export default function Resenas({ idioma = "es" }: { idioma?: Idioma }) {
+  const t = TEXTOS[idioma];
+  const { RESENAS } = resenas(idioma);
+  const { fechaNoticia } = noticias(idioma);
   return (
     <section className="section resenas" id="resenas" aria-labelledby="resenas-titulo">
       <div className="section-shell">
@@ -42,15 +65,18 @@ export default function Resenas() {
             “
           </span>
           <div className="resenas-texto">
-            <p className="section-kicker">Reseñas</p>
-            <h2 id="resenas-titulo">¿Ya compraste con nosotros? Cuéntanos cómo te fue</h2>
-            <p className="section-lede">
-              Tu experiencia ayuda a otras familias a decidir con calma. Escríbenos tu reseña por WhatsApp y, con tu
-              permiso, la publicamos aquí.
-            </p>
+            <p className="section-kicker">{t.kicker}</p>
+            <h2 id="resenas-titulo">{t.titulo}</h2>
+            <p className="section-lede">{t.lede}</p>
           </div>
-          <a className="btn-whatsapp resenas-boton" href={WA_RESENA} target="_blank" rel="noopener noreferrer">
-            <IconoWhatsApp /> Dejar mi reseña
+          <a
+            className="btn-whatsapp resenas-boton"
+            href={enlaceWhatsApp(t.whatsapp)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <IconoWhatsApp />
+            {t.boton}
           </a>
         </Reveal>
       </div>

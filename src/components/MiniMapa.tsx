@@ -8,20 +8,36 @@
  * monta. Leaflet se descarga cuando el mapa está por entrar en pantalla.
  */
 import { useEffect, useRef, useState } from "react";
+import type { Idioma } from "@/i18n/idioma";
 import { cargarLeaflet, TESELAS } from "@/lib/leaflet";
 import { movimientoReducido } from "@/lib/motion";
+
+/** Los espacios al borde son parte del texto: lo separan de la fuente. */
+const TEXTOS = {
+  es: {
+    falla: "El mapa quedó fuera de alcance.",
+    verificada: "Coordenada verificada · ",
+  },
+  en: {
+    falla: "The map could not be loaded.",
+    verificada: "Verified coordinates · ",
+  },
+} satisfies Record<Idioma, Record<string, string>>;
 
 export default function MiniMapa({
   lat,
   lon,
   nombre,
   fuente,
+  idioma = "es",
 }: {
   lat: number;
   lon: number;
   nombre: string;
   fuente: string;
+  idioma?: Idioma;
 }) {
+  const t = TEXTOS[idioma];
   const caja = useRef<HTMLDivElement>(null);
   const [cerca, setCerca] = useState(false);
   const [falló, setFalló] = useState(false);
@@ -85,9 +101,12 @@ export default function MiniMapa({
   return (
     <figure className="pp-mapa">
       <div ref={caja} className="pp-mapa-lienzo" aria-hidden="true">
-        {falló && <p className="pp-mapa-falla">El mapa quedó fuera de alcance.</p>}
+        {falló && <p className="pp-mapa-falla">{t.falla}</p>}
       </div>
-      <figcaption>Coordenada verificada · {fuente}</figcaption>
+      <figcaption>
+        {t.verificada}
+        {fuente}
+      </figcaption>
     </figure>
   );
 }

@@ -8,6 +8,8 @@
  * primero la oferta, después quién asesora, el territorio, cómo se compra, las
  * redes y el contacto.
  */
+import { ruta, type Idioma } from "@/i18n/idioma";
+
 export type Seccion = { ancla: string; texto: string; soloMovil?: boolean };
 
 export const SECCIONES_HOME: Seccion[] = [
@@ -56,3 +58,36 @@ export const MENU_PRINCIPAL: EntradaMenu[] = [
   { id: "vender", texto: "Quiero vender / consignar", href: "/vender", destacado: true },
   { id: "mercado", texto: "Inteligencia de mercado", href: "/inteligencia-de-mercado" },
 ];
+
+/**
+ * Las mismas listas en el idioma de la página (29-sep-2026, sitio en inglés).
+ * En español devuelven los arreglos de arriba sin tocarlos; en inglés, los
+ * textos traducidos y las rutas de /en (docs/i18n.md).
+ */
+const SECCIONES_EN: Record<string, string> = {
+  proyectos: "Projects",
+  apartamentos: "Apartments",
+  asesor: "Your advisor",
+  mapa: "The area",
+  "paso-a-paso": "How to buy",
+  noticias: "Market intelligence",
+  redes: "Follow us",
+  contacto: "Contact",
+};
+
+const MENU_EN: Record<EntradaMenu["id"], string> = {
+  inicio: "Home",
+  proyectos: "Projects",
+  vender: "Sell or list your property",
+  mercado: "Market intelligence",
+};
+
+export function seccionesHome(idioma: Idioma): Seccion[] {
+  if (idioma === "es") return SECCIONES_HOME;
+  return SECCIONES_HOME.map((s) => ({ ...s, texto: SECCIONES_EN[s.ancla] ?? s.texto }));
+}
+
+export function menuPrincipal(idioma: Idioma): EntradaMenu[] {
+  if (idioma === "es") return MENU_PRINCIPAL;
+  return MENU_PRINCIPAL.map((e) => ({ ...e, texto: MENU_EN[e.id], href: ruta(idioma, e.href) }));
+}

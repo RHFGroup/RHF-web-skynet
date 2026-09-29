@@ -29,6 +29,11 @@
  * Móvil: el mapa a todo el ancho y a un 70 % de la pantalla, los filtros en
  * una fila que se desliza, la tarjeta del punto tocado en una hoja inferior
  * con los botones siempre a la vista y la lista en carrusel debajo.
+ *
+ * En inglés (29-sep-2026) los rótulos, las categorías, las frases y las
+ * fuentes salen del módulo de la zona en inglés; los nombres de los lugares
+ * no se traducen. El estado de las obras («En obra»…) y las categorías son
+ * claves: se comparan en español y solo se traducen al mostrarlos.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -37,8 +42,9 @@ import { IconoWhatsApp } from "@/components/Iconos";
 import RevealGrupo from "@/components/RevealGrupo";
 import type { PinProyecto } from "@/components/MapaIlustrado";
 import { enlaceWhatsApp } from "@/data/contacto";
-import { GUIAS } from "@/data/proceso";
-import { CATEGORIAS, LUGARES, TIEMPOS_ZONA, type Categoria, type Lugar } from "@/data/zona";
+import type { Categoria, Lugar } from "@/data/zona";
+import { ruta, type Idioma } from "@/i18n/idioma";
+import { etiquetaEstado, etiquetaEstadoObra, etiquetaTipo, proceso, zona } from "@/i18n/datos";
 import type { Ficha } from "@/lib/ficha";
 import { svgGlifo } from "@/lib/glifos";
 import { cargarLeaflet, TESELAS } from "@/lib/leaflet";
@@ -64,16 +70,86 @@ const ZONA_NORTE: Caja = [
   [10.565, -75.452],
 ];
 
-const ESTADO: Record<Ficha["estado"], string> = {
-  "en lanzamiento": "En lanzamiento",
-  "en construcción": "En construcción",
-  "entrega inmediata": "Entrega inmediata",
-};
-const TIPO: Record<NonNullable<Ficha["tipoInmueble"]>, string> = {
-  apartamentos: "Apartamentos",
-  casas: "Casas",
-  apartaestudios: "Apartaestudios",
-};
+/**
+ * Los textos, en los dos idiomas (docs/i18n.md). Cada uno es un nodo de texto
+ * tal como queda en el HTML, con sus espacios de borde: así el español sale
+ * idéntico.
+ */
+const TEXTOS = {
+  es: {
+    proyecto: "Proyecto",
+    todo: "Todo",
+    proyectos: "Proyectos",
+    kicker: "El territorio",
+    titulo: "Mira la zona antes de mirar el apartamento",
+    lede: "Colegios, salud, comercio y vías: lo que ya funciona y lo que está en obra.",
+    filtros: "Qué mostrar en el mapa",
+    desde: "Desde ",
+    fallo: "El mapa quedó fuera de alcance. La lista tiene los mismos puntos.",
+    cargando: "Preparando el mapa de la zona…",
+    acercar: "Acercar el mapa",
+    alejar: "Alejar el mapa",
+    verTodo: "Ver toda la zona",
+    pista: "Haz clic en el mapa para acercar con la rueda",
+    cerrar: "Cerrar",
+    puntos: "Puntos del mapa",
+    nota: "El mapa base dibuja el resto del territorio con datos de OpenStreetMap. Aquí marcamos solo los puntos cuya coordenada verificamos; cada tarjeta dice su fuente.",
+    cierreTitulo: "¿Quieres recorrer la zona con un asesor?",
+    cierreTexto:
+      "Recorre la Zona Norte con nosotros: los proyectos, las vías y lo que ya funciona, en una sola visita.",
+    recorrido: "Hola Rafael, quiero agendar un recorrido por la Zona Norte.",
+    agendarRecorrido: " Agendar recorrido",
+    guia: "Recibir la guía de la zona",
+    corte: " · corte ",
+    entrega: "Entrega: ",
+    verificada: "Coordenada verificada · ",
+    verProyecto: "Ver proyecto",
+    visita: (nombre: string) => `Hola Rafael, quiero agendar una visita a ${nombre}.`,
+    agendarVisita: " Agendar visita",
+    fuente: "Fuente: ",
+    conocer: (nombre: string) => `Hola Rafael, quiero conocer la Zona Norte cerca de ${nombre}.`,
+  },
+  en: {
+    proyecto: "Project",
+    todo: "All",
+    proyectos: "Projects",
+    kicker: "The area",
+    titulo: "See the area before you see the apartment",
+    lede: "Schools, healthcare, shopping and roads: what's already up and running and what's under construction.",
+    filtros: "What to show on the map",
+    desde: "From ",
+    fallo: "The map couldn't load. The list has the same places.",
+    cargando: "Loading the area map…",
+    acercar: "Zoom in",
+    alejar: "Zoom out",
+    verTodo: "Show the whole area",
+    pista: "Click the map to zoom with the scroll wheel",
+    cerrar: "Close",
+    puntos: "Places on the map",
+    nota: "The base map shows the rest of the area with OpenStreetMap data. We mark only the places whose coordinates we verified; each card lists its source.",
+    cierreTitulo: "Want to tour the area with an advisor?",
+    cierreTexto:
+      "Tour the Zona Norte with us: the projects, the roads and what's already up and running, all in one visit.",
+    recorrido: "Hi Rafael, I'd like to schedule a tour of the Zona Norte.",
+    agendarRecorrido: " Schedule a tour",
+    guia: "Get the area guide",
+    corte: " · price as of ",
+    entrega: "Delivery: ",
+    verificada: "Verified coordinates · ",
+    verProyecto: "View project",
+    visita: (nombre: string) => `Hi Rafael, I'd like to schedule a visit to ${nombre}.`,
+    agendarVisita: " Schedule a visit",
+    fuente: "Source: ",
+    conocer: (nombre: string) => `Hi Rafael, I'd like to explore the Zona Norte near ${nombre}.`,
+  },
+} satisfies Record<Idioma, Record<string, unknown>>;
+
+/**
+ * El estado y el tipo de un proyecto salen de `etiquetaEstado` y
+ * `etiquetaTipo` (src/i18n/datos.ts), que los dan en minúscula, como van
+ * dentro de una frase. Aquí abren el rótulo: primera letra en mayúscula.
+ */
+const mayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const claseEstado = (e: NonNullable<Lugar["estado"]>) =>
   e === "Entregado" ? "entregado" : e === "En obra" ? "obra" : "estudio";
@@ -88,8 +164,9 @@ function coincide(it: Item, f: Filtro): boolean {
 
 /** La categoría principal de un lugar: la primera que no es «obras». */
 const categoriaDe = (l: Lugar) => l.categorias.find((c) => c !== "obras") ?? "turismo";
-const ORDEN_CATEGORIAS = CATEGORIAS.map((c) => c.id as string);
-const nombreCategoria = (l: Lugar) => CATEGORIAS.find((c) => c.id === categoriaDe(l))?.nombre ?? "";
+/** El nombre de la categoría principal, en el idioma de la página. */
+const nombreCategoria = (l: Lugar, idioma: Idioma) =>
+  zona(idioma).CATEGORIAS.find((c) => c.id === categoriaDe(l))?.nombre ?? "";
 
 function coordenadaDe(it: Item): { lat: number; lon: number } | null {
   if (it.tipo === "lugar") return it.lugar.coordenada;
@@ -97,10 +174,22 @@ function coordenadaDe(it: Item): { lat: number; lon: number } | null {
 }
 
 const nombreDe = (it: Item) => (it.tipo === "proyecto" ? it.ficha.nombre : it.lugar.nombre);
-const agendarVisita = (nombre: string) => enlaceWhatsApp(`Hola Rafael, quiero agendar una visita a ${nombre}.`);
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- Leaflet llega de la CDN, sin tipos */
-export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pines: PinProyecto[] }) {
+export default function MapaZona({
+  proyectos,
+  pines,
+  idioma = "es",
+}: {
+  proyectos: Ficha[];
+  pines: PinProyecto[];
+  idioma?: Idioma;
+}) {
+  const t = TEXTOS[idioma];
+  // El módulo se memoriza: LUGARES entra en las dependencias de los efectos
+  // del mapa y tiene que ser el mismo objeto en cada render.
+  const { CATEGORIAS, LUGARES, TIEMPOS_ZONA } = useMemo(() => zona(idioma), [idioma]);
+  const { GUIAS } = proceso(idioma);
   const reducido = usePrefersReducedMotion();
   const seccion = useRef<HTMLElement | null>(null);
   const contenedor = useRef<HTMLDivElement | null>(null);
@@ -122,8 +211,9 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
   const [elegido, setElegido] = useState<{ id: string; desde: "mapa" | "lista" } | null>(null);
   const [guia, setGuia] = useState(false);
 
-  const items: Item[] = useMemo(
-    () => [
+  const items: Item[] = useMemo(() => {
+    const orden = CATEGORIAS.map((c) => c.id as string);
+    return [
       ...proyectos.map((f) => ({
         tipo: "proyecto" as const,
         id: f.slug,
@@ -134,16 +224,15 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
       ...[...LUGARES]
         .sort(
           (a, b) =>
-            ORDEN_CATEGORIAS.indexOf(categoriaDe(a)) - ORDEN_CATEGORIAS.indexOf(categoriaDe(b)) ||
+            orden.indexOf(categoriaDe(a)) - orden.indexOf(categoriaDe(b)) ||
             (a.capa === b.capa ? 0 : a.capa === "hoy" ? -1 : 1),
         )
         .map((l) => ({ tipo: "lugar" as const, id: l.id, lugar: l })),
-    ],
-    [proyectos, pines],
-  );
+    ];
+  }, [proyectos, pines, CATEGORIAS, LUGARES]);
   const filtros: { id: Filtro; nombre: string }[] = [
-    { id: "todo", nombre: "Todo" },
-    { id: "proyectos", nombre: "Proyectos" },
+    { id: "todo", nombre: t.todo },
+    { id: "proyectos", nombre: t.proyectos },
     ...CATEGORIAS,
   ].filter((f) => items.some((it) => coincide(it, f.id as Filtro))) as { id: Filtro; nombre: string }[];
   const visibles = items.filter((it) => coincide(it, filtro));
@@ -299,14 +388,14 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
   // Si el lienzo cambia de tamaño (girar el teléfono), Leaflet se entera.
   useEffect(() => {
     if (!listo) return;
-    let t: ReturnType<typeof setTimeout>;
+    let espera: ReturnType<typeof setTimeout>;
     const alCambiar = () => {
-      clearTimeout(t);
-      t = setTimeout(() => mapaRef.current?.invalidateSize(), 180);
+      clearTimeout(espera);
+      espera = setTimeout(() => mapaRef.current?.invalidateSize(), 180);
     };
     window.addEventListener("resize", alCambiar);
     return () => {
-      clearTimeout(t);
+      clearTimeout(espera);
       window.removeEventListener("resize", alCambiar);
     };
   }, [listo]);
@@ -352,7 +441,7 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
         ul.scrollTo({ top: tarjeta.offsetTop - ul.offsetTop - 12, behavior: reducido ? "auto" : "smooth" });
       }
     }
-  }, [elegido, items, reducido]);
+  }, [elegido, items, reducido, LUGARES]);
 
   useEffect(() => {
     if (!elegido) return;
@@ -376,11 +465,11 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
   return (
     <section className="section section-mapa tr" id="mapa" ref={seccion}>
       <div className="section-shell">
-        <p className="section-kicker">El territorio</p>
-        <h2>Mira la zona antes de mirar el apartamento</h2>
-        <p className="section-lede">Colegios, salud, comercio y vías: lo que ya funciona y lo que está en obra.</p>
+        <p className="section-kicker">{t.kicker}</p>
+        <h2>{t.titulo}</h2>
+        <p className="section-lede">{t.lede}</p>
 
-        <div className="tr-filtros" role="group" aria-label="Qué mostrar en el mapa">
+        <div className="tr-filtros" role="group" aria-label={t.filtros}>
           {filtros.map((f) => (
             <button
               key={f.id}
@@ -398,15 +487,16 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
         {TIEMPOS_ZONA.length > 0 && (
           <div className="tr-tiempos">
             <ul>
-              {TIEMPOS_ZONA.map((t) => (
-                <li key={t.destino}>
-                  <strong>{t.minutos} min</strong>
-                  <span>{t.destino}</span>
+              {TIEMPOS_ZONA.map((tz) => (
+                <li key={tz.destino}>
+                  <strong>{tz.minutos} min</strong>
+                  <span>{tz.destino}</span>
                 </li>
               ))}
             </ul>
             <p>
-              Desde {TIEMPOS_ZONA[0].desde} · {TIEMPOS_ZONA[0].fuente} · {TIEMPOS_ZONA[0].fecha}
+              {t.desde}
+              {TIEMPOS_ZONA[0].desde} · {TIEMPOS_ZONA[0].fuente} · {TIEMPOS_ZONA[0].fecha}
             </p>
           </div>
         )}
@@ -422,22 +512,18 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
           >
             <div ref={contenedor} className="tr-lienzo" aria-hidden="true" />
             {!listo && (
-              <p className="tr-cargando">
-                {falló
-                  ? "El mapa quedó fuera de alcance. La lista tiene los mismos puntos."
-                  : "Preparando el mapa de la zona…"}
-              </p>
+              <p className="tr-cargando">{falló ? t.fallo : t.cargando}</p>
             )}
             {listo && (
               <>
                 <div className="tr-controles">
-                  <button type="button" aria-label="Acercar el mapa" onClick={() => mapaRef.current?.zoomIn()}>
+                  <button type="button" aria-label={t.acercar} onClick={() => mapaRef.current?.zoomIn()}>
                     +
                   </button>
-                  <button type="button" aria-label="Alejar el mapa" onClick={() => mapaRef.current?.zoomOut()}>
+                  <button type="button" aria-label={t.alejar} onClick={() => mapaRef.current?.zoomOut()}>
                     −
                   </button>
-                  <button type="button" aria-label="Ver toda la zona" className="tr-control-todo" onClick={verTodo}>
+                  <button type="button" aria-label={t.verTodo} className="tr-control-todo" onClick={verTodo}>
                     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
                       <path
                         d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
@@ -450,7 +536,7 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
                   </button>
                 </div>
                 <p className="tr-pista" aria-hidden="true">
-                  Haz clic en el mapa para acercar con la rueda
+                  {t.pista}
                 </p>
               </>
             )}
@@ -458,10 +544,10 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
             {/* Teléfono: la tarjeta del punto tocado sube desde abajo. */}
             {hoja && (
               <div className="tr-hoja" role="dialog" aria-label={nombreDe(itemElegido)}>
-                <button type="button" className="tr-hoja-cerrar" onClick={() => setElegido(null)} aria-label="Cerrar">
+                <button type="button" className="tr-hoja-cerrar" onClick={() => setElegido(null)} aria-label={t.cerrar}>
                   ×
                 </button>
-                <Detalle it={itemElegido} enHoja />
+                <Detalle it={itemElegido} enHoja idioma={idioma} />
               </div>
             )}
           </div>
@@ -472,7 +558,7 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
                 ref={lista}
                 key={filtro}
                 className={"tr-lista" + (cambióFiltro ? " tr-lista-nueva" : "")}
-                aria-label="Puntos del mapa"
+                aria-label={t.puntos}
               >
                 {visibles.map((it, i) => (
                   <li
@@ -491,9 +577,9 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
                         setElegido(elegido?.id === it.id ? null : { id: it.id, desde: "lista" })
                       }
                     >
-                      <Cabeza it={it} />
+                      <Cabeza it={it} idioma={idioma} />
                     </button>
-                    <Detalle it={it} />
+                    <Detalle it={it} idioma={idioma} />
                   </li>
                 ))}
               </ul>
@@ -501,29 +587,27 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
           </div>
         </div>
 
-        <p className="tr-nota">
-          El mapa base dibuja el resto del territorio con datos de OpenStreetMap. Aquí marcamos solo los puntos cuya
-          coordenada verificamos; cada tarjeta dice su fuente.
-        </p>
+        <p className="tr-nota">{t.nota}</p>
 
         {/* ── El cierre: recorrer la zona con un asesor ── */}
         <div className="tr-cierre">
           <div>
-            <h3>¿Quieres recorrer la zona con un asesor?</h3>
-            <p>Recorre la Zona Norte con nosotros: los proyectos, las vías y lo que ya funciona, en una sola visita.</p>
+            <h3>{t.cierreTitulo}</h3>
+            <p>{t.cierreTexto}</p>
           </div>
           <div className="tr-cierre-acciones">
             <a
               className="tr-boton tr-boton-camel"
-              href={enlaceWhatsApp("Hola Rafael, quiero agendar un recorrido por la Zona Norte.")}
+              href={enlaceWhatsApp(t.recorrido)}
               target="_blank"
               rel="noopener noreferrer"
             >
-              <IconoWhatsApp size={18} /> Agendar recorrido
+              <IconoWhatsApp size={18} />
+              {t.agendarRecorrido}
             </a>
             {GUIAS.zona.pdf && (
               <button type="button" className="tr-boton tr-boton-borde" onClick={() => setGuia(true)}>
-                Recibir la guía de la zona
+                {t.guia}
               </button>
             )}
           </div>
@@ -534,6 +618,7 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
                 pdf={GUIAS.zona.pdf}
                 origen={GUIAS.zona.origen}
                 alCerrar={() => setGuia(false)}
+                idioma={idioma}
               />
             </div>
           )}
@@ -545,9 +630,11 @@ export default function MapaZona({ proyectos, pines }: { proyectos: Ficha[]; pin
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 /** La parte de la tarjeta que se toca para elegir el punto. */
-function Cabeza({ it }: { it: Item }) {
+function Cabeza({ it, idioma }: { it: Item; idioma: Idioma }) {
+  const t = TEXTOS[idioma];
   if (it.tipo === "proyecto") {
     const f = it.ficha;
+    const tipo = f.tipoInmueble ? mayuscula(etiquetaTipo(f.tipoInmueble, idioma)) : t.proyecto;
     return (
       <span className="tr-cabeza">
         {f.foto ? (
@@ -557,12 +644,17 @@ function Cabeza({ it }: { it: Item }) {
         )}
         <span className="tr-cabeza-texto">
           <span className="tr-eyebrow">
-            {f.tipoInmueble ? TIPO[f.tipoInmueble] : "Proyecto"} · {ESTADO[f.estado]}
+            {tipo} · {mayuscula(etiquetaEstado(f.estado, idioma))}
           </span>
           <strong>{f.nombre}</strong>
           <span className="tr-precio">
             {f.precio}
-            {f.corte && <small> · corte {f.corte}</small>}
+            {f.corte && (
+              <small>
+                {t.corte}
+                {f.corte}
+              </small>
+            )}
           </span>
         </span>
       </span>
@@ -577,8 +669,12 @@ function Cabeza({ it }: { it: Item }) {
       />
       <span className="tr-cabeza-texto">
         <span className="tr-eyebrow-fila">
-          <span className="tr-eyebrow">{nombreCategoria(l)}</span>
-          {l.estado && <span className={"tr-estado tr-estado-" + claseEstado(l.estado)}>{l.estado}</span>}
+          <span className="tr-eyebrow">{nombreCategoria(l, idioma)}</span>
+          {l.estado && (
+            <span className={"tr-estado tr-estado-" + claseEstado(l.estado)}>
+              {etiquetaEstadoObra(l.estado, idioma)}
+            </span>
+          )}
         </span>
         <strong>{l.nombre}</strong>
         <span className="tr-frase">{l.frase}</span>
@@ -588,20 +684,38 @@ function Cabeza({ it }: { it: Item }) {
 }
 
 /** Lo que acompaña a la tarjeta: fuente, coordenada y, en proyectos, los botones. */
-function Detalle({ it, enHoja = false }: { it: Item; enHoja?: boolean }) {
+function Detalle({ it, enHoja = false, idioma }: { it: Item; enHoja?: boolean; idioma: Idioma }) {
+  const t = TEXTOS[idioma];
   if (it.tipo === "proyecto") {
     const f = it.ficha;
     return (
       <div className="tr-detalle">
-        {enHoja && <Cabeza it={it} />}
-        {f.entrega && <p className="tr-dato">Entrega: {f.entrega}</p>}
-        {it.pin && <p className="tr-fuente">Coordenada verificada · {it.pin.fuente}</p>}
+        {enHoja && <Cabeza it={it} idioma={idioma} />}
+        {f.entrega && (
+          <p className="tr-dato">
+            {t.entrega}
+            {f.entrega}
+          </p>
+        )}
+        {it.pin && (
+          <p className="tr-fuente">
+            {t.verificada}
+            {it.pin.fuente}
+          </p>
+        )}
         <div className="tr-acciones">
-          <Link className="tr-boton tr-boton-marino" href={f.href}>
-            Ver proyecto
+          {/* ruta() deja igual un enlace que ya viene en el idioma de la página. */}
+          <Link className="tr-boton tr-boton-marino" href={ruta(idioma, f.href)}>
+            {t.verProyecto}
           </Link>
-          <a className="tr-boton tr-boton-wa" href={agendarVisita(f.nombre)} target="_blank" rel="noopener noreferrer">
-            <IconoWhatsApp size={16} /> Agendar visita
+          <a
+            className="tr-boton tr-boton-wa"
+            href={enlaceWhatsApp(t.visita(f.nombre))}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <IconoWhatsApp size={16} />
+            {t.agendarVisita}
           </a>
         </div>
       </div>
@@ -610,7 +724,7 @@ function Detalle({ it, enHoja = false }: { it: Item; enHoja?: boolean }) {
   const l = it.lugar;
   return (
     <div className="tr-detalle">
-      {enHoja && <Cabeza it={it} />}
+      {enHoja && <Cabeza it={it} idioma={idioma} />}
       {l.imagen && (
         <figure className="tr-imagen">
           <img src={l.imagen.src} alt={l.imagen.alt} loading="lazy" decoding="async" />
@@ -619,19 +733,26 @@ function Detalle({ it, enHoja = false }: { it: Item; enHoja?: boolean }) {
           </figcaption>
         </figure>
       )}
-      {l.coordenada && <p className="tr-fuente">Coordenada verificada · {l.coordenada.fuente}</p>}
+      {l.coordenada && (
+        <p className="tr-fuente">
+          {t.verificada}
+          {l.coordenada.fuente}
+        </p>
+      )}
       <p className="tr-fuente">
-        Fuente: {l.fuente} · {l.fecha}
+        {t.fuente}
+        {l.fuente} · {l.fecha}
       </p>
       {enHoja && (
         <div className="tr-acciones">
           <a
             className="tr-boton tr-boton-wa"
-            href={enlaceWhatsApp(`Hola Rafael, quiero conocer la Zona Norte cerca de ${l.nombre}.`)}
+            href={enlaceWhatsApp(t.conocer(l.nombre))}
             target="_blank"
             rel="noopener noreferrer"
           >
-            <IconoWhatsApp size={16} /> Agendar recorrido
+            <IconoWhatsApp size={16} />
+            {t.agendarRecorrido}
           </a>
         </div>
       )}

@@ -26,6 +26,10 @@
  *
  * Todos los datos llegan armados desde el servidor (`fichaDe`): esta tarjeta
  * no calcula precios ni áreas, los muestra.
+ *
+ * 29-sep-2026 (sitio en inglés): la ficha llega ya en el idioma de la página;
+ * aquí se traducen los textos propios de la tarjeta, el estado (con
+ * `etiquetaEstado`) y el mensaje de WhatsApp. Los enlaces pasan por `ruta()`.
  */
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -40,6 +44,8 @@ import {
   IconoWhatsApp,
 } from "@/components/Iconos";
 import { enlaceWhatsApp } from "@/data/contacto";
+import { etiquetaEstado } from "@/i18n/datos";
+import { ruta, type Idioma } from "@/i18n/idioma";
 import type { Ficha } from "@/lib/ficha";
 import { SIZES_TARJETA, srcSetTarjeta } from "@/lib/imagenes";
 import { usePrefersReducedMotion } from "@/lib/motion";
@@ -52,13 +58,77 @@ const ESTADO: Record<Ficha["estado"], string> = {
   "entrega inmediata": "Entrega inmediata",
 };
 
+const TEXTOS = {
+  es: {
+    nuevo: "Nuevo",
+    apartamento: "Apartamento",
+    corte: "corte ",
+    hab: "hab.",
+    habs: "hab.",
+    bano: "baño",
+    banos: "baños",
+    area: "Área",
+    sello: "Revisado por nuestro estudio jurídico",
+    verMas: "Ver más",
+    tocaVerMas: "Toca para ver más",
+    especial: "Lo que lo hace especial",
+    especialDe: "lo que lo hace especial",
+    entrega: "Entrega: ",
+    rotulaFuente: "Área como la rotula la fuente: ",
+    abreCita: "«",
+    cierraCita: "»",
+    conflicto:
+      "* Las fuentes del promotor publican cifras de área distintas; en la página del proyecto están todas.",
+    agendar: "Agendar visita",
+    verProyecto: "Ver proyecto",
+    volver: "Volver",
+    visita: "Hola Rafael, quiero agendar una visita a ",
+  },
+  en: {
+    nuevo: "New",
+    apartamento: "Apartment",
+    corte: "price as of ",
+    hab: "bed",
+    habs: "beds",
+    bano: "bath",
+    banos: "baths",
+    area: "Area",
+    sello: "Reviewed by our legal team",
+    verMas: "See more",
+    tocaVerMas: "Tap to see more",
+    especial: "What makes it special",
+    especialDe: "what makes it special",
+    entrega: "Delivery: ",
+    rotulaFuente: "Area as labeled by the source: ",
+    abreCita: "“",
+    cierraCita: "”",
+    conflicto: "* The developer's sources publish different area figures; the project page lists all of them.",
+    agendar: "Schedule a visit",
+    verProyecto: "View project",
+    volver: "Back",
+    visita: "Hi Rafael, I'd like to schedule a visit to ",
+  },
+} satisfies Record<Idioma, Record<string, string>>;
+
 /** Cada cuánto cambia la foto de la tarjeta. */
 const INTERVALO_FOTOS_MS = 3600;
 
-/** El rótulo del área en la cara frontal: el literal si es corto. */
-function rotuloArea(etiquetas: string[]): string {
+/** El rótulo del área en la cara frontal: el literal si es corto; si no, el genérico. */
+function rotuloArea(etiquetas: string[], generico: string): string {
   const junto = etiquetas.join(" · ");
-  return etiquetas.length > 0 && junto.length <= 28 ? junto : "Área";
+  return etiquetas.length > 0 && junto.length <= 28 ? junto : generico;
+}
+
+const mayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** El estado en la foto: el de siempre en español; en inglés, el de `etiquetaEstado`. */
+function textoEstado(estado: Ficha["estado"], idioma: Idioma): string {
+  return idioma === "es" ? ESTADO[estado] : mayuscula(etiquetaEstado(estado, idioma));
+}
+
+/** ¿El precio dice «desde» («from»)? La referencia en dólares lo repite (ReferenciaDolares.tsx). */
+function diceDesde(precio: string, idioma: Idioma): boolean {
+  return idioma === "es" ? precio.startsWith("desde") : /^from\b/i.test(precio);
 }
 
 export default function TarjetaGiro({
@@ -66,6 +136,7 @@ export default function TarjetaGiro({
   desdeCartera = false,
   prioritaria = false,
   retraso = 0,
+  idioma = "es",
 }: {
   ficha: Ficha;
   /** La tarjeta está en la cartera de la home: «Volver» regresa aquí. */
@@ -73,6 +144,7 @@ export default function TarjetaGiro({
   prioritaria?: boolean;
   /** Desfase del primer cambio de foto, en ms, para que no roten todas juntas. */
   retraso?: number;
+  idioma?: Idioma;
 }) {
   const [girada, setGirada] = useState(false);
   const ultimoPuntero = useRef<string>("mouse");
@@ -83,6 +155,8 @@ export default function TarjetaGiro({
   const reducido = usePrefersReducedMotion();
 
   const f = ficha;
+  const t = TEXTOS[idioma];
+  const href = ruta(idioma, f.href);
   const fotos = f.fotos.length > 0 ? f.fotos : f.foto ? [f.foto] : [];
   const [fotoActiva, setFotoActiva] = useState(0);
   // La que sale queda debajo, entera, mientras la nueva entra encima.
@@ -123,7 +197,7 @@ export default function TarjetaGiro({
       window.clearInterval(intervalo);
     };
   }, [reducido, aLaVista, girada, fotos.length, retraso]);
-  const whatsapp = enlaceWhatsApp(`Hola Rafael, quiero agendar una visita a ${f.nombre}.`);
+  const whatsapp = enlaceWhatsApp(`${t.visita}${f.nombre}.`);
   const alSalir = () => {
     if (desdeCartera) marcarSalidaDesdeCartera();
   };
@@ -161,7 +235,7 @@ export default function TarjetaGiro({
         if (ultimoPuntero.current === "mouse") {
           // Con ratón la tarjeta ya está girada: el clic abre el proyecto.
           alSalir();
-          router.push(f.href);
+          router.push(href);
           return;
         }
         // Táctil o lápiz: el toque gira y vuelve.
@@ -204,10 +278,10 @@ export default function TarjetaGiro({
                 <span>{f.nombre}</span>
               </div>
             )}
-            <span className="tg-estado">{f.estadoTexto ?? ESTADO[f.estado]}</span>
-            {f.nuevo && <span className="tg-nuevo">Nuevo</span>}
+            <span className="tg-estado">{f.estadoTexto ?? textoEstado(f.estado, idioma)}</span>
+            {f.nuevo && <span className="tg-nuevo">{t.nuevo}</span>}
             {/* 25-sep-2026: los apartamentos van en la misma cartera; esta marca los distingue. */}
-            {f.origen === "apartamento" && <span className="tg-origen">Apartamento</span>}
+            {f.origen === "apartamento" && <span className="tg-origen">{t.apartamento}</span>}
             {fotos.length > 1 && (
               <span className="tg-puntos" aria-hidden="true">
                 {fotos.map((foto, i) => (
@@ -222,7 +296,7 @@ export default function TarjetaGiro({
             <div className="tg-cabeza">
               <div className="tg-titulos">
                 <h3 className="tg-nombre">
-                  <Link href={f.href} onClick={alSalir}>
+                  <Link href={href} onClick={alSalir}>
                     {f.nombre}
                   </Link>
                 </h3>
@@ -233,11 +307,16 @@ export default function TarjetaGiro({
                 {/* data-cop: la referencia en dólares (ReferenciaDolares.tsx). */}
                 <strong
                   data-cop={f.muestraPrecio && f.precioDesde ? f.precioDesde : undefined}
-                  data-desde={f.muestraPrecio && f.precio.startsWith("desde") ? "" : undefined}
+                  data-desde={f.muestraPrecio && diceDesde(f.precio, idioma) ? "" : undefined}
                 >
                   {f.precio}
                 </strong>
-                {f.corte && <span>corte {f.corte}</span>}
+                {f.corte && (
+                  <span>
+                    {t.corte}
+                    {f.corte}
+                  </span>
+                )}
               </p>
             </div>
 
@@ -246,7 +325,8 @@ export default function TarjetaGiro({
                 <li>
                   <IconoCama />
                   <span>
-                    <strong>{f.alcobas}</strong> hab.
+                    <strong>{f.alcobas}</strong>
+                    {` ${f.alcobas === "1" ? t.hab : t.habs}`}
                   </span>
                 </li>
               )}
@@ -254,7 +334,7 @@ export default function TarjetaGiro({
                 <li>
                   <IconoBano />
                   <span>
-                    <strong>{f.banos}</strong> {f.banos === "1" ? "baño" : "baños"}
+                    <strong>{f.banos}</strong> {f.banos === "1" ? t.bano : t.banos}
                   </span>
                 </li>
               )}
@@ -266,7 +346,7 @@ export default function TarjetaGiro({
                       {f.area.texto}
                       {f.area.conflicto && <sup aria-hidden="true">*</sup>}
                     </strong>
-                    <small>{rotuloArea(f.area.etiquetas)}</small>
+                    <small>{rotuloArea(f.area.etiquetas, t.area)}</small>
                   </span>
                 </li>
               )}
@@ -275,7 +355,8 @@ export default function TarjetaGiro({
             <div className="tg-pie">
               {f.revisionJuridica ? (
                 <p className="tg-sello">
-                  <IconoEscudo size={16} /> Revisado por nuestro estudio jurídico
+                  <IconoEscudo size={16} />
+                  {` ${t.sello}`}
                 </p>
               ) : (
                 <span />
@@ -286,8 +367,8 @@ export default function TarjetaGiro({
                 ref={botonVerMas}
                 onClick={() => girar(true, true)}
               >
-                <span className="tg-ver-mas-raton">Ver más</span>
-                <span className="tg-ver-mas-tactil">Toca para ver más</span>
+                <span className="tg-ver-mas-raton">{t.verMas}</span>
+                <span className="tg-ver-mas-tactil">{t.tocaVerMas}</span>
                 <IconoFlecha size={16} />
               </button>
             </div>
@@ -300,9 +381,9 @@ export default function TarjetaGiro({
           inert={!girada}
           ref={reverso}
           tabIndex={-1}
-          aria-label={`${f.nombre}: lo que lo hace especial`}
+          aria-label={`${f.nombre}: ${t.especialDe}`}
         >
-          <p className="tg-kicker">Lo que lo hace especial</p>
+          <p className="tg-kicker">{t.especial}</p>
           <p className="tg-frase">{f.frase}</p>
 
           {f.destacados.length > 0 && (
@@ -316,31 +397,39 @@ export default function TarjetaGiro({
             </ul>
           )}
 
-          {f.entrega && <p className="tg-entrega">Entrega: {f.entrega}</p>}
+          {f.entrega && (
+            <p className="tg-entrega">
+              {t.entrega}
+              {f.entrega}
+            </p>
+          )}
 
-          {f.area && (f.area.conflicto || rotuloArea(f.area.etiquetas) === "Área") && (
+          {f.area && (f.area.conflicto || rotuloArea(f.area.etiquetas, t.area) === t.area) && (
             <p className="tg-nota">
               {f.area.etiquetas.length > 0 && (
-                <>Área como la rotula la fuente: {f.area.etiquetas.map((e) => `«${e}»`).join(", ")}. </>
+                <>
+                  {t.rotulaFuente}
+                  {f.area.etiquetas.map((e) => `${t.abreCita}${e}${t.cierraCita}`).join(", ")}
+                  {". "}
+                </>
               )}
-              {f.area.conflicto && (
-                <>* Las fuentes del promotor publican cifras de área distintas; en la página del proyecto están todas.</>
-              )}
+              {f.area.conflicto && t.conflicto}
             </p>
           )}
 
           <div className="tg-acciones">
             <a className="tg-btn tg-btn-principal" href={whatsapp} target="_blank" rel="noopener noreferrer">
-              <IconoWhatsApp size={18} /> Agendar visita
+              <IconoWhatsApp size={18} />
+              {` ${t.agendar}`}
             </a>
-            <MeInteresaButton label="Me interesa" className="tg-btn tg-btn-secundario" />
+            <MeInteresaButton className="tg-btn tg-btn-secundario" idioma={idioma} />
           </div>
           <div className="tg-enlaces">
-            <Link className="tg-link" href={f.href} onClick={alSalir}>
-              {f.verTexto ?? "Ver proyecto"} <IconoFlecha size={16} />
+            <Link className="tg-link" href={href} onClick={alSalir}>
+              {f.verTexto ?? t.verProyecto} <IconoFlecha size={16} />
             </Link>
             <button type="button" className="tg-volver" onClick={() => girar(false, true)}>
-              Volver
+              {t.volver}
             </button>
           </div>
         </div>

@@ -1,13 +1,21 @@
 "use client";
 
-import { SALUDO_WHATSAPP, enlaceWhatsApp } from "@/data/contacto";
+import { enlaceWhatsApp, saludoWhatsApp } from "@/data/contacto";
+import type { Idioma } from "@/i18n/idioma";
 
 /**
  * Abre el widget de chat del agente de atención.
  *
  * `label` y `className` son opcionales para no romper los usos existentes
  * (`<MeInteresaButton />` en la home y en Cartera).
+ *
+ * 29-sep-2026 (sitio en inglés): sin `label`, el texto va en el idioma de la
+ * página, y el respaldo de WhatsApp lleva el saludo en ese idioma.
  */
+const TEXTOS = {
+  es: { label: "Me interesa" },
+  en: { label: "I'm interested" },
+} satisfies Record<Idioma, Record<string, string>>;
 
 /**
  * Selectores del botón que **abre** el widget, del más estable al más frágil.
@@ -59,11 +67,13 @@ function panelAbierto(): HTMLElement | null {
 }
 
 export default function MeInteresaButton({
-  label = "Me interesa",
+  label,
   className = "btn-card",
+  idioma = "es",
 }: {
   label?: string;
   className?: string;
+  idioma?: Idioma;
 }) {
   return (
     <button
@@ -96,13 +106,13 @@ export default function MeInteresaButton({
             SELECTORES_DEL_TOGGLE.join(", ")
         );
         window.open(
-          enlaceWhatsApp(SALUDO_WHATSAPP),
+          enlaceWhatsApp(saludoWhatsApp(idioma)),
           "_blank",
           "noopener,noreferrer"
         );
       }}
     >
-      {label}
+      {label ?? TEXTOS[idioma].label}
     </button>
   );
 }

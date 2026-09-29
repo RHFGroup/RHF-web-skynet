@@ -17,27 +17,20 @@
  *
  * La nota con la TRM y su fecha va en el pie (#nota-trm): la referencia no se
  * muestra sin decir de dónde sale.
+ *
+ * El idioma sale de `<html lang>` cada vez que pinta: el componente vive en el
+ * layout raíz y no recibe props. En inglés la cifra dice siempre «reference»
+ * («≈ US$83,000 reference», docs/i18n.md).
  */
 import { useEffect } from "react";
+import { fechaLarga, type Idioma } from "@/i18n/idioma";
 import { EVENTO_MONEDA, formatoDolares, formatoTRM, monedaActual, obtenerTRM, type TRM } from "@/lib/moneda";
-
-const MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-const MESES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-function fechaLarga(iso: string, idioma: "es" | "en"): string {
-  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return iso;
-  const [, a, mes, d] = m;
-  return idioma === "en"
-    ? `${MESES_EN[Number(mes) - 1]} ${Number(d)}, ${a}`
-    : `${Number(d)} de ${MESES_ES[Number(mes) - 1]} de ${a}`;
-}
 
 export default function ReferenciaDolares() {
   useEffect(() => {
     let trm: TRM | null = null;
     let observador: MutationObserver | null = null;
-    const idioma = (): "es" | "en" => (document.documentElement.lang === "en" ? "en" : "es");
+    const idioma = (): Idioma => (document.documentElement.lang === "en" ? "en" : "es");
 
     const pintar = () => {
       if (!trm) return;
@@ -49,7 +42,7 @@ export default function ReferenciaDolares() {
         const a = formatoDolares(desde / trm!.valor, len);
         const rango = hasta > desde ? ` ${len === "en" ? "to" : "a"} ${formatoDolares(hasta / trm!.valor, len)}` : "";
         const prefijo = "desde" in el.dataset ? (len === "en" ? "from " : "desde ") : "";
-        const texto = `≈ ${prefijo}${a}${rango}`;
+        const texto = `≈ ${prefijo}${a}${rango}${len === "en" ? " reference" : ""}`;
         if (el.dataset.usd !== texto) el.dataset.usd = texto;
       });
       const nota = document.getElementById("nota-trm");
