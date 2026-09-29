@@ -5,6 +5,13 @@
   "name": "rhf-web-skynet",
   "compatibility_date": "2026-09-10",
 
+  // Producción solo en rhfliving.com, detrás de las reglas de la zona
+  // (29-sep-2026). Las vistas previas de Workers Builds siguen en
+  // *.workers.dev: `preview_urls` va explícito porque, si falta, las vistas
+  // previas siguen el valor de `workers_dev`.
+  "workers_dev": false,
+  "preview_urls": true,
+
   // Desde el 18-sep-2026 el Worker tiene código propio, además de servir los
   // assets. `run_worker_first` lo limita a /api/*: todo lo demás se sirve como
   // asset igual que antes, sin pasar por el Worker.
