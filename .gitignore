@@ -44,3 +44,6 @@ next-env.d.ts
 .wrangler/
 
 catalogo-whatsapp.csv
+
+# Secretos locales de wrangler dev (auditoría del 29-sep, AS-11).
+.dev.vars*
