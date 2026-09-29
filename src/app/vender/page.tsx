@@ -103,17 +103,17 @@ export default function PaginaVender() {
                 <source
                   type="image/avif"
                   srcSet="/rafael/retrato-520.avif 520w, /rafael/retrato-1040.avif 1040w"
-                  sizes="(max-width: 860px) 70vw, 360px"
+                  sizes="(max-width: 860px) 70vw, 320px"
                 />
                 <source
                   type="image/webp"
                   srcSet="/rafael/retrato-520.webp 520w, /rafael/retrato-1040.webp 1040w"
-                  sizes="(max-width: 860px) 70vw, 360px"
+                  sizes="(max-width: 860px) 70vw, 320px"
                 />
                 <img
                   src="/rafael/retrato-1040.jpg"
                   srcSet="/rafael/retrato-520.jpg 520w, /rafael/retrato-1040.jpg 1040w"
-                  sizes="(max-width: 860px) 70vw, 360px"
+                  sizes="(max-width: 860px) 70vw, 320px"
                   width={1040}
                   height={1300}
                   decoding="async"
