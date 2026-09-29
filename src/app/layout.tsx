@@ -7,25 +7,16 @@ import ReferenciaDolares from "@/components/ReferenciaDolares";
 import { MONEDA_ANTES_DE_PINTAR } from "@/lib/moneda";
 import Script from "next/script";
 
-// Las fuentes van sin <link rel="preload"> (29-sep-2026). En Chrome 154 una
-// fuente precargada bloquea el primer pintado (RenderBlockingFonts) y, sumada
-// al paint holding, lo retenía cerca de un segundo después de llegar el HTML:
-// la portada pintaba a los 2,4 s en vez de a los 0,7 s (medido con Lighthouse,
-// apagando cada función de Chrome por separado). Sin precarga, el texto sale
-// con la fuente de respaldo ya ajustada (adjustFontFallback) y cambia apenas
-// llega la buena, sin mover nada.
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-serif",
-  preload: false,
 });
 
 const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-sans",
-  preload: false,
 });
 
 export const metadata: Metadata = {
