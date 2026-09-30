@@ -12,6 +12,8 @@
  * /api/solicitud-agente (desde el 29-sep-2026), por donde el agente de
  * atención (WhatsApp y chat de la web) deja la llamada que alguien pidió con
  * Rafael. Los tres caen al mismo buzón de leads y al mismo aviso de Telegram.
+ * Desde el 30-sep-2026, POST /api/suscripcion/confirmar: el enlace del correo
+ * de confirmación del boletín (worker/boletin.ts).
  * Y GET /api/trm (desde el 29-sep-2026): la tasa representativa del mercado
  * del día, para la referencia en dólares que muestra la web junto al precio
  * en pesos. El cron la mantiene al día en D1.
@@ -38,9 +40,30 @@
  */
 
 import { vigilar } from "./vigia";
+import { confirmarSuscripcion, guardarSuscripcion } from "./boletin";
+import {
+  baseDe,
+  cabecerasCors,
+  esc,
+  esVistaPrevia,
+  json,
+  LIMITES,
+  origenPermitido,
+  texto,
+  TOPE_POR_IP,
+  VENTANA_MINUTOS,
+  verificarTurnstile,
+} from "./comun";
 
 export interface Env {
   DB: D1Database;
+  /** La base de las vistas previas (30-sep-2026): `rhf-leads-preview`. Ver
+   *  `baseDe` en worker/comun.ts. Si falta, todo va a `DB`. */
+  DB_PREVIEW?: D1Database;
+  /** Cloudflare Email Service (plan pago de Workers). Con él, el boletín pide
+   *  confirmación por correo; sin él, la suscripción queda activa al
+   *  instante, como antes. Ver worker/boletin.ts. */
+  EMAIL?: SendEmail;
   ASSETS: Fetcher;
   /** Secreto de Turnstile. Mientras no exista, la verificación se salta y
    *  quedan las defensas de abajo. Se agrega con `wrangler secret put`. */
@@ -59,42 +82,8 @@ export interface Env {
   AGENTE_TOKEN?: string;
 }
 
-/**
- * Orígenes que pueden postear, ADEMÁS del propio.
- *
- * La regla principal es «mismo origen que esta petición», que cubre sola
- * producción, cada preview de Cloudflare y cualquier servidor local en
- * cualquier puerto. Una lista blanca de dominios y puertos parece más estricta
- * pero envejece mal: el primer preview con un hash nuevo, o un `wrangler dev`
- * en otro puerto, quedan afuera y el formulario devuelve 403 en silencio —
- * pasó en la prueba del 18-sep con el puerto 8787.
- *
- * Esta lista queda solo para el par apex/www, que son orígenes distintos para
- * el navegador aunque sirvan la misma página.
- */
-const ORIGENES_EXTRA = new Set([
-  "https://rhfliving.com",
-  "https://www.rhfliving.com",
-]);
-
 /** Versión del texto de autorización, si el cliente no manda la suya. */
 const AVISO_POR_DEFECTO = "2026-09-18";
-
-/** Topes de tamaño. Un campo más largo que esto es ruido o ataque. */
-const LIMITES = {
-  cuerpo: 16 * 1024,
-  nombre: 120,
-  contacto: 160,
-  proyecto: 80,
-  mensaje: 2000,
-  origen: 200,
-  userAgent: 400,
-  version: 32,
-} as const;
-
-/** Envíos permitidos desde una misma IP en la ventana de abajo. */
-const TOPE_POR_IP = 5;
-const VENTANA_MINUTOS = 10;
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -106,6 +95,10 @@ export default {
 
     if (url.pathname === "/api/suscripcion") {
       return guardarSuscripcion(request, env);
+    }
+
+    if (url.pathname === "/api/suscripcion/confirmar") {
+      return confirmarSuscripcion(request, env);
     }
 
     if (url.pathname === "/api/solicitud-agente") {
@@ -206,12 +199,13 @@ async function guardarConsulta(
   );
   const ahora = new Date();
 
-  if (ip && (await demasiadosEnvios(env.DB, ip, ahora))) {
+  const db = baseDe(env, request);
+  if (ip && (await demasiadosEnvios(db, ip, ahora))) {
     return json({ ok: false, error: "demasiados_envios" }, 429);
   }
 
   try {
-    const r = await env.DB.prepare(
+    const r = await db.prepare(
       `INSERT INTO consultas
          (creado_en, nombre, contacto, proyecto, mensaje,
           autoriza, version_aviso, ip, user_agent, origen)
@@ -246,6 +240,7 @@ async function guardarConsulta(
         mensaje,
         origen,
         creado: ahora,
+        vistaPrevia: esVistaPrevia(request),
       },
       consignar ? "🏷️ <b>Quiere consignar su inmueble</b> · formulario de la web" : undefined,
     );
@@ -254,7 +249,7 @@ async function guardarConsulta(
     // falla, el lead ya está guardado y Rafael ya recibió el mensaje.
     if (aviso.ok && id) {
       ctx.waitUntil(
-        env.DB.prepare(`UPDATE consultas SET notificado_en = ? WHERE id = ?`)
+        db.prepare(`UPDATE consultas SET notificado_en = ? WHERE id = ?`)
           .bind(new Date().toISOString(), id)
           .run()
           .then(() => undefined)
@@ -271,129 +266,6 @@ async function guardarConsulta(
     // formulario muestre el error y le ofrezca WhatsApp a la persona, en vez
     // de decirle «enviado» sobre algo que no se guardó.
     console.error("[consulta] fallo al guardar:", e);
-    return json({ ok: false, error: "fallo_al_guardar" }, 500, request);
-  }
-}
-
-// ── El boletín ────────────────────────────────────────────────────────
-
-/** Versión del texto de autorización del boletín, si el cliente no manda la suya. */
-const AVISO_BOLETIN_POR_DEFECTO = "2026-09-28-boletin";
-
-/**
- * La tabla del boletín. El Worker la crea sola en la primera suscripción
- * (igual que la del vigía), así que no hace falta correr la migración
- * 0003_suscriptores.sql para que funcione: está allá para que el esquema
- * quede escrito donde están los demás.
- *
- * Un correo, una fila: si alguien se vuelve a suscribir, se actualiza la
- * constancia (fecha, versión del texto, IP y navegador) y vuelve a quedar
- * activo. La baja se marca con `estado = 'baja'` y `baja_en`, sin borrar la
- * constancia, para poder demostrar la autorización y la baja.
- *
- * Para leer la lista:
- *   wrangler d1 execute rhf-leads --remote --command "SELECT correo, creado_en, estado FROM suscriptores"
- */
-const CREAR_SUSCRIPTORES = [
-  `CREATE TABLE IF NOT EXISTS suscriptores (
-    id             INTEGER PRIMARY KEY AUTOINCREMENT,
-    creado_en      TEXT    NOT NULL,
-    correo         TEXT    NOT NULL UNIQUE,
-    autoriza       INTEGER NOT NULL CHECK (autoriza = 1),
-    version_aviso  TEXT    NOT NULL,
-    ip             TEXT,
-    user_agent     TEXT,
-    origen         TEXT,
-    estado         TEXT    NOT NULL DEFAULT 'activa' CHECK (estado IN ('activa', 'baja')),
-    actualizado_en TEXT,
-    baja_en        TEXT
-  )`,
-  `CREATE INDEX IF NOT EXISTS idx_suscriptores_ip_creado ON suscriptores(ip, actualizado_en DESC)`,
-];
-let suscriptoresLista = false;
-
-/** Un correo con forma de correo. La verificación de verdad es que llegue. */
-const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-async function guardarSuscripcion(request: Request, env: Env): Promise<Response> {
-  if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: cabecerasCors(request) });
-  }
-  if (request.method !== "POST") {
-    return json({ ok: false, error: "metodo_no_permitido" }, 405);
-  }
-  if (!origenPermitido(request)) {
-    return json({ ok: false, error: "origen_no_permitido" }, 403);
-  }
-
-  let cuerpo: Record<string, unknown>;
-  try {
-    const crudo = await request.text();
-    if (crudo.length > LIMITES.cuerpo) {
-      return json({ ok: false, error: "cuerpo_demasiado_grande" }, 413);
-    }
-    cuerpo = JSON.parse(crudo) as Record<string, unknown>;
-  } catch {
-    return json({ ok: false, error: "json_invalido" }, 400);
-  }
-
-  // La misma trampa para bots del formulario de contacto, que responde igual
-  // que una suscripción real (29-sep, auditoría AS-8).
-  if (texto(cuerpo.sitio)) {
-    return json({ ok: true, guardado: true }, 201, request);
-  }
-
-  // Sin autorización no se guarda (Ley 1581, y el CHECK de la tabla).
-  if (cuerpo.autoriza !== true) {
-    return json({ ok: false, error: "falta_autorizacion" }, 422, request);
-  }
-  const correo = texto(cuerpo.correo).toLowerCase();
-  if (correo.length > LIMITES.contacto || !CORREO_VALIDO.test(correo)) {
-    return json({ ok: false, error: "correo_invalido" }, 422, request);
-  }
-  const versionAviso =
-    texto(cuerpo.version_aviso).slice(0, LIMITES.version) || AVISO_BOLETIN_POR_DEFECTO;
-  const origen = texto(cuerpo.origen).slice(0, LIMITES.origen);
-  const ip = request.headers.get("CF-Connecting-IP") ?? null;
-  const userAgent = (request.headers.get("User-Agent") ?? "").slice(0, LIMITES.userAgent);
-  const ahora = new Date().toISOString();
-
-  try {
-    if (!suscriptoresLista) {
-      await env.DB.batch(CREAR_SUSCRIPTORES.map((q) => env.DB.prepare(q)));
-      suscriptoresLista = true;
-    }
-
-    // El mismo freno por IP del formulario, contado sobre esta tabla.
-    if (ip) {
-      const desde = new Date(Date.now() - VENTANA_MINUTOS * 60_000).toISOString();
-      const fila = await env.DB.prepare(
-        `SELECT COUNT(*) AS n FROM suscriptores WHERE ip = ? AND actualizado_en > ?`,
-      )
-        .bind(ip, desde)
-        .first<{ n: number }>();
-      if ((fila?.n ?? 0) >= TOPE_POR_IP) {
-        return json({ ok: false, error: "demasiados_envios" }, 429, request);
-      }
-    }
-
-    await env.DB.prepare(
-      `INSERT INTO suscriptores
-         (creado_en, correo, autoriza, version_aviso, ip, user_agent, origen, estado, actualizado_en)
-       VALUES (?, ?, 1, ?, ?, ?, ?, 'activa', ?)
-       ON CONFLICT(correo) DO NOTHING`,
-    )
-      .bind(ahora, correo, versionAviso, ip, userAgent || null, origen || null, ahora)
-      .run();
-
-    // Si el correo ya estaba, no se toca (29-sep-2026, auditoría AS-4): antes,
-    // cualquiera podía reactivar una baja ajena y reemplazar la constancia de
-    // autorización con su propia IP. Una persona que se dio de baja y quiere
-    // volver lo pide por los canales de contacto. No se dice si el correo ya
-    // estaba: la respuesta es la misma para todos.
-    return json({ ok: true, guardado: true }, 201, request);
-  } catch (e) {
-    console.error("[suscripcion] fallo al guardar:", e);
     return json({ ok: false, error: "fallo_al_guardar" }, 500, request);
   }
 }
@@ -430,6 +302,8 @@ async function notificarTelegram(
     mensaje: string;
     origen: string;
     creado: Date;
+    /** Vino de una vista previa (y quedó en su base): el aviso lo dice. */
+    vistaPrevia?: boolean;
   },
   /** Primera línea del aviso, ya en HTML de Telegram. La escribe el código,
    *  nunca sale de lo que mandó alguien. Por defecto, la de la consulta. */
@@ -461,7 +335,7 @@ async function notificarTelegram(
       : null;
 
   const lineas = [
-    titulo,
+    c.vistaPrevia ? `🧪 <b>[VISTA PREVIA]</b> ${titulo}` : titulo,
     "",
     `<b>Nombre:</b> ${esc(c.nombre)}`,
     `<b>Contacto:</b> ${esc(c.contacto)}`,
@@ -611,9 +485,10 @@ async function guardarSolicitudAgente(
   const prueba = cuerpo.prueba === true;
 
   const ahora = new Date();
+  const db = baseDe(env, request);
   try {
     const desde = new Date(ahora.getTime() - 60 * 60_000).toISOString();
-    const fila = await env.DB.prepare(
+    const fila = await db.prepare(
       `SELECT SUM(CASE WHEN origen = ?1 THEN 1 ELSE 0 END) AS canal,
               SUM(CASE WHEN contacto = ?2 THEN 1 ELSE 0 END) AS tel
          FROM consultas WHERE origen LIKE 'agente:%' AND creado_en > ?3`,
@@ -648,7 +523,7 @@ async function guardarSolicitudAgente(
     .slice(0, LIMITES.mensaje);
 
   try {
-    const r = await env.DB.prepare(
+    const r = await db.prepare(
       `INSERT INTO consultas
          (creado_en, nombre, contacto, proyecto, mensaje,
           autoriza, version_aviso, ip, user_agent, origen, estado)
@@ -683,12 +558,13 @@ async function guardarSolicitudAgente(
         mensaje,
         origen: `agente:${canal}`,
         creado: ahora,
+        vistaPrevia: esVistaPrevia(request),
       },
       titulo,
     );
     if (aviso.ok && id) {
       ctx.waitUntil(
-        env.DB.prepare(`UPDATE consultas SET notificado_en = ? WHERE id = ?`)
+        db.prepare(`UPDATE consultas SET notificado_en = ? WHERE id = ?`)
           .bind(new Date().toISOString(), id)
           .run()
           .then(() => undefined)
@@ -955,11 +831,6 @@ async function trmDelDia(request: Request, env: Env, ctx: ExecutionContext): Pro
   return respuesta;
 }
 
-/** Escapa lo que Telegram interpreta como HTML. */
-function esc(v: string): string {
-  return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
 /** ¿Cuántos envíos hizo esta IP en los últimos minutos? */
 async function demasiadosEnvios(
   db: D1Database,
@@ -980,56 +851,6 @@ async function demasiadosEnvios(
     // falso positivo acá es perder una consulta real.
     return false;
   }
-}
-
-async function verificarTurnstile(
-  secreto: string,
-  token: string,
-  ip: string | null,
-): Promise<boolean> {
-  if (!token) return false;
-  const datos = new FormData();
-  datos.append("secret", secreto);
-  datos.append("response", token);
-  if (ip) datos.append("remoteip", ip);
-  try {
-    const r = await fetch(
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      { method: "POST", body: datos },
-    );
-    const j = (await r.json()) as { success?: boolean };
-    return j.success === true;
-  } catch {
-    return false;
-  }
-}
-
-function origenPermitido(request: Request): boolean {
-  const origen = request.headers.get("Origin");
-  // Sin cabecera Origin no es un envío del formulario desde un navegador: los
-  // navegadores la mandan siempre en un POST, también cuando es del mismo sitio.
-  if (!origen) return false;
-  try {
-    if (origen === new URL(request.url).origin) return true;
-  } catch {
-    /* url rara: cae a la lista de abajo */
-  }
-  return ORIGENES_EXTRA.has(origen);
-}
-
-function cabecerasCors(request: Request): Record<string, string> {
-  const origen = request.headers.get("Origin");
-  if (!origen || !origenPermitido(request)) return {};
-  return {
-    "Access-Control-Allow-Origin": origen,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Max-Age": "86400",
-  };
-}
-
-function texto(v: unknown): string {
-  return typeof v === "string" ? v.trim() : "";
 }
 
 /**
@@ -1053,17 +874,3 @@ function respuestaConsulta(
   return { ok: true, guardado: id > 0, id, notificado: aviso.ok, ...(aviso.motivo ? { motivo_aviso: aviso.motivo } : {}) };
 }
 
-function json(
-  cuerpo: unknown,
-  status: number,
-  request?: Request,
-): Response {
-  return new Response(JSON.stringify(cuerpo), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-      ...(request ? cabecerasCors(request) : {}),
-    },
-  });
-}

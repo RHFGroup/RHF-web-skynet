@@ -132,8 +132,11 @@
 }
 .suscripcion-bajada { margin: 8px 0 0; color: rgb(243 239 230 / 0.78); font-size: 15px; line-height: 1.55; }
 .suscripcion-campos { display: flex; flex-direction: column; gap: 14px; }
-.suscripcion-fila { display: flex; gap: 10px; }
-.suscripcion-fila input {
+/* 30-sep-2026: el orden es campo, casilla y botón. Antes el botón iba al lado
+   del campo y la casilla debajo: en el teléfono quedaba después del botón, y el
+   aviso de que faltaba salía al final del texto legal. */
+.suscripcion-campo { display: flex; flex-direction: column; gap: 8px; }
+.suscripcion-campo input {
   flex: 1;
   min-width: 0;
   padding: 14px 18px;
@@ -144,10 +147,11 @@
   font-family: inherit;
   font-size: 15px;
 }
-.suscripcion-fila input::placeholder { color: rgb(243 239 230 / 0.6); }
-.suscripcion-fila input:focus { outline: 2px solid var(--camel); outline-offset: 2px; border-color: var(--camel); }
+.suscripcion-campo input::placeholder { color: rgb(243 239 230 / 0.6); }
+.suscripcion-campo input:focus { outline: 2px solid var(--camel); outline-offset: 2px; border-color: var(--camel); }
 .suscripcion-boton {
   flex: none;
+  align-self: flex-start;
   padding: 14px 24px;
   border: none;
   border-radius: 9999px;
@@ -174,6 +178,9 @@
 .suscripcion-consentimiento input { flex: none; width: 18px; height: 18px; margin-top: 1px; accent-color: var(--camel); }
 .suscripcion-consentimiento a { color: var(--camel-light); text-decoration: underline; text-underline-offset: 3px; }
 .suscripcion-error { margin: 0; color: #ffd2c2; font-size: 13.5px; font-weight: 600; }
+.suscripcion-error a { color: var(--camel-light); text-decoration: underline; text-underline-offset: 3px; }
+.suscripcion-campo input[aria-invalid="true"] { border-color: #ffd2c2; }
+.suscripcion-consentimiento input[aria-invalid="true"] { outline: 2px solid #ffd2c2; outline-offset: 2px; }
 .suscripcion-trampa {
   position: absolute;
   width: 1px;
@@ -248,8 +255,7 @@
   #noticias .noticia { scroll-snap-align: start; }
   .noticia { padding: 22px 20px 18px; }
   .noticia-titulo { font-size: 21px; }
-  .suscripcion-fila { flex-direction: column; }
-  .suscripcion-boton { width: 100%; }
+  .suscripcion-boton { width: 100%; align-self: stretch; }
   .np-portada { padding: 48px 0 28px; }
 }
 /* movimiento: sistema o preferencia (src/lib/motion.ts) */
@@ -269,3 +275,20 @@
 :root[data-mov="reducido"] .noticia:hover,
 :root[data-mov="reducido"] .noticias-todas:hover,
 :root[data-mov="reducido"] .suscripcion-boton:hover { transform: none; }
+
+/* La confirmación del boletín (/boletin/confirmar y /en/newsletter/confirm, 30-sep-2026). */
+.boletin-confirmar {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 48px 20px;
+  background: var(--marfil);
+}
+.boletin-confirmar .suscripcion { width: min(560px, 100%); margin: 0; grid-template-columns: minmax(0, 1fr); }
+.boletin-confirmar h1.suscripcion-titulo { font-size: clamp(28px, 4vw, 38px); }
+.boletin-confirmar-acciones { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; align-items: center; }
+.boletin-confirmar-acciones a { color: var(--camel-light); text-decoration: underline; text-underline-offset: 3px; font-size: 14px; }
+.boletin-confirmar-volver { display: inline-block; margin-top: 18px; color: rgb(243 239 230 / 0.8); font-size: 13.5px; }
+@media (max-width: 640px) {
+  .boletin-confirmar .suscripcion { padding: 28px 22px; }
+}

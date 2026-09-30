@@ -28,11 +28,36 @@
 
   // Las consultas del formulario. La lectura se hace con
   // `wrangler d1 execute rhf-leads --remote --command "SELECT ..."`.
+  //
+  // 30-sep-2026: `DB_PREVIEW` es la base de las vistas previas
+  // (`rhf-leads-preview`). El Worker la usa cuando la petición llega a una
+  // dirección de vista previa (`baseDe` en worker/comun.ts): así las pruebas
+  // no quedan entre los leads reales (auditoría del 29-sep, AS-11). Sus
+  // migraciones: `wrangler d1 migrations apply rhf-leads-preview --remote`.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "rhf-leads",
       "database_id": "961a8a5d-0a87-48f7-986c-5e22e5394ea3"
+    },
+    {
+      "binding": "DB_PREVIEW",
+      "database_name": "rhf-leads-preview",
+      "database_id": "b036a63d-37cf-44c3-bab0-fdb210bf25e8"
     }
-  ]
+  ],
+
+  // Los registros del Worker se guardan (30-sep-2026): cuando alguien dice
+  // «no funciona», el resultado de cada intento queda para consultarlo en el
+  // panel, sin depender de tener `wrangler tail` abierto en ese momento. Solo
+  // se guarda lo que el código escribe con console.log, que nunca lleva
+  // correos, teléfonos ni IP: los registros automáticos de cada petición (con
+  // la IP y los encabezados) quedan apagados.
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
+  }
 }

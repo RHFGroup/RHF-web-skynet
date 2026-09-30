@@ -14,7 +14,8 @@ La web solo carga Google Tag Manager, y solo si la persona acepta el aviso de co
    - un botón de WhatsApp;
    - el brochure de un proyecto;
    - «Quiero vender / consignar»;
-   - el formulario de /vender.
+   - el formulario de /vender;
+   - la suscripción al boletín (con un correo de prueba).
    Cada acción debe disparar su etiqueta.
 6. **Publicar** el contenedor y poner su ID (`GTM-…`) en `GTM_ID`, en un PR. Al publicarse la web, aparece el aviso de cookies.
 7. En GA4, *Administrar → Eventos*: marcar `lead_consignar` y `generate_lead` como **eventos clave**. Opcional: `click_whatsapp`.
@@ -30,8 +31,10 @@ La web solo carga Google Tag Manager, y solo si la persona acepta el aviso de co
 | GA4 - lead_consignar | Formulario de /vender enviado, o WhatsApp con el mensaje de consignar | `metodo`, `tipo_inmueble` |
 | GA4 - generate_lead | Formulario de contacto enviado | `formulario`, `proyecto` |
 | GA4 - cambio_moneda | Cambio COP/USD | `moneda` |
+| GA4 - newsletter_signup | Suscripción al boletín enviada | `formulario` = boletin, `idioma`, `page_path` |
 | Meta - Píxel base | Todas las páginas | PageView |
 | Meta - Lead (consignar) | `lead_consignar` | Lead, con `content_name` = consignar |
+| Meta - NewsletterSignup | `newsletter_signup` | Evento personalizado `NewsletterSignup`, con `idioma`. No es «Lead»: un suscriptor no es un lead de las campañas |
 
 El «Lead» de Meta es solo para quien quiere vender o consignar, como pidió el informe de Luciano. Las consultas de compra quedan en GA4 (`generate_lead` y `click_whatsapp`).
 
