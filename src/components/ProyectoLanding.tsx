@@ -143,6 +143,10 @@ const TEXTOS = {
     agendar: " Agendar visita",
     meInteresa: "Me interesa",
     dejanosDatos: "O déjanos tus datos",
+    // El simulador de compra (30-sep-2026)
+    simularTitulo: "¿Te alcanza?",
+    simularTexto: "Mira cuánto pagas en obra, tu cuota y el ingreso que te piden, con tus números.",
+    simular: "Simular cuota",
     kickerCartera: "Nuestra cartera",
     tituloOtros: "Otros proyectos que asesoramos",
     kickerContacto: "Contacto",
@@ -223,6 +227,9 @@ const TEXTOS = {
     agendar: " Schedule a visit",
     meInteresa: "I'm interested",
     dejanosDatos: "Or leave us your details",
+    simularTitulo: "Can you afford it?",
+    simularTexto: "See what you'd pay during construction, your monthly payment and the income required, with your own numbers.",
+    simular: "Estimate my payment",
     kickerCartera: "Our portfolio",
     tituloOtros: "Other projects we advise on",
     kickerContacto: "Contact",
@@ -370,6 +377,15 @@ export default function ProyectoLanding({ p, idioma = "es" }: { p: Proyecto; idi
                 ))}
               </dl>
               <p className="pp-resumen">{p.resumen}</p>
+              {/* El simulador, con este proyecto ya elegido. Solo con precio publicable. */}
+              {precio.muestra && (
+                <a className="pp-simular" href={ruta(idioma, `/simulador?p=${p.slug}`)} data-ubicacion="proyecto-datos">
+                  <span>
+                    <strong>{t.simularTitulo}</strong> {t.simularTexto}
+                  </span>
+                  <span className="pp-simular-boton">{t.simular} →</span>
+                </a>
+              )}
             </section>
 
             {/* 3 · Tipologías ──────────────────────── */}
@@ -580,6 +596,11 @@ export default function ProyectoLanding({ p, idioma = "es" }: { p: Proyecto; idi
                 {t.agendar}
               </a>
               <MeInteresaButton label={t.meInteresa} className="pp-btn pp-btn-secundario" idioma={idioma} />
+              {precio.muestra && (
+                <a className="pp-lateral-simular" href={ruta(idioma, `/simulador?p=${p.slug}`)} data-ubicacion="proyecto-lateral">
+                  {t.simular} →
+                </a>
+              )}
               <a className="pp-lateral-form" href="#contacto">
                 {t.dejanosDatos}
               </a>

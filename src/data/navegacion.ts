@@ -45,7 +45,7 @@ export const SECCIONES_HOME: Seccion[] = [
  * `enHome` es el destino cuando la persona ya está en la home.
  */
 export type EntradaMenu = {
-  id: "inicio" | "proyectos" | "vender" | "mercado";
+  id: "inicio" | "proyectos" | "simulador" | "vender" | "mercado";
   texto: string;
   href: string;
   enHome?: string;
@@ -55,6 +55,8 @@ export type EntradaMenu = {
 export const MENU_PRINCIPAL: EntradaMenu[] = [
   { id: "inicio", texto: "Inicio", href: "/", enHome: "#inicio" },
   { id: "proyectos", texto: "Proyectos", href: "/#proyectos", enHome: "#proyectos" },
+  // 30-sep-2026 (fase 4 de los prompts de Luciano): el simulador de compra.
+  { id: "simulador", texto: "Simulador", href: "/simulador" },
   { id: "vender", texto: "Quiero vender / consignar", href: "/vender", destacado: true },
   { id: "mercado", texto: "Inteligencia de mercado", href: "/inteligencia-de-mercado" },
 ];
@@ -78,6 +80,8 @@ const SECCIONES_EN: Record<string, string> = {
 const MENU_EN: Record<EntradaMenu["id"], string> = {
   inicio: "Home",
   proyectos: "Projects",
+  // Corto en el menú, donde caben cinco entradas; la página se llama «Mortgage calculator».
+  simulador: "Calculator",
   vender: "Sell or list your property",
   mercado: "Market intelligence",
 };

@@ -42,13 +42,34 @@ La verificación del 30-sep-2026 está en el vault: `research/cifras-del-simulad
 
 Y dos definiciones que los casos de prueba dejaban implícitas: T5c y T7 usan leasing con opción de compra del 0 %, y T7 no resta seguros.
 
-## Reglas para la fase 4 (la página)
+## La página (fase 4, 30-sep-2026)
 
-- Una cifra con `verificado: false` nunca se etiqueta «Fuente»: sale como «Supuesto» (`etiquetaDe`).
-- Si pasó la `proximaActualizacion` de una cifra, la etiqueta lo dice (`porActualizar`).
+`/simulador` y `/en/mortgage-calculator`: `src/components/paginas/PaginaSimulador.tsx` arma la página (portada, simulador, guía y preguntas, con sus datos estructurados) y `src/components/simulador/` es el simulador, que corre entero en el navegador.
+
+| Archivo | Qué hace |
+|---|---|
+| `Simulador.tsx` | Estado, inicio rápido, frase con cifras que se tocan, pestañas y tablero |
+| `Pestanas.tsx` | Compra, financiación, gastos, beneficios, inversión y escenarios |
+| `Alcanzan.tsx` | «Proyectos que te alcanzan» y «¿Qué mover para que te alcance?» |
+| `Graficas.tsx` | «Tu camino a la escritura», composición por año y tabla de amortización |
+| `Acciones.tsx` | WhatsApp, enlace, plan en PDF y precalificación (a `/api/consulta`) |
+| `Campos.tsx` | Campos, chips y la etiqueta de cada cifra (Fuente, Supuesto, Tu dato) |
+| `textos.ts` | Los textos en español y en inglés, y las fuentes de la configuración en inglés |
+| `cartera.ts` | La cartera, armada en el build desde `src/data` (precio publicable y corte) |
+| `enlace.ts` | El escenario en la dirección de la página, después del «#» |
+
+Reglas:
+
+- Una cifra con `verificado: false` nunca se etiqueta «Fuente»: sale como «Supuesto» (`etiquetaDe`). Si pasó su `proximaActualizacion`, la etiqueta lo dice (`porActualizar`).
+- La etiqueta muestra `notaPublica`, nunca `nota`: `nota` es para quien mantiene la configuración.
+- El resultado nunca se esconde detrás de un formulario. Los datos de contacto se piden solo para el plan en PDF y para «Quiero ayuda con mi crédito», con la casilla de autorización (Ley 1581) y el mismo texto de `ContactForm` (versión `2026-09-18`).
+- El escenario (con el ingreso y los ahorros) va después del «#» de la dirección: no llega al servidor ni a la analítica. En la consulta solo va lo que no es personal: `?p=slug` desde el botón «Simular cuota» de cada proyecto e inmueble, y las UTM.
+- La analítica recibe rangos, nunca cifras exactas. `generate_lead` es el evento que GTM convierte en «Lead»; `simulator_pdf_lead` y `simulator_prequal_lead` miden el embudo y no se deben mapear a «Lead» (se contaría dos veces).
+- La renta corta solo se calcula para inmuebles con `rentaCorta` en `src/data` (hoy, Doral Suite y Doral Suites 320, según su constructor). Los demás usan renta tradicional.
+- Los meses a la entrega de un proyecto en obra sin fecha publicada son el supuesto `mesesEntregaSupuesto`, marcado.
 - El impuesto de registro de Bolívar es un supuesto hasta confirmarlo con la Gobernación.
 - Mi Casa Ya y la cobertura FRECH quedan apagadas: `disponible: false`.
-- La página no pide datos personales para mostrar un resultado.
+- Una fuente o nota nueva en la configuración necesita su traducción en `FUENTES_EN` (`textos.ts`); sin ella, la página en inglés la muestra en español.
 
 ## Mantenerlo al día
 

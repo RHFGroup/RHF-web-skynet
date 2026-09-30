@@ -31,7 +31,10 @@ export type Parametro<T = number> = {
   verificado: boolean;
   /** AAAA-MM-DD o AAAA-MM. */
   proximaActualizacion?: string;
+  /** Para quien mantiene la configuración: cómo se obtuvo, qué falta. No se publica. */
   nota?: string;
+  /** Lo que la página dice junto a la fuente («Cada entidad puede exigir menos»). */
+  notaPublica?: string;
 };
 
 export type ConfigSimulador = {
@@ -81,6 +84,9 @@ export type ConfigSimulador = {
     comisionOperador: Parametro;
     contribucionTurismo: Parametro;
     mesesVacancia: Parametro;
+    mesesEntregaSupuesto: Parametro;
+    plazoPorDefectoAnios: Parametro;
+    pctFinanciadoPorDefecto: Parametro;
   };
 };
 

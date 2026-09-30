@@ -74,6 +74,8 @@ export type Inmueble = {
   fuentes: string[];
   /** Imagen para compartir en WhatsApp y redes. */
   compartir: string;
+  /** Renta corta aprobada, con su fuente (ver el mismo campo en proyectos.ts). */
+  rentaCorta?: { fuente: string };
 };
 
 const FOTO_PROPIA_FEB = "Foto del apartamento · 28 de febrero de 2026";
@@ -173,6 +175,7 @@ export const INMUEBLES: Inmueble[] = [
       "Fotos del apartamento: 28 de febrero de 2026.",
     ],
     compartir: "/inmuebles/doral-suites-320/01.jpg",
+    rentaCorta: { fuente: "Según su constructor: doralcartagena.com/doral-suites" },
   },
 
   // ─────────────────────────────────────────────────────────────────────────

@@ -40,7 +40,8 @@
       "tipo": "supuesto",
       "verificado": true,
       "proximaActualizacion": "2026-12",
-      "nota": "Es el pronóstico de un banco, no un dato oficial: sirve de escenario base editable para la UVR, el arriendo y la valorización."
+      "nota": "Es el pronóstico de un banco, no un dato oficial: sirve de escenario base editable para la UVR, el arriendo y la valorización.",
+      "notaPublica": "Es el pronóstico de un banco, no un dato oficial."
     },
     "uvr": {
       "valor": 418.8527,
@@ -70,7 +71,8 @@
       "fecha": "2025-05-28",
       "tipo": "fuente",
       "verificado": true,
-      "nota": "Minvivienda publicó en enero de 2026 un borrador para un tope nacional de 135 SMMLV en pesos. Al 30-sep-2026 no se había expedido."
+      "nota": "Minvivienda publicó en enero de 2026 un borrador para un tope nacional de 135 SMMLV en pesos. Al 30-sep-2026 no se había expedido.",
+      "notaPublica": "Minvivienda publicó en enero de 2026 un borrador para un tope nacional de 135 SMMLV. Al 30-sep-2026 no se había expedido."
     },
     "topeVISRenovacionSmmlv": {
       "valor": 175,
@@ -97,7 +99,8 @@
       "fecha": "2021-03-09",
       "tipo": "fuente",
       "verificado": true,
-      "nota": "Es el tope del crédito hipotecario. No aplica al leasing habitacional."
+      "nota": "Es el tope del crédito hipotecario. No aplica al leasing habitacional.",
+      "notaPublica": "Es el tope del crédito hipotecario. No aplica al leasing habitacional."
     },
     "financiacionMaxVIS": {
       "valor": 0.8,
@@ -106,7 +109,8 @@
       "fecha": "2021-03-09",
       "tipo": "fuente",
       "verificado": true,
-      "nota": "Es el tope del crédito hipotecario. No aplica al leasing habitacional."
+      "nota": "Es el tope del crédito hipotecario. No aplica al leasing habitacional.",
+      "notaPublica": "Es el tope del crédito hipotecario. No aplica al leasing habitacional."
     },
     "cuotaIngresoMax": {
       "valor": 0.4,
@@ -115,7 +119,8 @@
       "fecha": "2025-05-28",
       "tipo": "fuente",
       "verificado": true,
-      "nota": "Cada entidad puede exigir menos. El prompt del 30-sep-2026 decía 30 % para No VIS: era la regla anterior al Decreto 583 de 2025."
+      "nota": "Cada entidad puede exigir menos. El prompt del 30-sep-2026 decía 30 % para No VIS: era la regla anterior al Decreto 583 de 2025.",
+      "notaPublica": "Cada entidad puede exigir menos."
     },
     "plazoMinAnios": {
       "valor": 5,
@@ -155,9 +160,26 @@
         "plazoMaxAnios": 20,
         "ingresoMinSmmlv": 3,
         "paises": [
-          "Estados Unidos", "Canadá", "Puerto Rico", "Panamá", "Costa Rica", "El Salvador", "México",
-          "Chile", "Perú", "Reino Unido", "España", "Italia", "Francia", "Alemania", "Suiza",
-          "Holanda", "Bélgica", "Australia", "Nueva Zelanda", "Emiratos Árabes"
+          "Estados Unidos",
+          "Canadá",
+          "Puerto Rico",
+          "Panamá",
+          "Costa Rica",
+          "El Salvador",
+          "México",
+          "Chile",
+          "Perú",
+          "Reino Unido",
+          "España",
+          "Italia",
+          "Francia",
+          "Alemania",
+          "Suiza",
+          "Holanda",
+          "Bélgica",
+          "Australia",
+          "Nueva Zelanda",
+          "Emiratos Árabes"
         ]
       },
       "fuente": "Bancolombia, crédito de vivienda desde el exterior: condiciones y países (referencia de una entidad)",
@@ -165,7 +187,8 @@
       "fecha": "2026-09-30",
       "tipo": "fuente",
       "verificado": true,
-      "nota": "Son las condiciones de una sola entidad. Las de cada banco cambian."
+      "nota": "Son las condiciones de una sola entidad. Las de cada banco cambian.",
+      "notaPublica": "Son las condiciones de una sola entidad; las de cada banco cambian."
     },
     "tasaViviendaPromedio": {
       "valor": 0.1471,
@@ -174,7 +197,8 @@
       "fecha": "2026-09-09",
       "tipo": "fuente",
       "verificado": false,
-      "nota": "Es el promedio de todo el crédito de vivienda, no solo No VIS en pesos. La publicación de la Superfinanciera no se pudo abrir."
+      "nota": "Es el promedio de todo el crédito de vivienda, no solo No VIS en pesos. La publicación de la Superfinanciera no se pudo abrir.",
+      "notaPublica": "Es el promedio de todo el crédito de vivienda desembolsado, no la oferta que te hará un banco."
     },
     "tasaNoVISPesos": {
       "valor": 0.1548,
@@ -183,7 +207,8 @@
       "fecha": "2026-09-18",
       "tipo": "fuente",
       "verificado": false,
-      "nota": "Cálculo de la verificación del 30-sep-2026: hay que repetirlo antes de publicarlo. Se puede automatizar como la TRM."
+      "nota": "Cálculo de la verificación del 30-sep-2026: hay que repetirlo antes de publicarlo. Se puede automatizar como la TRM.",
+      "notaPublica": "Es un promedio de lo desembolsado, no la oferta que te hará un banco: la tasa la define la entidad con tu estudio de crédito."
     },
     "tasaRealUVR": {
       "valor": null,
@@ -196,25 +221,62 @@
     },
     "tasasPorEntidad": {
       "valor": [
-        { "entidad": "Fondo Nacional del Ahorro", "tasaEA": 0.119 },
-        { "entidad": "Bancoomeva", "tasaEA": 0.129 },
-        { "entidad": "AV Villas", "tasaEA": 0.136 },
-        { "entidad": "La Hipotecaria", "tasaEA": 0.143 },
-        { "entidad": "Banco Caja Social", "tasaEA": 0.144 },
-        { "entidad": "BBVA", "tasaEA": 0.144 },
-        { "entidad": "Confiar", "tasaEA": 0.148 },
-        { "entidad": "Davivienda", "tasaEA": 0.149 },
-        { "entidad": "Banco de Occidente", "tasaEA": 0.149 },
-        { "entidad": "Banco Agrario", "tasaEA": 0.15 },
-        { "entidad": "Credifamilia", "tasaEA": 0.161 },
-        { "entidad": "Banco Unión", "tasaEA": 0.174 }
+        {
+          "entidad": "Fondo Nacional del Ahorro",
+          "tasaEA": 0.119
+        },
+        {
+          "entidad": "Bancoomeva",
+          "tasaEA": 0.129
+        },
+        {
+          "entidad": "AV Villas",
+          "tasaEA": 0.136
+        },
+        {
+          "entidad": "La Hipotecaria",
+          "tasaEA": 0.143
+        },
+        {
+          "entidad": "Banco Caja Social",
+          "tasaEA": 0.144
+        },
+        {
+          "entidad": "BBVA",
+          "tasaEA": 0.144
+        },
+        {
+          "entidad": "Confiar",
+          "tasaEA": 0.148
+        },
+        {
+          "entidad": "Davivienda",
+          "tasaEA": 0.149
+        },
+        {
+          "entidad": "Banco de Occidente",
+          "tasaEA": 0.149
+        },
+        {
+          "entidad": "Banco Agrario",
+          "tasaEA": 0.15
+        },
+        {
+          "entidad": "Credifamilia",
+          "tasaEA": 0.161
+        },
+        {
+          "entidad": "Banco Unión",
+          "tasaEA": 0.174
+        }
       ],
       "fuente": "Superintendencia Financiera: promedio ponderado de lo que desembolsó cada entidad en crédito de vivienda, septiembre de 2026, citado por Noticias Caracol",
       "url": "https://www.noticiascaracol.com/economia/bancos-y-entidades-con-las-tasas-mas-bajas-para-credito-de-vivienda-en-septiembre-de-2026-so35",
       "fecha": "2026-09-09",
       "tipo": "fuente",
       "verificado": false,
-      "nota": "Son promedios de lo desembolsado, nunca la oferta que le harán a la persona. Mezclan segmentos: falta separarlas por No VIS en pesos con los microdatos."
+      "nota": "Son promedios de lo desembolsado, nunca la oferta que le harán a la persona. Mezclan segmentos: falta separarlas por No VIS en pesos con los microdatos.",
+      "notaPublica": "Son promedios de lo que desembolsó cada entidad, no la oferta que te harán. Mezclan segmentos (VIS, No VIS, pesos y UVR)."
     },
     "seguroVidaMensual": {
       "valor": 0.000412,
@@ -223,16 +285,18 @@
       "fecha": "2025-10-15",
       "tipo": "fuente",
       "verificado": true,
-      "nota": "Prima mensual con IVA de una sola entidad. Cada banco licita la suya y el seguro de vida depende de la edad. El simulador la aplica sobre el saldo del crédito."
+      "nota": "Prima mensual con IVA de una sola entidad. Cada banco licita la suya y el seguro de vida depende de la edad. El simulador la aplica sobre el saldo del crédito.",
+      "notaPublica": "Tasa de una sola entidad. Cada banco licita la suya y el seguro de vida depende de la edad. Se aplica sobre el saldo del crédito."
     },
     "seguroIncendioMensual": {
-      "valor": 0.000099,
+      "valor": 9.9e-05,
       "fuente": "Banco Serfinanza, licitación 002-2025 del seguro de incendio y terremoto: La Previsora, 0,0099 % mensual (15-ene-2026)",
       "url": "https://bancoserfinanza.com/wp-content/uploads/2026/04/Cuadro-Comparativo-Tasas-Licitacion-002-2025_Incedio-y-Terremoto.pdf",
       "fecha": "2026-01-15",
       "tipo": "fuente",
       "verificado": true,
-      "nota": "Prima mensual con IVA sobre el valor asegurado, de una sola entidad."
+      "nota": "Prima mensual con IVA sobre el valor asegurado, de una sola entidad.",
+      "notaPublica": "Tasa de una sola entidad, sobre el valor asegurado del inmueble."
     },
     "notarial": {
       "valor": {
@@ -251,7 +315,8 @@
       "tipo": "fuente",
       "verificado": true,
       "proximaActualizacion": "2027-02-01",
-      "nota": "La tarifa única de la compraventa VIS aplica cuando se cumplen las condiciones de los Decretos 2158 de 1995 y 371 de 1996."
+      "nota": "La tarifa única de la compraventa VIS aplica cuando se cumplen las condiciones de los Decretos 2158 de 1995 y 371 de 1996.",
+      "notaPublica": "La tarifa única de la compraventa VIS aplica cuando se cumplen las condiciones de los Decretos 2158 de 1995 y 371 de 1996."
     },
     "parteCompradorNotarial": {
       "valor": 0.5,
@@ -263,11 +328,26 @@
     "registro": {
       "valor": {
         "tramos": [
-          { "hasta": 12852101, "fijo": 53100 },
-          { "hasta": 192778606, "porMil": 9.11 },
-          { "hasta": 334149656, "porMil": 11.31 },
-          { "hasta": 494798857, "porMil": 12.6 },
-          { "hasta": null, "porMil": 13.33 }
+          {
+            "hasta": 12852101,
+            "fijo": 53100
+          },
+          {
+            "hasta": 192778606,
+            "porMil": 9.11
+          },
+          {
+            "hasta": 334149656,
+            "porMil": 11.31
+          },
+          {
+            "hasta": 494798857,
+            "porMil": 12.6
+          },
+          {
+            "hasta": null,
+            "porMil": 13.33
+          }
         ],
         "sistematizacion": 0.02,
         "factorHipoteca": 0.7,
@@ -281,15 +361,20 @@
       "tipo": "fuente",
       "verificado": true,
       "proximaActualizacion": "2027-02-01",
-      "nota": "El enlace es la Resolución RES-2026-001896-6, que fija la vigencia; el PDF de la 001726-6 en la Superintendencia no se pudo abrir y se leyó en copia. Si el avalúo catastral es mayor que el precio, el registro se liquida sobre el avalúo."
+      "nota": "El enlace es la Resolución RES-2026-001896-6, que fija la vigencia; el PDF de la 001726-6 en la Superintendencia no se pudo abrir y se leyó en copia. Si el avalúo catastral es mayor que el precio, el registro se liquida sobre el avalúo.",
+      "notaPublica": "Si el avalúo catastral es mayor que el precio, el registro se liquida sobre el avalúo."
     },
     "impuestoRegistro": {
-      "valor": { "compraventa": 0.01, "hipoteca": 0.01 },
+      "valor": {
+        "compraventa": 0.01,
+        "hipoteca": 0.01
+      },
       "fuente": "Supuesto: la Ley 223 de 1995 (art. 230) fija para los departamentos entre 0,5 % y 1 % en actos con cuantía. La tarifa de Bolívar (Ordenanza 384 de 2024) no se pudo verificar.",
       "fecha": "2026-09-30",
       "tipo": "supuesto",
       "verificado": false,
-      "nota": "Confirmar con la Gobernación de Bolívar o con la oficina de registro antes de publicar."
+      "nota": "Confirmar con la Gobernación de Bolívar o con la oficina de registro antes de publicar.",
+      "notaPublica": "Confírmalo con la oficina de registro antes de firmar."
     },
     "deduccionInteresesUVT": {
       "valor": 1200,
@@ -301,7 +386,10 @@
       "verificado": true
     },
     "limiteRentasExentas": {
-      "valor": { "pct": 0.4, "uvt": 1340 },
+      "valor": {
+        "pct": 0.4,
+        "uvt": 1340
+      },
       "fuente": "Estatuto Tributario, art. 336 (Ley 2277 de 2022). Los intereses de vivienda entran en este tope (Concepto DIAN 9067 de 2026).",
       "url": "http://www.secretariasenado.gov.co/senado/basedoc/estatuto_tributario_pr014.html",
       "fecha": "2026-05-29",
@@ -310,23 +398,54 @@
     },
     "tarifasRenta": {
       "valor": [
-        { "desdeUVT": 0, "tarifa": 0, "baseUVT": 0 },
-        { "desdeUVT": 1090, "tarifa": 0.19, "baseUVT": 0 },
-        { "desdeUVT": 1700, "tarifa": 0.28, "baseUVT": 116 },
-        { "desdeUVT": 4100, "tarifa": 0.33, "baseUVT": 788 },
-        { "desdeUVT": 8670, "tarifa": 0.35, "baseUVT": 2296 },
-        { "desdeUVT": 18970, "tarifa": 0.37, "baseUVT": 5901 },
-        { "desdeUVT": 31000, "tarifa": 0.39, "baseUVT": 10352 }
+        {
+          "desdeUVT": 0,
+          "tarifa": 0,
+          "baseUVT": 0
+        },
+        {
+          "desdeUVT": 1090,
+          "tarifa": 0.19,
+          "baseUVT": 0
+        },
+        {
+          "desdeUVT": 1700,
+          "tarifa": 0.28,
+          "baseUVT": 116
+        },
+        {
+          "desdeUVT": 4100,
+          "tarifa": 0.33,
+          "baseUVT": 788
+        },
+        {
+          "desdeUVT": 8670,
+          "tarifa": 0.35,
+          "baseUVT": 2296
+        },
+        {
+          "desdeUVT": 18970,
+          "tarifa": 0.37,
+          "baseUVT": 5901
+        },
+        {
+          "desdeUVT": 31000,
+          "tarifa": 0.39,
+          "baseUVT": 10352
+        }
       ],
       "fuente": "Estatuto Tributario, art. 241 (Ley 2010 de 2019), tabla de la DIAN",
       "url": "https://micrositios.dian.gov.co/renta-personas-naturales-ag-2021/calculo-del-impuesto-a-cargo-en-la-cedula-general/",
       "fecha": "2026-09-30",
       "tipo": "fuente",
       "verificado": true,
-      "nota": "El proyecto de reforma tributaria 004 de 2026 propone subir la tarifa máxima al 41 %; al 14-sep-2026 seguía en comisión."
+      "nota": "El proyecto de reforma tributaria 004 de 2026 propone subir la tarifa máxima al 41 %; al 14-sep-2026 seguía en comisión.",
+      "notaPublica": "Un proyecto de reforma tributaria (004 de 2026) propone subir la tarifa máxima al 41 %; al 14-sep-2026 seguía en comisión."
     },
     "miCasaYa": {
-      "valor": { "disponible": false },
+      "valor": {
+        "disponible": false
+      },
       "fuente": "Fonvivienda, Circular 0012 de 2024, y Fondo Nacional del Ahorro: sin postulaciones nuevas. El 24-sep-2026 el Gobierno anunció «Mi Casa Milagro», sin reglamentar.",
       "url": "https://minvivienda.gov.co/sites/default/files/normativa/circular-0012-16-12-2024.pdf",
       "fecha": "2026-09-30",
@@ -334,13 +453,16 @@
       "verificado": true
     },
     "frech": {
-      "valor": { "disponible": false },
+      "valor": {
+        "disponible": false
+      },
       "fuente": "Sin cupos de cobertura a la tasa abiertos para 2026: Fonvivienda, Circular 0012 de 2024 (cupos agotados), y ninguna norma nueva hallada al 30-sep-2026",
       "url": "https://www.banrep.gov.co/es/normatividad/frech",
       "fecha": "2026-09-30",
       "tipo": "fuente",
       "verificado": true,
-      "nota": "Si vuelve, la cobertura es un monto mensual fijo en pesos, no «puntos» de tasa."
+      "nota": "Si vuelve, la cobertura es un monto mensual fijo en pesos, no «puntos» de tasa.",
+      "notaPublica": "Si vuelve, la cobertura es un monto mensual fijo en pesos, no puntos de tasa."
     },
     "ocupacionRentaCorta": {
       "valor": 0.56,
@@ -349,7 +471,8 @@
       "fecha": "2026-03-12",
       "tipo": "supuesto",
       "verificado": true,
-      "nota": "Dato de un proveedor y promedio de toda la ciudad: la Zona Norte puede ser distinta. El prompt decía 57 % y US$85 para nov-2024 a oct-2025; esa ventana no está publicada."
+      "nota": "Dato de un proveedor y promedio de toda la ciudad: la Zona Norte puede ser distinta. El prompt decía 57 % y US$85 para nov-2024 a oct-2025; esa ventana no está publicada.",
+      "notaPublica": "Dato de un proveedor, promedio de toda la ciudad: la Zona Norte puede ser distinta."
     },
     "tarifaNocheUSD": {
       "valor": 86,
@@ -359,7 +482,8 @@
       "fecha": "2026-03-12",
       "tipo": "supuesto",
       "verificado": true,
-      "nota": "Dato de un proveedor, promedio de toda la ciudad."
+      "nota": "Dato de un proveedor, promedio de toda la ciudad.",
+      "notaPublica": "Dato de un proveedor, promedio de toda la ciudad."
     },
     "comisionOperador": {
       "valor": 0.2,
@@ -374,6 +498,29 @@
       "url": "https://normas.cra.gov.co/gestor/docs/ley_2068_2020.htm",
       "fecha": "2020-12-31",
       "tipo": "fuente",
+      "verificado": true
+    },
+    "mesesEntregaSupuesto": {
+      "valor": 12,
+      "unidad": "meses",
+      "fuente": "Supuesto: el proyecto no publica su fecha estimada de entrega. Cámbialo por la que te den en la sala de ventas.",
+      "fecha": "2026-09-30",
+      "tipo": "supuesto",
+      "verificado": true
+    },
+    "plazoPorDefectoAnios": {
+      "valor": 20,
+      "unidad": "años",
+      "fuente": "Supuesto: plazo con el que arranca el simulador",
+      "fecha": "2026-09-30",
+      "tipo": "supuesto",
+      "verificado": true
+    },
+    "pctFinanciadoPorDefecto": {
+      "valor": 0.7,
+      "fuente": "Supuesto: el simulador arranca con el máximo del crédito hipotecario No VIS",
+      "fecha": "2026-09-30",
+      "tipo": "supuesto",
       "verificado": true
     },
     "mesesVacancia": {

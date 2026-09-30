@@ -213,6 +213,13 @@ export type Proyecto = {
   faq?: { pregunta: string; respuesta: string }[];
   /** La página de avance de obra de la constructora, si existe. */
   avanceObra?: { url: string; fuente: string };
+  /**
+   * Renta corta (menos de 30 días) aprobada, con su fuente. Solo donde un
+   * documento lo dice; el simulador abre el cálculo de renta corta solo aquí.
+   * La fuente dice de quién es la afirmación: hoy, del constructor. El
+   * reglamento de propiedad horizontal es lo que la respalda del todo.
+   */
+  rentaCorta?: { fuente: string };
 };
 
 const SIN_PRECONTRACTUAL: Precontractual = {
@@ -897,6 +904,7 @@ export const PROYECTOS: Proyecto[] = [
     },
     reservas: ["No hay fotos ni video de la tipología del piso 4."],
     tipoInmueble: "apartaestudios",
+    rentaCorta: { fuente: "Según su constructor: doralcartagena.com/doral-suites" },
     // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
     revisionJuridica: false,
     presentacion: {
