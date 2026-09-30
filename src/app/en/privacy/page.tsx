@@ -51,7 +51,7 @@ export default function Privacy() {
       titulo="Personal Data Processing Policy"
       bajada="If you write to us on WhatsApp, through the chat on this website, on Instagram or on Facebook, if you subscribe to the newsletter, or if you leave your details at a trade fair, we end up holding information about you. Here we explain what we do with it, for how long, and how to ask us to delete it."
       // La fecha de la versión en español que traduce esta página.
-      vigencia="September 29, 2026"
+      vigencia="September 30, 2026"
     >
       <Seccion titulo="1. Who is responsible for your data">
         <p>
@@ -332,9 +332,10 @@ export default function Privacy() {
           with his own credentials, and it is not exposed on the website.
         </p>
         <p>
-          The form also uses Cloudflare Turnstile, an automatic check that
-          tells a person apart from a program before the inquiry is saved. For
-          most people it is invisible: there is no image puzzle to solve.
+          The inquiry and newsletter forms also use Cloudflare Turnstile, an
+          automatic check that tells a person apart from a program before what
+          you send is saved. For most people it is invisible: there is no
+          image puzzle to solve.
           Turnstile does not install tracking cookies or use your data for
           advertising, and it runs on the same infrastructure that already hosts
           this website, so your inquiry does not go through an additional third
