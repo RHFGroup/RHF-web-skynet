@@ -35,7 +35,7 @@ import type { ItemCartera, ResultadoItem } from "@/lib/simulador/cartera";
 import { CORREO, RESPONSABLE, TELEFONO_VISIBLE, enlaceWhatsApp } from "@/data/contacto";
 import { fechaLarga, ruta } from "@/i18n/idioma";
 import { useSim } from "@/components/simulador/contexto";
-import { evento, idDeEvento } from "@/components/simulador/analitica";
+import { evento, idDeEvento, sinClicSalienteDeGA4 } from "@/components/simulador/analitica";
 import { enlaceDelEscenario } from "@/components/simulador/enlace";
 import { anios, meses, mesDesdeHoy, pesos, porcentaje } from "@/components/simulador/formato";
 import { PARAMETROS } from "@/components/simulador/parametros";
@@ -199,7 +199,10 @@ export default function Acciones({
           target="_blank"
           rel="noopener noreferrer"
           data-ubicacion="simulador-resumen"
-          onClick={() => evento("simulator_whatsapp", { proyecto: item?.slug ?? "otro" })}
+          onClick={(e) => {
+            evento("simulator_whatsapp", { proyecto: item?.slug ?? "otro" });
+            sinClicSalienteDeGA4(e);
+          }}
         >
           {t.enviarWhatsApp}
         </a>
@@ -359,8 +362,12 @@ function Formulario({
     }
   }
 
+  // `action` y `method` explícitos (1-oct-2026): sin ellos, el destino del
+  // formulario es la dirección de la página con el «#» del escenario (ingreso y
+  // ahorros), y GA4 lo manda como `form_destination` en cuanto se escribe. El
+  // envío real lo hace `enviar`, con fetch; esto solo cuenta si no cargó el JS.
   return (
-    <form className="sim-form" onSubmit={enviar} ref={formRef}>
+    <form className="sim-form" action="/api/consulta" method="post" onSubmit={enviar} ref={formRef}>
       <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
       <div className="sim-form-cabeza">
         <h4>{tipo === "plan" ? t.formPlanTitulo : t.formAyudaTitulo}</h4>
@@ -462,7 +469,7 @@ function Formulario({
           <p>
             <strong>{t.falloTitulo}</strong> {t.falloTexto}
           </p>
-          <a className="btn-whatsapp" href={enlaceWhatsApp(resumen)} target="_blank" rel="noopener noreferrer" data-ubicacion="simulador-fallo">
+          <a className="btn-whatsapp" href={enlaceWhatsApp(resumen)} target="_blank" rel="noopener noreferrer" data-ubicacion="simulador-fallo" onClick={sinClicSalienteDeGA4}>
             {t.enviarWhatsApp}
           </a>
         </div>

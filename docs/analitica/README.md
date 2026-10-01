@@ -1,6 +1,19 @@
 # Analítica de rhfliving.com: GTM, GA4 y píxel de Meta
 
-La web solo carga Google Tag Manager, y solo si la persona acepta el aviso de cookies. GA4 y el píxel de Meta viven **dentro** del contenedor de GTM, así que se cambian sin tocar el código. Mientras `GTM_ID` esté vacío en `src/data/analitica.ts` no se carga nada: ni GTM ni el aviso.
+La web mide con Google Tag Manager o, mientras no haya contenedor, con GA4 directo; en los dos casos, solo si la persona acepta el aviso de cookies. Con GTM, GA4 y el píxel de Meta viven **dentro** del contenedor, así que se cambian sin tocar el código. Mientras `GTM_ID` y `GA4_ID` estén vacíos en `src/data/analitica.ts` no se carga nada: ni la medición ni el aviso.
+
+## Mientras no haya contenedor: GA4 directo (1-oct-2026)
+
+Rafael creó la propiedad de GA4 (flujo web, ID `G-WPZ0XN2C6J`) antes que el contenedor de GTM. Mientras `GTM_ID` esté vacío, la web carga GA4 directo con la etiqueta de Google (`gtag.js`) y `GA4_ID` (`src/data/analitica.ts`), con la misma regla: nada se carga sin «Aceptar» en el aviso de cookies.
+
+- **Los eventos** de la capa de datos (`click_whatsapp`, `generate_lead`, `simulator_*`…) llegan a GA4 con los mismos nombres y parámetros: `src/components/Analitica.tsx` los pasa con `gtag("event", …)`.
+- **Lo que GA4 mide solo** (medición mejorada): páginas vistas, también al navegar dentro del sitio, desplazamiento, clics salientes, descargas y formularios.
+- **Lo que se probó el 1-oct**, en Chrome, interceptando cada envío a GA4 sin dejarlo salir:
+  - la dirección (`page_location`) va sin el «#», y un cambio solo del «#» no es página vista: el escenario del simulador no sale;
+  - los clics salientes llevan el enlace completo, con el texto de WhatsApp. Los enlaces de WhatsApp del simulador detienen el clic antes de que GA4 lo escuche (`sinClicSalienteDeGA4`);
+  - el destino de un formulario sin `action` es la dirección con el «#». El formulario del simulador lleva `action` y `method` explícitos.
+- **El día que exista el contenedor:** poner su ID en `GTM_ID` y vaciar `GA4_ID` en el mismo PR. Con los dos, cada visita se contaría dos veces.
+- **En GA4**, *Administrar → Eventos*: marcar `generate_lead` y `lead_consignar` como eventos clave.
 
 ## Cómo dejarlo andando (una vez)
 
