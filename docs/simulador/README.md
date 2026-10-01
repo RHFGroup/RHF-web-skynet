@@ -44,6 +44,8 @@ Y dos definiciones que los casos de prueba dejaban implícitas: T5c y T7 usan le
 
 ## La página (fase 4, 30-sep-2026)
 
+En producción desde el 1-oct-2026: el #50 se fusionó después del #46, con el OK de Rafael.
+
 `/simulador` y `/en/mortgage-calculator`: `src/components/paginas/PaginaSimulador.tsx` arma la página (portada, simulador, guía y preguntas, con sus datos estructurados) y `src/components/simulador/` es el simulador, que corre entero en el navegador.
 
 | Archivo | Qué hace |
@@ -63,7 +65,12 @@ Reglas:
 - Una cifra con `verificado: false` nunca se etiqueta «Fuente»: sale como «Supuesto» (`etiquetaDe`). Si pasó su `proximaActualizacion`, la etiqueta lo dice (`porActualizar`).
 - La etiqueta muestra `notaPublica`, nunca `nota`: `nota` es para quien mantiene la configuración.
 - El resultado nunca se esconde detrás de un formulario. Los datos de contacto se piden solo para el plan en PDF y para «Quiero ayuda con mi crédito», con la casilla de autorización (Ley 1581) y el mismo texto de `ContactForm` (versión `2026-09-18`).
-- El escenario (con el ingreso y los ahorros) va después del «#» de la dirección: no llega al servidor ni a la analítica. En la consulta solo va lo que no es personal: `?p=slug` desde el botón «Simular cuota» de cada proyecto e inmueble, y las UTM.
+- El escenario (con el ingreso y los ahorros) va después del «#» de la dirección: no llega al servidor. En la consulta solo va lo que no es personal: `?p=slug` desde el botón «Simular cuota» de cada proyecto e inmueble, y las UTM.
+- Para que el escenario tampoco llegue a la analítica (GA4 directo desde el 1-oct-2026, `docs/analitica/README.md`):
+  - todo formulario del simulador lleva `action` explícito;
+  - todo enlace saliente cuyo texto lleve el escenario (WhatsApp) llama a `sinClicSalienteDeGA4` en su `onClick`.
+
+  GA4 manda la dirección sin el «#», pero el destino de un formulario sin `action` y el enlace de un clic saliente van completos (probado con `gtag.js` el 1-oct).
 - La analítica recibe rangos, nunca cifras exactas. `generate_lead` es el evento que GTM convierte en «Lead»; `simulator_pdf_lead` y `simulator_prequal_lead` miden el embudo y no se deben mapear a «Lead» (se contaría dos veces).
 - La renta corta solo se calcula para inmuebles con `rentaCorta` en `src/data` (hoy, Doral Suite y Doral Suites 320, según su constructor). Los demás usan renta tradicional.
 - Los meses a la entrega de un proyecto en obra sin fecha publicada son el supuesto `mesesEntregaSupuesto`, marcado.
