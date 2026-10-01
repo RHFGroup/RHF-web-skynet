@@ -94,18 +94,21 @@
 /* La tarjeta entera es el enlace. */
 .noticia-titulo a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
 .noticia-resumen { color: var(--near-black); font-size: 14.5px; line-height: 1.6; }
+/* Abajo de la tarjeta: «Leer el análisis» y, discreta, la fuente de los datos. */
 .noticia-fuente {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 6px 14px;
   margin-top: auto;
   padding-top: 6px;
-  color: var(--marino);
   font-size: 13px;
-  font-weight: 600;
 }
+.noticia-leer { display: inline-flex; align-items: center; gap: 6px; color: var(--marino); font-weight: 600; }
+.noticia-origen { color: var(--text-muted); font-size: 12px; }
 .noticia-fuente svg { transition: transform 0.35s ease; }
-.noticia:hover .noticia-fuente svg { transform: translate(2px, -2px); }
+.noticia:hover .noticia-fuente svg { transform: translateX(4px); }
 
 /* La suscripción: tarjeta azul marino, texto a la izquierda y el campo a la derecha. */
 .suscripcion {
@@ -269,3 +272,59 @@
 :root[data-mov="reducido"] .noticia:hover,
 :root[data-mov="reducido"] .noticias-todas:hover,
 :root[data-mov="reducido"] .suscripcion-boton:hover { transform: none; }
+
+/* /inteligencia-de-mercado/<id>: el artículo de RHF Living (1-oct-2026).
+   Columna de lectura angosta, firma, entrada, «Nuestra lectura» y la fuente al pie. */
+.art-cuerpo { padding: 56px 0 64px; }
+.art-shell { width: min(720px, 100% - 32px); margin: 0 auto; }
+.art-shell > p { margin: 0 0 18px; color: var(--near-black); font-size: 17px; line-height: 1.72; }
+.art-volver { font-size: 14px !important; }
+.art-volver a { color: var(--marino); font-weight: 600; text-decoration: none; }
+.art-volver a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.art-volver a:focus-visible { outline: 2px solid var(--camel); outline-offset: 3px; }
+.art-shell h1 {
+  margin: 10px 0 16px;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: clamp(34px, 4.6vw, 54px);
+  font-weight: 600;
+  line-height: 1.06;
+  color: var(--marino);
+}
+.art-firma { color: var(--text-muted) !important; font-size: 14px !important; }
+.art-firma strong { color: var(--marino); font-weight: 600; }
+.art-entrada {
+  padding-bottom: 18px;
+  border-bottom: 1px solid #dfe5ee;
+  font-size: 19px !important;
+  font-weight: 500;
+}
+.art-lectura {
+  margin: 28px 0;
+  padding: 22px 26px;
+  border-left: 3px solid var(--camel);
+  border-radius: 0 18px 18px 0;
+  background: #f6f1e8;
+}
+.art-lectura p { margin: 0; color: var(--near-black); font-size: 16.5px; line-height: 1.68; }
+.art-lectura .art-lectura-titulo {
+  margin-bottom: 8px;
+  color: #6b4a2f;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.art-fuente { padding-top: 16px; border-top: 1px solid #dfe5ee; color: var(--text-muted) !important; font-size: 13.5px !important; }
+.art-fuente a { color: var(--marino); text-decoration: underline; text-underline-offset: 3px; }
+.art-mas-titulo {
+  margin: 0;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: clamp(28px, 3vw, 38px);
+  font-weight: 600;
+  color: var(--marino);
+}
+@media (max-width: 640px) {
+  .art-cuerpo { padding: 36px 0 44px; }
+  .art-shell > p { font-size: 16px; }
+  .art-lectura { padding: 18px 18px; }
+}

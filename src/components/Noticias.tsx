@@ -4,8 +4,9 @@
  *
  * Las tres noticias más nuevas, el botón a /inteligencia-de-mercado con todas y
  * la suscripción al boletín. Las noticias y sus reglas: src/data/noticias.ts.
- * El nombre le da peso de firma a la sección; la atribución no cambia: cada
- * noticia sigue con su medio, su fecha y el enlace al artículo original.
+ * El nombre le da peso de firma a la sección. Desde el 1-oct-2026 cada
+ * tarjeta abre el artículo propio de RHF Living, que cita su medio y enlaza
+ * el original.
  */
 import Link from "next/link";
 import RevealGrupo from "@/components/RevealGrupo";
@@ -25,7 +26,7 @@ export default function Noticias() {
             <p className="section-kicker">Inteligencia de mercado</p>
             <h2 id="noticias-titulo">La zona que crece</h2>
             <p className="section-lede">
-              Obras, inversión y vida nueva en el norte de Cartagena, cada noticia con su fuente y su fecha.
+              Obras, inversión y vida nueva en el norte de Cartagena, con nuestro análisis y la fuente de cada dato.
             </p>
           </div>
           <Link className="noticias-todas" href="/inteligencia-de-mercado">
