@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import LegalPage, { Seccion, RESPONSABLE } from "@/components/LegalPage";
+import { alternos } from "@/i18n/idioma";
 
 export const metadata: Metadata = {
   title: "Política de Tratamiento de Datos Personales — RHF",
   description:
     "Cómo recogemos, usamos, protegemos y eliminamos los datos personales de quienes nos escriben, conforme a la Ley 1581 de 2012.",
   robots: { index: true, follow: true },
-  alternates: { canonical: "https://rhfliving.com/privacidad" },
+  // El canonical de siempre (https://rhfliving.com/privacidad) y los hreflang
+  // hacia la traducción en /en/privacy.
+  alternates: alternos("/privacidad", "es"),
 };
 
 export default function Privacidad() {

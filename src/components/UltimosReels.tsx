@@ -13,29 +13,58 @@
 import Link from "next/link";
 import FilaDeslizable from "@/components/FilaDeslizable";
 import { IconoFlecha, IconoInstagram } from "@/components/Iconos";
-import { fechaNoticia } from "@/data/noticias";
-import { getProyecto } from "@/data/proyectos";
-import { REDES } from "@/data/redes";
-import { REELS } from "@/data/reels";
+import { ruta, type Idioma } from "@/i18n/idioma";
+import { noticias, proyectos, redes, reels } from "@/i18n/datos";
 import { fichaDe } from "@/lib/ficha";
 
-export default function UltimosReels() {
+/**
+ * Los textos, en los dos idiomas (docs/i18n.md). Cada uno es un nodo de texto
+ * tal como queda en el HTML, con sus espacios de borde: así el español sale
+ * idéntico.
+ */
+const TEXTOS = {
+  es: {
+    titulo: "Últimos reels",
+    todos: "Ver todos en Instagram ",
+    mover: "Mover los reels",
+    verReel: (titulo: string) => `Ver en Instagram el reel «${titulo}»`,
+    corte: " · corte ",
+    ficha: "Ver la ficha",
+    verEnInstagram: " Ver en Instagram",
+  },
+  en: {
+    titulo: "Latest reels",
+    todos: "See all on Instagram ",
+    mover: "Scroll the reels",
+    verReel: (titulo: string) => `Watch the reel “${titulo}” on Instagram`,
+    corte: " · price as of ",
+    ficha: "View details",
+    verEnInstagram: " Watch on Instagram",
+  },
+} satisfies Record<Idioma, Record<string, string | ((titulo: string) => string)>>;
+
+export default function UltimosReels({ idioma = "es" }: { idioma?: Idioma }) {
+  const t = TEXTOS[idioma];
+  const { REELS } = reels(idioma);
+  const { REDES } = redes(idioma);
+  const { getProyecto } = proyectos(idioma);
+  const { fechaNoticia } = noticias(idioma);
   if (REELS.length === 0) return null;
   const instagram = REDES.find((r) => r.id === "instagram");
   return (
     <div className="reels" role="region" aria-labelledby="reels-titulo">
       <div className="reels-cabeza">
-        <h3 id="reels-titulo">Últimos reels</h3>
+        <h3 id="reels-titulo">{t.titulo}</h3>
         {instagram && (
           <a className="reels-todos" href={instagram.url} target="_blank" rel="noopener noreferrer">
-            Ver todos en Instagram <IconoFlecha size={16} />
+            {t.todos}<IconoFlecha size={16} />
           </a>
         )}
       </div>
-      <FilaDeslizable className="reels-fila" etiqueta="Mover los reels">
+      <FilaDeslizable className="reels-fila" etiqueta={t.mover} idioma={idioma}>
         {REELS.map((r) => {
           const p = r.proyecto ? getProyecto(r.proyecto) : undefined;
-          const f = p ? fichaDe(p) : null;
+          const f = p ? fichaDe(p, idioma) : null;
           return (
             <li key={r.id} className="reel">
               <a
@@ -43,7 +72,7 @@ export default function UltimosReels() {
                 href={r.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`Ver en Instagram el reel «${r.titulo}»`}
+                aria-label={t.verReel(r.titulo)}
               >
                 <img src={r.portada} alt="" width={540} height={675} loading="lazy" decoding="async" />
                 <span className="reel-play" aria-hidden="true">
@@ -59,18 +88,20 @@ export default function UltimosReels() {
                   <p className="reel-ficha">
                     <span>
                       {[
-                        f.muestraPrecio && f.corte ? `${f.precio} · corte ${f.corte}` : f.precio,
+                        f.muestraPrecio && f.corte ? `${f.precio}${t.corte}${f.corte}` : f.precio,
                         f.area?.texto,
                         f.zona,
                       ]
                         .filter(Boolean)
                         .join(" · ")}
                     </span>{" "}
-                    <Link href={f.href}>Ver la ficha</Link>
+                    {/* ruta() deja igual un enlace que ya viene en inglés. */}
+                    <Link href={ruta(idioma, f.href)}>{t.ficha}</Link>
                   </p>
                 )}
                 <a className="reel-ig" href={r.url} target="_blank" rel="noopener noreferrer">
-                  <IconoInstagram size={16} /> Ver en Instagram
+                  <IconoInstagram size={16} />
+                  {t.verEnInstagram}
                 </a>
               </div>
             </li>

@@ -32,11 +32,18 @@
  * Los datos salen de proyectos.ts vía `fichaDe`: el precio solo si es
  * publicable y siempre con su corte. La cifra de la primera leyenda sale de
  * zona.ts, con su fuente.
+ *
+ * 29-sep-2026 (sitio en inglés): las fichas llegan ya en el idioma de la
+ * página; aquí se traducen los textos propios de la portada, el estado (con
+ * `etiquetaEstado`) y los controles. La cifra de la zona sale de
+ * `zona(idioma)`. Los enlaces a los proyectos pasan por `ruta()`.
  */
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { IconoFlecha, IconoWhatsApp } from "@/components/Iconos";
-import { CIFRA_OFERTA } from "@/data/zona";
+import { etiquetaEstado } from "@/i18n/etiquetas";
+import { zona } from "@/i18n/modulos/zona";
+import { ruta, type Idioma } from "@/i18n/idioma";
 import type { Ficha } from "@/lib/ficha";
 import { avifDe } from "@/lib/imagenes";
 import { usePrefersReducedMotion } from "@/lib/motion";
@@ -56,6 +63,75 @@ const ESTADO: Record<Ficha["estado"], string> = {
   "en construcción": "En construcción",
   "entrega inmediata": "Entrega inmediata",
 };
+
+const TEXTOS = {
+  es: {
+    carrusel: "carrusel",
+    region: "La Zona Norte y los proyectos de nuestra cartera",
+    corredorAlt:
+      "Vista aérea del corredor de la Zona Norte de Cartagena, con la Vía al Mar y la línea de costa",
+    corredorCredito: "Corredor de la Zona Norte, Cartagena · marzo de 2026 · foto propia",
+    verDetalle: "ver detalle",
+    corte: "corte ",
+    verProyecto: "Ver proyecto",
+    posicion: "Posición verificada · ",
+    eyebrow: "Asesoría inmobiliaria · Cartagena",
+    titulo1: "Tu próximo proyecto,",
+    titulo2: "en la mejor ubicación.",
+    sub: "Te ayudamos a elegir el proyecto que se ajusta a lo que buscas.",
+    verCartera: "Ver proyectos y apartamentos",
+    contactar: "Contactar",
+    accesos: "Ver la cartera por estado",
+    pausar: "Pausar la portada",
+    reanudar: "Reanudar la portada",
+    elegir: "Elegir la imagen de la portada",
+    nuevo: "Nuevo",
+    creciendo: "Donde Cartagena está creciendo",
+    cerca: "Cerca del ",
+    porciento: " % ",
+    fuente: ". Fuente: ",
+    conoceZona: "Conoce la zona",
+  },
+  en: {
+    carrusel: "carousel",
+    region: "Zona Norte and the projects in our portfolio",
+    corredorAlt: "Aerial view of Zona Norte, Cartagena's northern corridor, with the Vía al Mar and the coastline",
+    corredorCredito: "Zona Norte corridor, Cartagena · March 2026 · our own photo",
+    verDetalle: "see details",
+    corte: "price as of ",
+    verProyecto: "View project",
+    posicion: "Verified position · ",
+    eyebrow: "Real estate advisory · Cartagena",
+    // Sin «best» (docs/i18n.md): «la mejor ubicación» queda en «the right location».
+    titulo1: "Your next home,",
+    titulo2: "in the right location.",
+    sub: "We help you choose the project that fits what you're looking for.",
+    verCartera: "View projects and apartments",
+    contactar: "Contact us",
+    accesos: "Browse the portfolio by status",
+    pausar: "Pause the carousel",
+    reanudar: "Resume the carousel",
+    elegir: "Choose the cover image",
+    nuevo: "New",
+    creciendo: "Where Cartagena is growing",
+    cerca: "About ",
+    porciento: "% ",
+    fuente: ". Source: ",
+    conoceZona: "Explore the area",
+  },
+} satisfies Record<Idioma, Record<string, string>>;
+
+const mayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/** El estado como se muestra: el de siempre en español; en inglés, el de `etiquetaEstado`. */
+function textoEstado(estado: Ficha["estado"], idioma: Idioma): string {
+  return idioma === "es" ? ESTADO[estado] : mayuscula(etiquetaEstado(estado, idioma));
+}
+
+/** ¿El precio dice «desde» («from»)? La referencia en dólares lo repite (ReferenciaDolares.tsx). */
+function diceDesde(precio: string, idioma: Idioma): boolean {
+  return idioma === "es" ? precio.startsWith("desde") : /^from\b/i.test(precio);
+}
 
 type Diapositiva = {
   clave: string;
@@ -104,12 +180,15 @@ export default function Hero({
   fichas,
   whatsapp,
   accesos = [],
+  idioma = "es",
 }: {
   fichas: FichaHero[];
   whatsapp: string;
   accesos?: AccesoHero[];
+  idioma?: Idioma;
 }) {
   const reducido = usePrefersReducedMotion();
+  const t = TEXTOS[idioma];
 
   const diapositivas = useMemo<Diapositiva[]>(
     () => [
@@ -118,14 +197,14 @@ export default function Hero({
         imagen: {
           src: "/zona-norte/corredor-2400.jpg",
           src1200: "/zona-norte/corredor-1200.jpg",
-          alt: "Vista aérea del corredor de la Zona Norte de Cartagena, con la Vía al Mar y la línea de costa",
+          alt: TEXTOS[idioma].corredorAlt,
           enfoque: "50% 50%",
           ancho: 2400,
         },
         mini: "/zona-norte/corredor-mini.jpg",
         etiqueta: "Zona Norte",
         sub: "Cartagena",
-        credito: "Corredor de la Zona Norte, Cartagena · marzo de 2026 · foto propia",
+        credito: TEXTOS[idioma].corredorCredito,
         ficha: null,
       },
       ...fichas
@@ -135,12 +214,12 @@ export default function Hero({
           imagen: f.escaparate!,
           mini: f.escaparate!.mini,
           etiqueta: f.nombre,
-          sub: `${f.zona} · ${ESTADO[f.estado]}`,
+          sub: `${f.zona} · ${textoEstado(f.estado, idioma)}`,
           credito: f.escaparate!.credito,
           ficha: f,
         })),
     ],
-    [fichas],
+    [fichas, idioma],
   );
   const total = diapositivas.length;
 
@@ -250,8 +329,8 @@ export default function Hero({
       ref={raiz}
       className={"hero hero-escaparate" + (corriendo ? "" : " pausado")}
       id="inicio"
-      aria-roledescription="carrusel"
-      aria-label="La Zona Norte y los proyectos de nuestra cartera"
+      aria-roledescription={t.carrusel}
+      aria-label={t.region}
       style={{ "--dur": `${DURACION_MS}ms`, "--n": total } as React.CSSProperties}
     >
       {/* ── Las imágenes ─────────────────────────── */}
@@ -309,7 +388,7 @@ export default function Hero({
                   <button
                     type="button"
                     className="hero-pin-punto"
-                    aria-label={`${f.nombre}: ver detalle`}
+                    aria-label={`${f.nombre}: ${t.verDetalle}`}
                     aria-expanded={pinActivo === f.slug}
                     onClick={() => setPinActivo(pinActivo === f.slug ? null : f.slug)}
                     onFocus={() => setPinActivo(f.slug)}
@@ -320,20 +399,28 @@ export default function Hero({
                       <div>
                         <strong>{f.nombre}</strong>
                         <span>
-                          {f.zona} · {f.linea ?? ESTADO[f.estado]}
+                          {f.zona} · {f.linea ?? textoEstado(f.estado, idioma)}
                         </span>
                         <span
                           className="hero-pin-precio"
                           data-cop={f.muestraPrecio && f.precioDesde ? f.precioDesde : undefined}
-                          data-desde={f.muestraPrecio && f.precio.startsWith("desde") ? "" : undefined}
+                          data-desde={f.muestraPrecio && diceDesde(f.precio, idioma) ? "" : undefined}
                         >
                           {f.precio}
-                          {f.corte && <small> · corte {f.corte}</small>}
+                          {f.corte && (
+                            <small>
+                              {` · ${t.corte}`}
+                              {f.corte}
+                            </small>
+                          )}
                         </span>
-                        <Link href={f.href} onClick={marcarSalidaDesdeCartera}>
-                          Ver proyecto
+                        <Link href={ruta(idioma, f.href)} onClick={marcarSalidaDesdeCartera}>
+                          {t.verProyecto}
                         </Link>
-                        <small className="hero-pin-fuente">Posición verificada · {f.pin!.fuente}</small>
+                        <small className="hero-pin-fuente">
+                          {t.posicion}
+                          {f.pin!.fuente}
+                        </small>
                       </div>
                     </div>
                   )}
@@ -347,24 +434,25 @@ export default function Hero({
       {/* ── El texto y la leyenda de la imagen ───── */}
       <div className="hero-cuerpo">
         <div className="hero-content">
-          <p className="eyebrow hero-eyebrow">Asesoría inmobiliaria · Cartagena</p>
+          <p className="eyebrow hero-eyebrow">{t.eyebrow}</p>
           <h1>
-            <span className="hero-linea">Tu próximo proyecto,</span>{" "}
-            <span className="hero-linea">en la mejor ubicación.</span>
+            <span className="hero-linea">{t.titulo1}</span>{" "}
+            <span className="hero-linea">{t.titulo2}</span>
           </h1>
           {/* 25-sep-2026: Rafael pidió subtítulos más cortos. */}
-          <p className="hero-sub">Te ayudamos a elegir el proyecto que se ajusta a lo que buscas.</p>
+          <p className="hero-sub">{t.sub}</p>
           <div className="hero-ctas">
             {/* 25-sep-2026: lleva al bloque de proyectos y apartamentos, que va justo debajo. */}
             <a className="btn-primary" href="#cartera">
-              Ver proyectos y apartamentos
+              {t.verCartera}
             </a>
             <a className="btn-ghost" href={whatsapp} target="_blank" rel="noopener noreferrer">
-              <IconoWhatsApp /> Contactar
+              <IconoWhatsApp />
+              {` ${t.contactar}`}
             </a>
           </div>
           {accesos.length > 0 && (
-            <nav className="hero-accesos" aria-label="Ver la cartera por estado">
+            <nav className="hero-accesos" aria-label={t.accesos}>
               {accesos.map((a, i) => (
                 <a key={a.href} href={a.href} style={{ "--i": i } as React.CSSProperties}>
                   {a.texto} <span>{a.n}</span>
@@ -389,13 +477,13 @@ export default function Hero({
                 type="button"
                 className="hero-pausa"
                 aria-pressed={pausaBoton}
-                aria-label={pausaBoton ? "Reanudar la portada" : "Pausar la portada"}
+                aria-label={pausaBoton ? t.reanudar : t.pausar}
                 onClick={() => setPausaBoton((p) => !p)}
               >
                 {pausaBoton ? <IconoPlay /> : <IconoPausa />}
               </button>
             )}
-            <Leyenda key={d.clave} d={d} indice={activo} total={total} />
+            <Leyenda key={d.clave} d={d} indice={activo} total={total} idioma={idioma} />
           </div>
         </div>
       </div>
@@ -416,7 +504,7 @@ export default function Hero({
           if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPausaTeclado(false);
         }}
       >
-        <div className="hero-tabs" role="tablist" aria-label="Elegir la imagen de la portada" ref={fila}>
+        <div className="hero-tabs" role="tablist" aria-label={t.elegir} ref={fila}>
           {diapositivas.map((s, i) => (
             <button
               key={s.clave}
@@ -450,8 +538,20 @@ export default function Hero({
 }
 
 /** La leyenda de la imagen activa. Se vuelve a montar con cada una: así entra animada. */
-function Leyenda({ d, indice, total }: { d: Diapositiva; indice: number; total: number }) {
+function Leyenda({
+  d,
+  indice,
+  total,
+  idioma = "es",
+}: {
+  d: Diapositiva;
+  indice: number;
+  total: number;
+  idioma?: Idioma;
+}) {
   const f = d.ficha;
+  const t = TEXTOS[idioma];
+  const { CIFRA_OFERTA } = zona(idioma);
   return (
     <div className="hero-leyenda-contenido">
       <p className="hero-leyenda-cuenta">
@@ -460,8 +560,8 @@ function Leyenda({ d, indice, total }: { d: Diapositiva; indice: number; total: 
       {f ? (
         <>
           <p className="hero-leyenda-etiquetas">
-            <span className="hero-leyenda-estado">{ESTADO[f.estado]}</span>
-            {f.nuevo && <span className="hero-leyenda-nuevo">Nuevo</span>}
+            <span className="hero-leyenda-estado">{textoEstado(f.estado, idioma)}</span>
+            {f.nuevo && <span className="hero-leyenda-nuevo">{t.nuevo}</span>}
           </p>
           <p className="hero-leyenda-nombre">
             <span>{f.nombre}</span>
@@ -473,14 +573,20 @@ function Leyenda({ d, indice, total }: { d: Diapositiva; indice: number; total: 
           <p className="hero-leyenda-precio">
             <strong
               data-cop={f.muestraPrecio && f.precioDesde ? f.precioDesde : undefined}
-              data-desde={f.muestraPrecio && f.precio.startsWith("desde") ? "" : undefined}
+              data-desde={f.muestraPrecio && diceDesde(f.precio, idioma) ? "" : undefined}
             >
               {f.precio}
             </strong>
-            {f.corte && <small>corte {f.corte}</small>}
+            {f.corte && (
+              <small>
+                {t.corte}
+                {f.corte}
+              </small>
+            )}
           </p>
-          <Link className="hero-leyenda-cta" href={f.href} onClick={marcarSalidaDesdeCartera}>
-            Ver proyecto <IconoFlecha size={16} />
+          <Link className="hero-leyenda-cta" href={ruta(idioma, f.href)} onClick={marcarSalidaDesdeCartera}>
+            {`${t.verProyecto} `}
+            <IconoFlecha size={16} />
           </Link>
         </>
       ) : (
@@ -489,13 +595,19 @@ function Leyenda({ d, indice, total }: { d: Diapositiva; indice: number; total: 
             <span className="hero-leyenda-estado">Zona Norte</span>
           </p>
           <p className="hero-leyenda-nombre">
-            <span>Donde Cartagena está creciendo</span>
+            <span>{t.creciendo}</span>
           </p>
           <p className="hero-leyenda-meta">
-            Cerca del {CIFRA_OFERTA.valor} % {CIFRA_OFERTA.rotulo}. Fuente: {CIFRA_OFERTA.fuente}.
+            {t.cerca}
+            {CIFRA_OFERTA.valor}
+            {t.porciento}
+            {CIFRA_OFERTA.rotulo}
+            {t.fuente}
+            {CIFRA_OFERTA.fuente}.
           </p>
           <a className="hero-leyenda-cta" href="#mapa">
-            Conoce la zona <IconoFlecha size={16} />
+            {`${t.conoceZona} `}
+            <IconoFlecha size={16} />
           </a>
         </>
       )}

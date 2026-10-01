@@ -19,13 +19,61 @@
  * Tamaños: todo lo que debe medir lo mismo en pantalla a cualquier zoom
  * (íconos, letras, grosores) se multiplica por `u`, las unidades del SVG que
  * ocupa un píxel. Por eso el mapa mide su lienzo.
+ *
+ * En inglés (29-sep-2026) los rótulos del dibujo, las pestañas y las tarjetas
+ * van traducidos; los nombres de los lugares no (Vía al Mar, Ciénaga de la
+ * Virgen, Bahía de Cartagena…). El mar sí: «Caribbean Sea» es su nombre en
+ * inglés. Los lugares y sus fuentes salen del módulo de la zona en inglés.
  */
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { LUGARES, ROTULOS, type Icono, type Lugar } from "@/data/zona";
+import type { Icono, Lugar } from "@/data/zona";
+import { ruta, type Idioma } from "@/i18n/idioma";
+import { etiquetaEstadoObra } from "@/i18n/etiquetas";
+import { zona } from "@/i18n/modulos/zona";
 import { GLIFOS } from "@/lib/glifos";
 import { useReveal } from "@/lib/motion";
 import "@/styles/mapa-ilustrado.css";
+
+/**
+ * Los textos, en los dos idiomas (docs/i18n.md). Cada uno es un nodo de texto
+ * tal como queda en el HTML, con sus espacios de borde: así el español sale
+ * idéntico.
+ */
+const TEXTOS = {
+  es: {
+    capa: { hoy: "Hoy puedes disfrutar", viene: "Lo que viene" },
+    pestanas: "Qué mostrar en el mapa",
+    tituloMapa: "Mapa ilustrado de Cartagena y su corredor norte, del aeropuerto a Punta Canoa",
+    marCaribe: "Mar Caribe",
+    haciaNorte: "hacia Barranquilla ↗",
+    haciaSur: "↙ hacia el Centro Histórico",
+    leyenda: "Ilustración guiada por OpenStreetMap; los puntos van en su coordenada verificada.",
+    verDetalle: (nombre: string) => `${nombre}: ver detalle`,
+    verLista: "← Ver la lista",
+    trazadoNota: "Trazado ilustrativo sobre la costa.",
+    verificada: "Coordenada verificada · ",
+    fuente: "Fuente: ",
+    corte: " · corte ",
+    verProyecto: "Ver proyecto →",
+  },
+  en: {
+    capa: { hoy: "Here today", viene: "What's coming" },
+    pestanas: "What to show on the map",
+    tituloMapa: "Illustrated map of Cartagena and its northern corridor, from the airport to Punta Canoa",
+    marCaribe: "Caribbean Sea",
+    haciaNorte: "toward Barranquilla ↗",
+    haciaSur: "↙ toward Centro Histórico",
+    leyenda: "Illustration based on OpenStreetMap; the points are placed at their verified coordinates.",
+    verDetalle: (nombre: string) => `${nombre}: view details`,
+    verLista: "← Back to the list",
+    trazadoNota: "Illustrative route along the coast.",
+    verificada: "Verified coordinates · ",
+    fuente: "Source: ",
+    corte: " · price as of ",
+    verProyecto: "View project →",
+  },
+} satisfies Record<Idioma, Record<string, unknown>>;
 
 // ── Proyección ─────────────────────────────────────────────────────────────
 // Equirectangular sobre el corredor (a 10,5° N un grado de longitud mide
@@ -171,6 +219,7 @@ export default function MapaIlustrado({
   proyectos,
   compacto = false,
   resaltado = null,
+  idioma = "es",
 }: {
   progreso: number;
   proyectos: PinProyecto[];
@@ -178,7 +227,11 @@ export default function MapaIlustrado({
   compacto?: boolean;
   /** Proyecto resaltado desde fuera (la fila de proyectos). */
   resaltado?: string | null;
+  idioma?: Idioma;
 }) {
+  // `t` ya es el avance del encuadre: los textos van en `tx`.
+  const tx = TEXTOS[idioma];
+  const { LUGARES, ROTULOS } = zona(idioma);
   const [capa, setCapa] = useState<"hoy" | "viene">("hoy");
   const [elegido, setElegido] = useState<string | null>(null);
   const idBase = "mi" + useId().replace(/[^a-zA-Z0-9_-]/g, "");
@@ -233,12 +286,12 @@ export default function MapaIlustrado({
   const panel = (
     <div className="mi-panel" aria-live="polite">
       {seleccion ? (
-        <TarjetaLugar lugar={seleccion} alCerrar={() => setElegido(null)} />
+        <TarjetaLugar lugar={seleccion} alCerrar={() => setElegido(null)} idioma={idioma} />
       ) : proyectoElegido ? (
-        <TarjetaProyecto proyecto={proyectoElegido} alCerrar={() => setElegido(null)} />
+        <TarjetaProyecto proyecto={proyectoElegido} alCerrar={() => setElegido(null)} idioma={idioma} />
       ) : (
         <>
-          <p className="mi-panel-titulo">{capa === "hoy" ? "Hoy puedes disfrutar" : "Lo que viene"}</p>
+          <p className="mi-panel-titulo">{tx.capa[capa]}</p>
           <ul className="mi-lista" id={`${idBase}-lista`}>
             {deLaCapa.map((l) => (
               <li key={l.id}>
@@ -246,7 +299,11 @@ export default function MapaIlustrado({
                   <IconoLugar icono={l.icono} />
                   <span className="mi-lista-texto">
                     <span className="mi-lista-nombre">{l.nombreCorto ?? l.nombre}</span>
-                    {l.estado && <span className={"mi-estado mi-estado-" + claseEstado(l.estado)}>{l.estado}</span>}
+                    {l.estado && (
+                      <span className={"mi-estado mi-estado-" + claseEstado(l.estado)}>
+                        {etiquetaEstadoObra(l.estado, idioma)}
+                      </span>
+                    )}
                   </span>
                 </button>
               </li>
@@ -262,7 +319,7 @@ export default function MapaIlustrado({
       ref={raiz}
       className={"mi" + (compacto ? " mi-compacto" : "") + (oculto ? " mi-oculto" : "") + (elegido ? " mi-con-eleccion" : "")}
     >
-      <div className="mi-pestanas" role="tablist" aria-label="Qué mostrar en el mapa">
+      <div className="mi-pestanas" role="tablist" aria-label={tx.pestanas}>
         {(["hoy", "viene"] as const).map((c) => (
           <button
             key={c}
@@ -282,7 +339,7 @@ export default function MapaIlustrado({
               }
             }}
           >
-            {c === "hoy" ? "Hoy puedes disfrutar" : "Lo que viene"}
+            {tx.capa[c]}
           </button>
         ))}
       </div>
@@ -295,9 +352,7 @@ export default function MapaIlustrado({
             role="img"
             aria-labelledby={`${idBase}-titulo`}
           >
-            <title id={`${idBase}-titulo`}>
-              Mapa ilustrado de Cartagena y su corredor norte, del aeropuerto a Punta Canoa
-            </title>
+            <title id={`${idBase}-titulo`}>{tx.tituloMapa}</title>
             <defs>
               <linearGradient id={`${idBase}-mar`} x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stopColor="#5fb0b7" />
@@ -391,7 +446,7 @@ export default function MapaIlustrado({
                   fontSize={px(15)}
                   transform={`rotate(-90 ${x(MAR_CARIBE.movil[1])} ${y(MAR_CARIBE.movil[0])})`}
                 >
-                  Mar Caribe
+                  {tx.marCaribe}
                 </text>
               ) : (
                 <text
@@ -400,7 +455,7 @@ export default function MapaIlustrado({
                   className="mi-rotulo-mar"
                   fontSize={px(17)}
                 >
-                  Mar Caribe
+                  {tx.marCaribe}
                 </text>
               )}
               {AGUAS.map((r) => (
@@ -474,6 +529,7 @@ export default function MapaIlustrado({
                       activa={capa === c}
                       activo={elegido === l.id}
                       alElegir={() => alternar(l.id)}
+                      idioma={idioma}
                     />
                   ))}
               </g>
@@ -510,7 +566,7 @@ export default function MapaIlustrado({
                   className={"mi-proyecto" + (elegido === p.slug || resaltado === p.slug ? " activo" : "")}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${p.nombre}: ver detalle`}
+                  aria-label={tx.verDetalle(p.nombre)}
                   onClick={() => alternar(p.slug)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -530,10 +586,10 @@ export default function MapaIlustrado({
           </svg>
 
           <span className="mi-direccion mi-direccion-norte" aria-hidden="true">
-            hacia Barranquilla ↗
+            {tx.haciaNorte}
           </span>
           <span className="mi-direccion mi-direccion-sur" style={{ opacity: n(t) }} aria-hidden="true">
-            ↙ hacia el Centro Histórico
+            {tx.haciaSur}
           </span>
           <span className="mi-rosa" aria-hidden="true">
             <svg viewBox="0 0 24 24" width="26" height="26">
@@ -545,7 +601,7 @@ export default function MapaIlustrado({
           {!compacto && panel}
         </div>
 
-        <p className="mi-leyenda">Ilustración guiada por OpenStreetMap; los puntos van en su coordenada verificada.</p>
+        <p className="mi-leyenda">{tx.leyenda}</p>
         {compacto && panel}
       </div>
     </div>
@@ -556,44 +612,68 @@ function claseEstado(e: NonNullable<Lugar["estado"]>) {
   return e === "Entregado" ? "entregado" : e === "En obra" ? "obra" : "estudio";
 }
 
-function TarjetaLugar({ lugar, alCerrar }: { lugar: Lugar; alCerrar: () => void }) {
+function TarjetaLugar({ lugar, alCerrar, idioma }: { lugar: Lugar; alCerrar: () => void; idioma: Idioma }) {
+  const tx = TEXTOS[idioma];
   return (
     <div className="mi-tarjeta" role="group" aria-label={lugar.nombre}>
       <button type="button" className="mi-tarjeta-volver" onClick={alCerrar}>
-        ← Ver la lista
+        {tx.verLista}
       </button>
-      {lugar.estado && <span className={"mi-estado mi-estado-" + claseEstado(lugar.estado)}>{lugar.estado}</span>}
+      {lugar.estado && (
+        <span className={"mi-estado mi-estado-" + claseEstado(lugar.estado)}>
+          {etiquetaEstadoObra(lugar.estado, idioma)}
+        </span>
+      )}
       <strong>{lugar.nombre}</strong>
       <p>{lugar.frase}</p>
-      {lugar.id === "gran-malecon" && <p className="mi-tarjeta-nota">Trazado ilustrativo sobre la costa.</p>}
+      {lugar.id === "gran-malecon" && <p className="mi-tarjeta-nota">{tx.trazadoNota}</p>}
       <small>
         {lugar.coordenada && (
           <>
-            Coordenada verificada · {lugar.coordenada.fuente}.
+            {tx.verificada}
+            {lugar.coordenada.fuente}.
             <br />
           </>
         )}
-        Fuente: {lugar.fuente} · {lugar.fecha}
+        {tx.fuente}
+        {lugar.fuente} · {lugar.fecha}
       </small>
     </div>
   );
 }
 
-function TarjetaProyecto({ proyecto, alCerrar }: { proyecto: PinProyecto; alCerrar: () => void }) {
+function TarjetaProyecto({
+  proyecto,
+  alCerrar,
+  idioma,
+}: {
+  proyecto: PinProyecto;
+  alCerrar: () => void;
+  idioma: Idioma;
+}) {
+  const tx = TEXTOS[idioma];
   return (
     <div className="mi-tarjeta mi-tarjeta-proyecto" role="group" aria-label={proyecto.nombre}>
       <button type="button" className="mi-tarjeta-volver" onClick={alCerrar}>
-        ← Ver la lista
+        {tx.verLista}
       </button>
       {proyecto.foto && <img src={proyecto.foto} alt="" loading="lazy" decoding="async" />}
       <strong>{proyecto.nombre}</strong>
       {proyecto.linea && <p>{proyecto.linea}</p>}
       <p className="mi-tarjeta-precio">
         {proyecto.precio}
-        {proyecto.corte && <small> · corte {proyecto.corte}</small>}
+        {proyecto.corte && (
+          <small>
+            {tx.corte}
+            {proyecto.corte}
+          </small>
+        )}
       </p>
-      <Link href={`/proyectos/${proyecto.slug}`}>Ver proyecto →</Link>
-      <small>Coordenada verificada · {proyecto.fuente}</small>
+      <Link href={ruta(idioma, `/proyectos/${proyecto.slug}`)}>{tx.verProyecto}</Link>
+      <small>
+        {tx.verificada}
+        {proyecto.fuente}
+      </small>
     </div>
   );
 }
@@ -605,6 +685,7 @@ function PuntoMapa({
   activa,
   activo,
   alElegir,
+  idioma,
 }: {
   lugar: Lugar;
   u: number;
@@ -612,6 +693,7 @@ function PuntoMapa({
   activa: boolean;
   activo: boolean;
   alElegir: () => void;
+  idioma: Idioma;
 }) {
   const c = lugar.coordenada!;
   return (
@@ -621,7 +703,7 @@ function PuntoMapa({
       style={{ "--i": i } as React.CSSProperties}
       role="button"
       tabIndex={activa ? 0 : -1}
-      aria-label={`${lugar.nombre}: ver detalle`}
+      aria-label={TEXTOS[idioma].verDetalle(lugar.nombre)}
       onClick={alElegir}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {

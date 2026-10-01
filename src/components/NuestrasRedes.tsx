@@ -17,12 +17,37 @@ import RevealGrupo from "@/components/RevealGrupo";
 import UltimosReels from "@/components/UltimosReels";
 import { IconoCorreo, IconoFlecha, IconoInstagram, IconoWhatsApp } from "@/components/Iconos";
 import { CORREO, TELEFONO_VISIBLE, enlaceWhatsApp } from "@/data/contacto";
-import { REDES } from "@/data/redes";
+import type { Idioma } from "@/i18n/idioma";
+import { redes } from "@/i18n/datos";
 import "@/styles/redes.css";
 
-const WA_LINK = enlaceWhatsApp("Hola Rafael, te encontré en la página y quiero hablar contigo sobre: ");
+/** Los textos, en los dos idiomas (docs/i18n.md). */
+const TEXTOS = {
+  es: {
+    whatsapp: "Hola Rafael, te encontré en la página y quiero hablar contigo sobre: ",
+    seguir: "Seguir",
+    escribirWhatsApp: "Escribir",
+    correo: "Correo",
+    escribirCorreo: "Escribir",
+    kicker: "Nuestras redes",
+    titulo: "Síguenos y escríbenos",
+    lede: "Elige el canal que prefieras: Instagram, WhatsApp o correo.",
+  },
+  en: {
+    whatsapp: "Hi Rafael, I found your website and I'd like to talk to you about: ",
+    seguir: "Follow",
+    escribirWhatsApp: "Message",
+    correo: "Email",
+    escribirCorreo: "Write",
+    kicker: "Follow us",
+    titulo: "Follow along and get in touch",
+    lede: "Choose the channel you prefer: Instagram, WhatsApp or email.",
+  },
+} satisfies Record<Idioma, Record<string, string>>;
 
-export default function NuestrasRedes() {
+export default function NuestrasRedes({ idioma = "es" }: { idioma?: Idioma }) {
+  const t = TEXTOS[idioma];
+  const { REDES } = redes(idioma);
   const canales = [
     ...REDES.map((r) => ({
       clave: r.id,
@@ -32,17 +57,17 @@ export default function NuestrasRedes() {
       icono: <IconoInstagram size={30} />,
       nombre: r.nombre,
       dato: r.usuario,
-      accion: "Seguir",
+      accion: t.seguir,
     })),
     {
       clave: "whatsapp",
       clase: "red-whatsapp",
-      href: WA_LINK,
+      href: enlaceWhatsApp(t.whatsapp),
       externo: true,
       icono: <IconoWhatsApp size={28} />,
       nombre: "WhatsApp",
       dato: TELEFONO_VISIBLE,
-      accion: "Escribir",
+      accion: t.escribirWhatsApp,
     },
     {
       clave: "correo",
@@ -50,9 +75,9 @@ export default function NuestrasRedes() {
       href: `mailto:${CORREO}`,
       externo: false,
       icono: <IconoCorreo size={28} />,
-      nombre: "Correo",
+      nombre: t.correo,
       dato: CORREO,
-      accion: "Escribir",
+      accion: t.escribirCorreo,
     },
   ];
 
@@ -60,9 +85,9 @@ export default function NuestrasRedes() {
     <section className="section redes" id="redes" aria-labelledby="redes-titulo">
       <div className="section-shell">
         <div className="redes-cabeza">
-          <p className="section-kicker">Nuestras redes</p>
-          <h2 id="redes-titulo">Síguenos y escríbenos</h2>
-          <p className="section-lede">Elige el canal que prefieras: Instagram, WhatsApp o correo.</p>
+          <p className="section-kicker">{t.kicker}</p>
+          <h2 id="redes-titulo">{t.titulo}</h2>
+          <p className="section-lede">{t.lede}</p>
         </div>
         <RevealGrupo className="redes-lista">
           {/* La celda entra con el grupo; la tarjeta guarda sus propias
@@ -86,7 +111,7 @@ export default function NuestrasRedes() {
             </div>
           ))}
         </RevealGrupo>
-        <UltimosReels />
+        <UltimosReels idioma={idioma} />
       </div>
     </section>
   );

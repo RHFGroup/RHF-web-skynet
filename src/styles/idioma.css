@@ -1,0 +1,54 @@
+/* ─────────────────────────────────────────────────────────────
+   Idioma: el selector ES | EN del menú (29-sep-2026).
+   Ver src/components/SelectorIdioma.tsx y docs/i18n.md.
+   Se ve como el selector de moneda, pero son enlaces.
+   ───────────────────────────────────────────────────────────── */
+
+.selector-idioma {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 2px;
+  gap: 2px;
+  opacity: 0.9;
+}
+.selector-idioma a,
+.selector-idioma span {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 7px 10px;
+  min-height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+.selector-idioma span[aria-current] {
+  background: var(--marino);
+  color: var(--white);
+}
+.selector-idioma a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.selector-idioma a:focus-visible {
+  outline: 2px solid var(--camel);
+  outline-offset: 2px;
+}
+/* Sobre la foto de la portada, el menú es transparente: el activo va en blanco. */
+.nav-inicio:not(.nav-solida) .selector-idioma { color: var(--white); }
+.nav-inicio:not(.nav-solida) .selector-idioma span[aria-current] {
+  background: var(--white);
+  color: var(--marino);
+}
+
+/* En el teléfono la barra lleva solo la moneda: el idioma va dentro del menú. */
+@media (max-width: 900px) {
+  .nav-herramientas .selector-idioma { display: none; }
+}
+.menu-movil .menu-movil-idioma {
+  align-self: flex-start;
+  margin: 6px 0 4px;
+  color: var(--marino);
+}

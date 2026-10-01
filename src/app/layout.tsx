@@ -4,6 +4,7 @@ import "./globals.css";
 import ChatDiferido from "@/components/ChatDiferido";
 import Analitica from "@/components/Analitica";
 import ReferenciaDolares from "@/components/ReferenciaDolares";
+import IdiomaDocumento from "@/components/IdiomaDocumento";
 import { MONEDA_ANTES_DE_PINTAR } from "@/lib/moneda";
 import Script from "next/script";
 
@@ -107,6 +108,16 @@ const jsonLd = {
  * página quieta y luego el salto. Si el navegador no deja leer el
  * almacenamiento, no pasa nada: manda lo que pida el sistema.
  */
+/**
+ * El idioma del documento, antes de pintar (29-sep-2026, sitio en inglés).
+ * El layout raíz es uno solo y escribe `lang="es"`; en /en este script lo
+ * cambia a "en" antes del primer cuadro, para los lectores de pantalla, el
+ * traductor del navegador y los componentes del layout que eligen su texto
+ * por `document.documentElement.lang` (chat, aviso de cookies, referencia en
+ * dólares). Google toma el idioma del contenido y de los `hreflang`.
+ */
+const IDIOMA_ANTES_DE_PINTAR = `if(location.pathname==="/en"||location.pathname.indexOf("/en/")===0)document.documentElement.lang="en"`;
+
 const MOVIMIENTO_ANTES_DE_PINTAR = `try{var m=localStorage.getItem("rhf-movimiento");if(m==="activo"||m==="reducido")document.documentElement.setAttribute("data-mov",m)}catch(e){}`;
 
 export default function RootLayout({
@@ -122,6 +133,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <script id="idioma" dangerouslySetInnerHTML={{ __html: IDIOMA_ANTES_DE_PINTAR }} />
         <script id="movimiento" dangerouslySetInnerHTML={{ __html: MOVIMIENTO_ANTES_DE_PINTAR }} />
         {/* La moneda de la referencia de precio (src/lib/moneda.ts), antes de pintar. */}
         <script id="moneda" dangerouslySetInnerHTML={{ __html: MONEDA_ANTES_DE_PINTAR }} />
@@ -133,6 +145,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-dvh font-sans antialiased">
         {children}
+        <IdiomaDocumento />
         <ChatDiferido />
         <ReferenciaDolares />
         <Analitica />

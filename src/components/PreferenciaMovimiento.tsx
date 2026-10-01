@@ -14,42 +14,54 @@
  *
  * La elección vive en el navegador del visitante (src/lib/motion.ts) y se
  * aplica al instante, sin recargar.
+ *
+ * 29-sep-2026 (sitio en inglés): los textos van en el idioma de la página.
  */
+import type { Idioma } from "@/i18n/idioma";
 import { usePreferenciaMovimiento, type PreferenciaMovimiento as Preferencia } from "@/lib/motion";
 import "@/styles/movimiento.css";
 
-const OPCIONES: { valor: Preferencia; texto: string }[] = [
-  { valor: "auto", texto: "Automáticas" },
-  { valor: "activo", texto: "Activadas" },
-  { valor: "reducido", texto: "Reducidas" },
-];
+const TEXTOS = {
+  es: {
+    leyenda: "Animaciones",
+    auto: "Automáticas",
+    activo: "Activadas",
+    reducido: "Reducidas",
+    nota: "Tu dispositivo pide menos movimiento (ahorro de batería o accesibilidad) y el sitio lo respeta. Elige «Activadas» para ver las animaciones.",
+  },
+  en: {
+    leyenda: "Animations",
+    auto: "Automatic",
+    activo: "Enabled",
+    reducido: "Reduced",
+    nota: "Your device asks for less motion (battery saver or accessibility settings), and the site respects that. Choose “Enabled” to see the animations.",
+  },
+} satisfies Record<Idioma, Record<string, string>>;
 
-export default function PreferenciaMovimiento() {
+const OPCIONES: Preferencia[] = ["auto", "activo", "reducido"];
+
+export default function PreferenciaMovimiento({ idioma = "es" }: { idioma?: Idioma }) {
   const { preferencia, sistema, listo, elegir } = usePreferenciaMovimiento();
+  const t = TEXTOS[idioma];
 
   return (
     <fieldset className="movimiento-control">
-      <legend className="movimiento-leyenda">Animaciones</legend>
+      <legend className="movimiento-leyenda">{t.leyenda}</legend>
       <div className="movimiento-opciones">
-        {OPCIONES.map((o) => (
-          <label key={o.valor} className="movimiento-opcion">
+        {OPCIONES.map((valor) => (
+          <label key={valor} className="movimiento-opcion">
             <input
               type="radio"
               name="rhf-movimiento"
-              value={o.valor}
-              checked={preferencia === o.valor}
-              onChange={() => elegir(o.valor)}
+              value={valor}
+              checked={preferencia === valor}
+              onChange={() => elegir(valor)}
             />
-            <span>{o.texto}</span>
+            <span>{t[valor]}</span>
           </label>
         ))}
       </div>
-      {listo && sistema && preferencia === "auto" && (
-        <p className="movimiento-nota">
-          Tu dispositivo pide menos movimiento (ahorro de batería o accesibilidad) y el sitio lo respeta. Elige
-          «Activadas» para ver las animaciones.
-        </p>
-      )}
+      {listo && sistema && preferencia === "auto" && <p className="movimiento-nota">{t.nota}</p>}
     </fieldset>
   );
 }

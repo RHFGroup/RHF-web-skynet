@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import LegalPage, { Seccion, RESPONSABLE } from "@/components/LegalPage";
+import { alternos } from "@/i18n/idioma";
 
 export const metadata: Metadata = {
   title: "Términos de uso — RHF",
   description:
     "Condiciones bajo las cuales se publica la información de rhfliving.com y se atienden los canales de contacto.",
   robots: { index: true, follow: true },
-  alternates: { canonical: "https://rhfliving.com/terminos" },
+  // El canonical de siempre (https://rhfliving.com/terminos) y los hreflang
+  // hacia la traducción en /en/terms.
+  alternates: alternos("/terminos", "es"),
 };
 
 export default function Terminos() {

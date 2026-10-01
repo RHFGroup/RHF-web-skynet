@@ -13,10 +13,39 @@
  *  3. Solo con «Aceptar» carga GTM, con el consentimiento de Google ya
  *     concedido. Con «Rechazar» no se carga nada: los eventos se quedan en la
  *     página y no salen a ningún lado.
+ *
+ * El idioma (29-sep-2026, sitio en inglés): el aviso vive en el layout raíz y
+ * no recibe props. Lee `<html lang>` cada vez que se muestra, y en inglés
+ * enlaza a /en/privacy. El consentimiento es el mismo en los dos idiomas.
  */
 import { useEffect, useState } from "react";
 import { CLAVE_CONSENTIMIENTO, GTM_ID, VERSION_AVISO_COOKIES } from "@/data/analitica";
+import { ruta, type Idioma } from "@/i18n/idioma";
 import "@/styles/cookies.css";
+
+const TEXTOS = {
+  es: {
+    region: "Aviso de cookies",
+    aviso:
+      "Usamos cookies de Google y de Meta para medir las visitas y mostrar anuncios de nuestros proyectos. Sin tu autorización no se carga nada.",
+    politica: "Política de datos",
+    rechazar: "Rechazar",
+    aceptar: "Aceptar",
+  },
+  en: {
+    region: "Cookie notice",
+    aviso:
+      "We use Google and Meta cookies to measure visits and show ads for our projects. Nothing loads without your authorization.",
+    politica: "Privacy policy",
+    rechazar: "Reject",
+    aceptar: "Accept",
+  },
+} satisfies Record<Idioma, Record<string, string>>;
+
+/** El idioma de la página en la que se muestra el aviso. */
+function idiomaDeLaPagina(): Idioma {
+  return document.documentElement.lang === "en" ? "en" : "es";
+}
 
 type Decision = "aceptado" | "rechazado";
 type W = Window & { dataLayer?: unknown[]; __rhfGtm?: boolean };
@@ -77,13 +106,14 @@ function cargarGTM() {
 }
 
 /** El nombre del proyecto a partir de la ruta: /proyectos/doral-west/brochure.pdf → doral-west. */
-function proyectoDe(ruta: string): string {
-  const m = ruta.match(/\/(?:en\/)?(?:proyectos|projects|inmuebles|properties)\/([^/]+)/);
-  return m ? m[1] : ruta;
+function proyectoDe(camino: string): string {
+  const m = camino.match(/\/(?:en\/)?(?:proyectos|projects|inmuebles|properties)\/([^/]+)/);
+  return m ? m[1] : camino;
 }
 
 export default function Analitica() {
-  const [preguntar, setPreguntar] = useState(false);
+  // El aviso abierto, en el idioma de la página; null mientras no se pregunta.
+  const [aviso, setAviso] = useState<Idioma | null>(null);
 
   // Los clics: WhatsApp, brochures y «Quiero vender».
   useEffect(() => {
@@ -126,35 +156,34 @@ export default function Analitica() {
     if (!GTM_ID) return;
     const d = leerDecision();
     if (d === "aceptado") cargarGTM();
-    if (d === null) setPreguntar(true);
-    const reabrir = () => setPreguntar(true);
-    window.addEventListener("rhf-preferencias-cookies", reabrir);
-    return () => window.removeEventListener("rhf-preferencias-cookies", reabrir);
+    // El idioma se lee al mostrar el aviso: en el cliente, nunca en el build.
+    const preguntar = () => setAviso(idiomaDeLaPagina());
+    if (d === null) preguntar();
+    window.addEventListener("rhf-preferencias-cookies", preguntar);
+    return () => window.removeEventListener("rhf-preferencias-cookies", preguntar);
   }, []);
 
-  if (!preguntar) return null;
+  if (aviso === null) return null;
 
   const decidir = (estado: Decision) => {
     guardarDecision(estado);
-    setPreguntar(false);
+    setAviso(null);
     if (estado === "aceptado") cargarGTM();
   };
 
-  const en = typeof document !== "undefined" && document.documentElement.lang === "en";
+  const t = TEXTOS[aviso];
   return (
-    <div className="aviso-cookies" role="region" aria-label={en ? "Cookies" : "Aviso de cookies"}>
+    <div className="aviso-cookies" role="region" aria-label={t.region}>
       <p>
-        {en
-          ? "We use Google and Meta cookies to measure visits and show ads for our projects. Nothing loads without your permission."
-          : "Usamos cookies de Google y de Meta para medir las visitas y mostrar anuncios de nuestros proyectos. Sin tu autorización no se carga nada."}{" "}
-        <a href={en ? "/en/privacy" : "/privacidad"}>{en ? "Privacy policy" : "Política de datos"}</a>
+        {t.aviso}{" "}
+        <a href={ruta(aviso, "/privacidad")}>{t.politica}</a>
       </p>
       <div className="aviso-cookies-botones">
         <button type="button" onClick={() => decidir("rechazado")}>
-          {en ? "Reject" : "Rechazar"}
+          {t.rechazar}
         </button>
         <button type="button" className="aceptar" onClick={() => decidir("aceptado")}>
-          {en ? "Accept" : "Aceptar"}
+          {t.aceptar}
         </button>
       </div>
     </div>

@@ -11,17 +11,28 @@
  * Arranca en COP en el servidor y se ajusta al montar con lo que ya dejó el
  * script de <head> en <html data-moneda>: así el HTML del build y el del
  * navegador coinciden y React no se queja al hidratar.
+ *
+ * 29-sep-2026 (sitio en inglés): la etiqueta va en el idioma de la página;
+ * COP y USD quedan igual en los dos.
  */
 import { useEffect, useState } from "react";
+import type { Idioma } from "@/i18n/idioma";
 import { EVENTO_MONEDA, fijarMoneda, monedaActual, type Moneda } from "@/lib/moneda";
 import "@/styles/moneda.css";
 
+const TEXTOS = {
+  es: { etiqueta: "Moneda de los precios" },
+  en: { etiqueta: "Price currency" },
+} satisfies Record<Idioma, Record<string, string>>;
+
 export default function SelectorMoneda({
   className = "",
-  etiqueta = "Moneda de los precios",
+  etiqueta,
+  idioma = "es",
 }: {
   className?: string;
   etiqueta?: string;
+  idioma?: Idioma;
 }) {
   const [moneda, setMoneda] = useState<Moneda>("COP");
 
@@ -33,7 +44,7 @@ export default function SelectorMoneda({
   }, []);
 
   return (
-    <div className={`selector-moneda ${className}`.trim()} role="group" aria-label={etiqueta}>
+    <div className={`selector-moneda ${className}`.trim()} role="group" aria-label={etiqueta ?? TEXTOS[idioma].etiqueta}>
       {(["COP", "USD"] as const).map((m) => (
         <button
           key={m}

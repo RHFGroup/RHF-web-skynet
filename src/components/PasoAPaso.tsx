@@ -26,18 +26,68 @@ import FormularioGuia from "@/components/FormularioGuia";
 import IconoProceso, { AvisoPropuesta } from "@/components/IconoProceso";
 import { IconoEscudo, IconoPersona, IconoWhatsApp } from "@/components/Iconos";
 import { enlaceWhatsApp } from "@/data/contacto";
-import { COMPRA_DESDE_EXTERIOR, GUIAS, PASOS, type Quien } from "@/data/proceso";
+import type { Quien } from "@/data/proceso";
+import type { Idioma } from "@/i18n/idioma";
+import { proceso } from "@/i18n/modulos/proceso";
 import { MODO_REVISION, seMuestra } from "@/lib/revision";
 import { usePrefersReducedMotion } from "@/lib/motion";
 import "@/styles/proceso.css";
 
-const QUIEN: Record<Quien, { texto: string; icono: React.ReactNode }> = {
-  asesor: { texto: "Asesor", icono: <IconoPersona size={14} /> },
-  juridico: { texto: "Estudio jurídico", icono: <IconoEscudo size={14} /> },
-  ambos: { texto: "Asesor y estudio jurídico", icono: <IconoEscudo size={14} /> },
+const ICONO_QUIEN: Record<Quien, React.ReactNode> = {
+  asesor: <IconoPersona size={14} />,
+  juridico: <IconoEscudo size={14} />,
+  ambos: <IconoEscudo size={14} />,
 };
 
-export default function PasoAPaso() {
+/**
+ * Los textos, en los dos idiomas (docs/i18n.md). Cada uno es un nodo de texto
+ * tal como queda en el HTML, con sus espacios de borde: así el español sale
+ * idéntico. «Estudio jurídico» es «legal team» en inglés.
+ */
+const TEXTOS = {
+  es: {
+    quien: { asesor: "Asesor", juridico: "Estudio jurídico", ambos: "Asesor y estudio jurídico" },
+    kicker: "Paso a paso",
+    titulo: "Cómo comprar con nosotros",
+    lede: "Sabes en qué paso vas, qué sigue y quién te acompaña.",
+    leyenda: "Quién te acompaña",
+    leyendaAsesor: " Asesor",
+    leyendaJuridico: " Estudio jurídico",
+    notaPropuesta: "todos los pasos",
+    exterior: "¿Compras desde el exterior?",
+    validadoPor: "Validado por ",
+    verMenos: "Ver menos",
+    verLos: (n: number) => `Ver los ${n} pasos`,
+    ctaTitulo: "Empieza por el paso 1",
+    ctaTexto: "Cuéntanos qué buscas y armamos juntos el camino.",
+    whatsapp: "Hola Rafael, quiero empezar por el paso 1: te cuento qué busco.",
+    hablar: " Hablar con un asesor",
+    guia: "Descargar la guía de compra",
+  },
+  en: {
+    quien: { asesor: "Advisor", juridico: "Legal team", ambos: "Advisor and legal team" },
+    kicker: "Step by step",
+    titulo: "How to buy with us",
+    lede: "You always know which step you're on, what comes next and who's with you.",
+    leyenda: "Who's with you",
+    leyendaAsesor: " Advisor",
+    leyendaJuridico: " Legal team",
+    notaPropuesta: "all steps",
+    exterior: "Buying from abroad?",
+    validadoPor: "Validated by ",
+    verMenos: "Show less",
+    verLos: (n: number) => `See all ${n} steps`,
+    ctaTitulo: "Start with step 1",
+    ctaTexto: "Tell us what you're looking for and we'll map out the path together.",
+    whatsapp: "Hi Rafael, I'd like to start with step 1: let me tell you what I'm looking for.",
+    hablar: " Talk to an advisor",
+    guia: "Download the buying guide",
+  },
+} satisfies Record<Idioma, Record<string, unknown>>;
+
+export default function PasoAPaso({ idioma = "es" }: { idioma?: Idioma }) {
+  const t = TEXTOS[idioma];
+  const { COMPRA_DESDE_EXTERIOR, GUIAS, PASOS } = proceso(idioma);
   const pasos = PASOS.filter(seMuestra);
   const reduced = usePrefersReducedMotion();
   const seccion = useRef<HTMLElement>(null);
@@ -97,20 +147,22 @@ export default function PasoAPaso() {
       <div className="section-shell">
         <div className="pa-cabeza">
           <div>
-            <p className="section-kicker">Paso a paso</p>
-            <h2 id="pa-titulo">Cómo comprar con nosotros</h2>
-            <p className="section-lede">Sabes en qué paso vas, qué sigue y quién te acompaña.</p>
+            <p className="section-kicker">{t.kicker}</p>
+            <h2 id="pa-titulo">{t.titulo}</h2>
+            <p className="section-lede">{t.lede}</p>
           </div>
-          <ul className="pa-leyenda" aria-label="Quién te acompaña">
+          <ul className="pa-leyenda" aria-label={t.leyenda}>
             <li className="pa-quien pa-quien-asesor">
-              <IconoPersona size={14} /> Asesor
+              <IconoPersona size={14} />
+              {t.leyendaAsesor}
             </li>
             <li className="pa-quien pa-quien-juridico">
-              <IconoEscudo size={14} /> Estudio jurídico
+              <IconoEscudo size={14} />
+              {t.leyendaJuridico}
             </li>
           </ul>
         </div>
-        <AvisoPropuesta pendiente={pasos.some((p) => !p.confirmado)} nota="todos los pasos" />
+        <AvisoPropuesta pendiente={pasos.some((p) => !p.confirmado)} nota={t.notaPropuesta} idioma={idioma} />
 
         <div id="pa-pasos">
           {abierto ? (
@@ -140,7 +192,7 @@ export default function PasoAPaso() {
                         <div className="pa-tarjeta-cabeza">
                           <span className="pa-numero">{String(i + 1).padStart(2, "0")}</span>
                           <span className={"pa-quien pa-quien-" + (p.quien === "asesor" ? "asesor" : "juridico")}>
-                            {QUIEN[p.quien].icono} {QUIEN[p.quien].texto}
+                            {ICONO_QUIEN[p.quien]} {t.quien[p.quien]}
                           </span>
                         </div>
                         <h3>{p.titulo}</h3>
@@ -155,14 +207,15 @@ export default function PasoAPaso() {
 
               {COMPRA_DESDE_EXTERIOR && (
                 <aside className="pa-exterior">
-                  <h3>¿Compras desde el exterior?</h3>
+                  <h3>{t.exterior}</h3>
                   <ul>
                     {COMPRA_DESDE_EXTERIOR.pasos.map((x) => (
                       <li key={x}>{x}</li>
                     ))}
                   </ul>
                   <p className="pa-exterior-fuente">
-                    Validado por {COMPRA_DESDE_EXTERIOR.validadoPor} · {COMPRA_DESDE_EXTERIOR.fecha}
+                    {t.validadoPor}
+                    {COMPRA_DESDE_EXTERIOR.validadoPor} · {COMPRA_DESDE_EXTERIOR.fecha}
                   </p>
                 </aside>
               )}
@@ -194,7 +247,7 @@ export default function PasoAPaso() {
             aria-controls="pa-pasos"
             onClick={alternar}
           >
-            {abierto ? "Ver menos" : `Ver los ${n} pasos`}
+            {abierto ? t.verMenos : t.verLos(n)}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="m6 9 6 6 6-6" />
             </svg>
@@ -203,21 +256,17 @@ export default function PasoAPaso() {
 
         <div className="pa-cta">
           <div>
-            <h3>Empieza por el paso 1</h3>
-            <p>Cuéntanos qué buscas y armamos juntos el camino.</p>
+            <h3>{t.ctaTitulo}</h3>
+            <p>{t.ctaTexto}</p>
           </div>
           <div className="pa-cta-botones">
-            <a
-              className="btn-primary"
-              href={enlaceWhatsApp("Hola Rafael, quiero empezar por el paso 1: te cuento qué busco.")}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <IconoWhatsApp size={18} /> Hablar con un asesor
+            <a className="btn-primary" href={enlaceWhatsApp(t.whatsapp)} target="_blank" rel="noopener noreferrer">
+              <IconoWhatsApp size={18} />
+              {t.hablar}
             </a>
             {GUIAS.compra.pdf && !guiaAbierta && (
               <button type="button" className="pa-btn-guia" onClick={() => setGuiaAbierta(true)}>
-                Descargar la guía de compra
+                {t.guia}
               </button>
             )}
           </div>
@@ -228,6 +277,7 @@ export default function PasoAPaso() {
             pdf={GUIAS.compra.pdf}
             origen={GUIAS.compra.origen}
             alCerrar={() => setGuiaAbierta(false)}
+            idioma={idioma}
           />
         )}
       </div>
