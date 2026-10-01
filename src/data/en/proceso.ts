@@ -49,6 +49,7 @@ const TEXTOS: Diccionario = {
   "Plan de pagos y financiación": "Payment plan and financing",
   "Te ayudamos con la cuota inicial y con el crédito hipotecario o el leasing.":
     "We help you with the down payment and with the mortgage or housing lease (leasing habitacional).",
+  "Simula tu cuota y tu plan de pagos": "Estimate your payment and payment plan",
   "Seguimiento de obra": "Construction follow-up",
   "Te mantenemos al tanto del avance de la obra hasta la entrega.":
     "We keep you up to date on construction progress until handover.",
@@ -67,6 +68,7 @@ const t = traductor(TEXTOS);
 function paso(p: Paso): Paso {
   const x: Paso = { ...p, titulo: t(p.titulo), texto: t(p.texto) };
   if (p.pendiente !== undefined) x.pendiente = t(p.pendiente);
+  if (p.enlace !== undefined) x.enlace = { ...p.enlace, texto: t(p.enlace.texto) };
   return x;
 }
 
