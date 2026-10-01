@@ -71,3 +71,21 @@
   margin: 14px 0 4px;
   color: var(--marino);
 }
+
+/* 30-sep-2026: con el simulador, el menú tiene cinco entradas. Entre 901 y
+   1100 px se aprieta un poco para no chocar con los selectores de moneda e
+   idioma (medido en español y en inglés, a 901, 960, 1024 y 1100 px). */
+@media (max-width: 1100px) {
+  .nav .nav-links { gap: 14px; }
+  .nav .nav-links a.nav-vender { padding: 8px 12px; }
+}
+@media (max-width: 1024px) {
+  .nav .nav-links { gap: 10px; }
+  .nav .nav-links a { font-size: 12.5px; }
+  .nav .nav-herramientas { gap: 6px; }
+}
+@media (max-width: 960px) {
+  .nav .nav-links { gap: 8px; }
+  .nav .nav-links a { font-size: 12px; }
+  .nav .nav-links a.nav-vender { padding: 7px 10px; }
+}

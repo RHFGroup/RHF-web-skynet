@@ -1,0 +1,834 @@
+/* ─────────────────────────────────────────────────────────────
+   EL SIMULADOR DE COMPRA (/simulador y /en/mortgage-calculator)
+   30-sep-2026 · fase 4 de los prompts de Luciano.
+
+   Móvil primero: una columna, campos de 48 px de alto, texto de los
+   campos de 17 px (el iPhone no hace zoom desde 16 px) y, con el detalle
+   abierto, una hoja fija abajo con lo esencial. Desde 960 px, los
+   controles a la izquierda y el tablero fijo a la derecha.
+
+   La paleta del sitio: marino, camel, cuero y marfil. Los estados usan un
+   verde apagado (cumple), el camel (cerca) y un ladrillo (supera), siempre
+   con su texto: el color nunca es la única señal.
+   ───────────────────────────────────────────────────────────── */
+
+.simp {
+  --sim-verde: #2f6b4f;
+  --sim-verde-claro: #9fd4b4;
+  --sim-ladrillo: #9a3b2e;
+  --sim-ladrillo-claro: #f1a38f;
+  --sim-borde: var(--marfil-dark);
+  --sim-radio: 20px;
+}
+
+/* ── La portada de la página ─────────────────── */
+.simp-portada { padding: 48px 0 28px; }
+.simp-portada h1 {
+  margin-top: 14px;
+  max-width: 820px;
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: 1.06;
+  color: var(--marino);
+}
+.simp-portada .section-lede { max-width: 700px; }
+.simp-puntos {
+  display: grid;
+  gap: 8px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  max-width: 760px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--near-black);
+}
+.simp-puntos li { position: relative; padding-left: 24px; }
+.simp-puntos li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.45em;
+  width: 12px;
+  height: 7px;
+  border-left: 2px solid var(--camel);
+  border-bottom: 2px solid var(--camel);
+  transform: rotate(-45deg);
+}
+.simp-simulador { padding: 8px 0 72px; }
+
+/* ── Piezas comunes ───────────────────────────── */
+.sim { display: grid; gap: 24px; color: var(--near-black); }
+/* Las rejillas de una columna no se dejan ensanchar por su contenido (un
+   campo de texto mide 20 caracteres de ancho por defecto): en 360 px, una
+   etiqueta en inglés empujaba la página hacia la derecha. */
+.sim, .sim-inicio, .sim-detalle, .sim-controles, .sim-pestana, .sim-grupo, .sim-campo,
+.sim-preguntas, .sim-pregunta, .sim-respuesta, .sim-cartera, .sim-caja, .sim-bloque,
+.sim-form, .sim-tablero-caja, .sim-grid, .sim-tarjeta { grid-template-columns: minmax(0, 1fr); }
+/* Los botones y campos no heredan la fuente por defecto: la del sitio. */
+.sim :where(button, input, select, textarea) { font-family: inherit; }
+.sim .btn-primary { border: 0; font-family: inherit; }
+.sim h2, .sim h3, .sim h4 { color: var(--marino); }
+.sim :where(button, input, select, summary, a):focus-visible {
+  outline: 2px solid var(--camel);
+  outline-offset: 2px;
+}
+.sim-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 1px solid var(--marino);
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--marino);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.sim-boton:hover, .sim-boton[aria-pressed="true"] { background: var(--marino); color: var(--white); }
+.sim-boton:disabled { opacity: 0.5; cursor: not-allowed; }
+.sim-boton:disabled:hover { background: var(--white); color: var(--marino); }
+.sim-boton-texto {
+  min-height: 0;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--marino);
+  text-decoration: underline;
+  text-decoration-color: var(--camel);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.sim-boton-texto:hover { background: none; color: var(--cuero); }
+/* El verde oscuro de WhatsApp: el blanco sobre el verde claro no se lee en letra pequeña. */
+.sim-boton-wa { border-color: var(--green-wa-dark); background: var(--green-wa-dark); color: var(--white); }
+.sim-boton-wa:hover { border-color: #075e54; background: #075e54; color: var(--white); }
+.sim-quitar {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--sim-borde);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--marino);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.sim-nota { margin: 0; font-size: 13.5px; line-height: 1.55; }
+.sim-nota-bien, .sim-nota-mal {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border-left: 3px solid var(--sim-verde);
+  background: rgb(47 107 79 / 0.07);
+}
+.sim-nota-mal { border-left-color: var(--sim-ladrillo); background: rgb(154 59 46 / 0.07); }
+.sim-nota-fuerte { font-weight: 600; color: var(--marino); }
+.sim-notas { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.55; color: var(--text-muted); }
+.sim-notas li + li { margin-top: 6px; }
+.sim-aviso-fijo {
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--cuero);
+  border-radius: 10px;
+  background: rgb(107 74 47 / 0.07);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--marino);
+}
+.sim-aviso-final { max-width: 90ch; margin: 0; font-size: 12px; line-height: 1.6; color: var(--text-muted); }
+.sim-trampa {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── La etiqueta de cada cifra ────────────────── */
+.sim-etq { position: relative; display: inline-block; vertical-align: middle; line-height: 1; }
+.sim-etq-boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.sim-etq-fuente .sim-etq-boton { background: rgb(58 74 102 / 0.1); color: var(--marino); }
+.sim-etq-supuesto .sim-etq-boton { background: rgb(194 165 120 / 0.22); color: var(--cuero); }
+.sim-etq-tu-dato .sim-etq-boton { background: var(--marfil-dark); color: var(--near-black); }
+.sim-etq-viejo .sim-etq-boton::after { content: "!"; font-weight: 800; color: var(--sim-ladrillo); }
+.sim-etq-boton[aria-expanded="true"] { border-color: currentColor; }
+/* Sobre fondos oscuros (el tablero), la etiqueta en claro. */
+.sim-tablero .sim-etq-boton,
+.sim-alcance .sim-etq-boton { background: rgb(243 239 230 / 0.14); color: var(--marfil); }
+.sim-etq-panel {
+  position: fixed;
+  z-index: 120;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  max-height: 60vh;
+  overflow: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--sim-borde);
+  border-radius: 14px;
+  background: var(--white);
+  box-shadow: 0 18px 50px rgb(22 30 43 / 0.25);
+  color: var(--near-black);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.5;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+}
+.sim-etq-linea { display: block; }
+.sim-etq-linea + .sim-etq-linea { margin-top: 6px; }
+.sim-etq-fecha { color: var(--text-muted); font-size: 12px; }
+.sim-etq-nota { color: var(--text-muted); }
+.sim-etq-aviso { color: var(--sim-ladrillo); font-weight: 600; }
+.sim-etq-panel a { color: var(--marino); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+@media (min-width: 720px) {
+  .sim-etq-panel {
+    position: absolute;
+    left: 0;
+    right: auto;
+    bottom: auto;
+    top: calc(100% + 6px);
+    width: min(340px, 70vw);
+    max-height: none;
+  }
+}
+
+/* ── Los campos ───────────────────────────────── */
+.sim-campo { display: grid; gap: 6px; min-width: 0; }
+.sim-campo-apagado { opacity: 0.5; }
+.sim-campo-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sim-campo-cabeza label { font-size: 13.5px; font-weight: 600; color: var(--marino); }
+.sim-campo-entrada {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1px solid var(--sim-borde);
+  border-radius: 12px;
+  background: var(--white);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.sim-campo-entrada:focus-within { border-color: var(--camel); box-shadow: 0 0 0 3px rgb(194 165 120 / 0.18); }
+.sim-campo-entrada span { color: var(--text-muted); font-size: 14px; font-weight: 600; white-space: nowrap; }
+.sim-campo-entrada input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  outline: none;
+  color: var(--near-black);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.sim-campo-entrada input:disabled { color: var(--text-muted); }
+.sim .sim-campo-entrada input:focus-visible { outline: none; }
+.sim-deslizador { width: 100%; height: 28px; margin: 0; accent-color: var(--marino); cursor: pointer; }
+.sim-campo-ayuda { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--text-muted); }
+.sim-select {
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 40px 12px 14px;
+  border: 1px solid var(--sim-borde);
+  border-radius: 12px;
+  background: var(--white)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231f2a3d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 14px center;
+  appearance: none;
+  -webkit-appearance: none;
+  color: var(--near-black);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Chips: radios de verdad, con su foco. */
+.sim-chips { min-width: 0; margin: 0; padding: 0; border: 0; }
+.sim-chips legend { padding: 0; margin-bottom: 8px; font-size: 13.5px; font-weight: 600; color: var(--marino); }
+.sim-chips-lista { display: flex; flex-wrap: wrap; gap: 8px; }
+.sim-chip {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 44px;
+  padding: 9px 16px;
+  border: 1px solid var(--sim-borde);
+  border-radius: 14px;
+  background: var(--white);
+  color: var(--marino);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.sim-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.sim-chip small { margin-top: 2px; font-size: 11.5px; font-weight: 500; color: var(--text-muted); }
+.sim-chip:hover { border-color: var(--marino); }
+.sim-chip-activo { border-color: var(--marino); background: var(--marino); color: var(--white); }
+.sim-chip-activo small { color: rgb(243 239 230 / 0.78); }
+.sim-chip:has(input:focus-visible) { outline: 2px solid var(--camel); outline-offset: 2px; }
+
+.sim-interruptor { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; font-size: 14px; font-weight: 600; color: var(--marino); cursor: pointer; }
+.sim-interruptor input { width: 20px; height: 20px; margin: 0; accent-color: var(--marino); cursor: pointer; }
+.sim-interruptor small { grid-column: 2; font-size: 12.5px; font-weight: 400; line-height: 1.5; color: var(--text-muted); }
+.sim-fila-etq { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+
+/* La cifra que se toca en la frase. */
+.sim-ficha {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0 1px;
+  padding: 0 6px;
+  border: 0;
+  border-bottom: 2px dashed var(--camel);
+  border-radius: 6px 6px 0 0;
+  background: rgb(194 165 120 / 0.14);
+  color: var(--marino);
+  font: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  cursor: ew-resize;
+}
+.sim-ficha:focus { cursor: text; background: rgb(194 165 120 / 0.26); outline: none; }
+.sim-ficha-arrastrando { background: rgb(194 165 120 / 0.34); }
+.sim-ficha-lista {
+  width: auto;
+  padding-right: 22px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgb(194 165 120 / 0.14)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%231f2a3d' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 5px center;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* ── Inicio rápido ────────────────────────────── */
+.sim-inicio {
+  display: grid;
+  gap: 22px;
+  padding: 22px 18px;
+  border: 1px solid var(--sim-borde);
+  border-radius: 24px;
+  background: var(--white);
+  box-shadow: 0 16px 44px rgb(31 42 61 / 0.06);
+}
+.sim-inicio-cabeza { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.sim-inicio-cabeza h2 { font-size: clamp(28px, 4vw, 38px); line-height: 1.1; }
+.sim-alternar {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--marfil);
+}
+.sim-alternar button {
+  min-height: 38px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--marino);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sim-alternar button[aria-pressed="true"] { background: var(--marino); color: var(--white); }
+.sim-preguntas { display: grid; gap: 22px; align-content: start; }
+.sim-pregunta { display: grid; gap: 14px; padding-top: 18px; border-top: 1px solid var(--sim-borde); }
+.sim-pregunta-titulo { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--marino-light); }
+.sim-respuesta { display: grid; gap: 16px; align-content: start; }
+.sim-respuesta-vacia {
+  margin: 0;
+  padding: 22px;
+  border: 1px dashed var(--camel);
+  border-radius: var(--sim-radio);
+  background: rgb(194 165 120 / 0.08);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--marino);
+}
+.sim-alcance {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 22px;
+  border-radius: var(--sim-radio);
+  background: linear-gradient(160deg, var(--marino-light) 0%, var(--marino) 60%, var(--marino-dark) 100%);
+  color: var(--marfil);
+}
+.sim-alcance span { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--camel-light); }
+.sim-alcance strong {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: clamp(36px, 7vw, 54px);
+  font-weight: 600;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+/* La referencia en dólares (Dolares.tsx): pequeña, debajo de la cifra en pesos. */
+.sim-usd { display: block; font-family: var(--font-sans), "Montserrat", sans-serif; font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; opacity: 0.85; }
+.sim-alcance .sim-usd { font-size: 14px; color: var(--camel-light); opacity: 1; }
+/* En las tarjetas, la del sitio (data-cop), más pequeña que el precio. */
+html[data-moneda="USD"] .sim-tarjeta-precio [data-usd]::after { font-size: 11.5px; font-weight: 500; }
+.sim-alcance-detalle { margin: 0; font-size: 14px; line-height: 1.6; color: var(--near-black); }
+.sim-abrir { justify-content: center; width: 100%; }
+
+@media (min-width: 960px) {
+  .sim-inicio { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 28px 36px; padding: 34px 36px; }
+  .sim-inicio-cabeza { grid-column: 1 / -1; }
+  .sim-abrir { width: auto; justify-self: start; }
+}
+
+/* ── Proyectos que te alcanzan ────────────────── */
+.sim-cartera { display: grid; gap: 14px; }
+.sim-cartera-resumen { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.5; color: var(--marino); }
+.sim-tarjetas { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 640px) { .sim-tarjetas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .sim-cartera-compacta .sim-tarjetas { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.sim-tarjeta {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--sim-borde);
+  border-left: 4px solid var(--camel);
+  border-radius: 16px;
+  background: var(--white);
+}
+.sim-tarjeta-alcanza { border-left-color: var(--sim-verde); }
+.sim-tarjeta-faltan-ambos { border-left-color: var(--cuero); }
+.sim-tarjeta-cabeza { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; }
+.sim-tarjeta-nombre {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--marino);
+}
+.sim-tarjeta-nombre:hover { text-decoration: underline; text-decoration-color: var(--camel); }
+.sim-tarjeta-estado { font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; color: var(--text-muted); }
+.sim-tarjeta-precio { display: grid; margin: 0; font-size: 15px; font-weight: 600; color: var(--near-black); }
+.sim-tarjeta-precio small { font-size: 11.5px; font-weight: 400; color: var(--text-muted); }
+.sim-tarjeta-veredicto { display: flex; gap: 6px; margin: 0; font-size: 13.5px; font-weight: 700; line-height: 1.45; color: var(--cuero); }
+.sim-veredicto-alcanza { color: var(--sim-verde); }
+.sim-tarjeta-cuota { margin: 0; font-size: 13px; line-height: 1.5; color: var(--near-black); }
+.sim-tarjeta-supuesto { display: block; margin-top: 2px; font-size: 11.5px; font-style: italic; color: var(--text-muted); }
+.sim-tarjeta-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 4px; }
+.sim-tarjeta-acciones .sim-boton { min-height: 38px; padding: 7px 12px; font-size: 12.5px; }
+.sim-palancas { padding: 12px 14px; border-radius: 12px; background: var(--marfil); font-size: 13px; line-height: 1.5; }
+.sim-palancas p { margin: 0; }
+.sim-palancas ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sim-palancas li { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.sim-ver-todos { justify-self: start; }
+.sim-consultar { margin: 0; font-size: 13px; line-height: 1.55; color: var(--text-muted); }
+.sim-consultar a { color: var(--marino); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── El detalle ───────────────────────────────── */
+.sim-detalle { display: grid; gap: 24px; scroll-margin-top: calc(var(--nav-h) + 12px); }
+.sim-frase {
+  margin: 0;
+  padding: 22px;
+  border-radius: 24px;
+  background: var(--white);
+  border: 1px solid var(--sim-borde);
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: clamp(21px, 3vw, 30px);
+  font-weight: 500;
+  line-height: 1.75;
+  color: var(--near-black);
+}
+.sim-frase strong { color: var(--marino); font-weight: 700; font-variant-numeric: tabular-nums; }
+.sim-grid { display: grid; gap: 24px; }
+.sim-controles { display: grid; gap: 14px; min-width: 0; }
+.sim-pestanas {
+  display: flex;
+  gap: 6px;
+  margin: 0 -4px;
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+.sim-pestanas::-webkit-scrollbar { display: none; }
+.sim-pestanas button {
+  flex: none;
+  min-height: 42px;
+  padding: 8px 16px;
+  border: 1px solid var(--sim-borde);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--marino);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  scroll-snap-align: start;
+  cursor: pointer;
+}
+.sim-pestanas button[aria-selected="true"] { border-color: var(--marino); background: var(--marino); color: var(--white); }
+.sim-panel {
+  padding: 20px 16px;
+  border: 1px solid var(--sim-borde);
+  border-radius: var(--sim-radio);
+  background: var(--white);
+}
+.sim-pestana { display: grid; gap: 22px; }
+.sim-grupo { display: grid; gap: 16px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.sim-grupo + .sim-grupo, .sim-pestana > .sim-caja { padding-top: 20px; border-top: 1px solid var(--sim-borde); }
+/* La leyenda flota: así no corta el borde de arriba del grupo. */
+.sim-grupo > legend { float: left; width: 100%; }
+.sim-grupo > legend, .sim-grupo > h4, .sim-grupo > summary, .sim-caja > h4 {
+  padding: 0;
+  margin: 0 0 2px;
+  font-family: var(--font-sans), "Montserrat", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--marino);
+}
+.sim-caja { display: grid; gap: 12px; }
+.sim-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 0; }
+.sim-dato { padding: 12px 14px; border-radius: 12px; background: var(--marfil); }
+.sim-dato dt { font-size: 12px; line-height: 1.4; color: var(--text-muted); }
+.sim-dato dd { margin: 4px 0 0; font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--near-black); font-variant-numeric: tabular-nums; }
+.sim-dato dd small { display: block; margin-top: 3px; font-size: 11.5px; font-weight: 400; line-height: 1.4; color: var(--text-muted); }
+.sim-dato-fuerte { background: rgb(31 42 61 / 0.07); }
+.sim-dato-fuerte dd { color: var(--marino); }
+.sim-dato-mal dd { color: var(--sim-ladrillo); }
+.sim-entidades summary { cursor: pointer; }
+.sim-estres-botones { display: flex; flex-wrap: wrap; gap: 8px; }
+.sim-acciones-botones .sim-boton, .sim-estres-botones .sim-boton { min-height: 44px; }
+
+/* Tablas: se desplazan de lado en el teléfono. */
+.sim-tabla-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.sim table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.sim th, .sim td { padding: 9px 10px; border-bottom: 1px solid var(--sim-borde); text-align: right; vertical-align: top; white-space: nowrap; }
+.sim th:first-child, .sim td:first-child { text-align: left; }
+.sim thead th { font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--marino-light); }
+.sim tbody th { font-weight: 600; color: var(--marino); }
+.sim tfoot th, .sim tfoot td { border-bottom: 0; font-size: 14px; font-weight: 700; color: var(--marino); }
+.sim tfoot small { display: block; font-size: 11.5px; font-weight: 400; color: var(--text-muted); }
+.sim-tabla-gastos th { white-space: normal; }
+.sim-fila-activa th, .sim-fila-activa td { background: rgb(194 165 120 / 0.14); }
+.sim-fila-mal td { color: var(--sim-ladrillo); font-weight: 600; }
+.sim-mejor { font-weight: 700; color: var(--sim-verde); background: rgb(47 107 79 / 0.07); }
+.sim-mejor::after { content: " ✓"; }
+.sim-comparar thead th { white-space: normal; min-width: 130px; text-transform: none; letter-spacing: 0; font-size: 12.5px; color: var(--marino); }
+.sim-comparar .sim-quitar { width: 24px; height: 24px; margin-left: 4px; font-size: 15px; vertical-align: middle; }
+
+/* ── El tablero ───────────────────────────────── */
+.sim-tablero { min-width: 0; }
+.sim-tablero-caja {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border-radius: var(--sim-radio);
+  background: linear-gradient(165deg, var(--marino-light) 0%, var(--marino) 45%, var(--marino-dark) 100%);
+  color: var(--marfil);
+}
+.sim-cifra { display: grid; gap: 2px; padding-bottom: 14px; border-bottom: 1px solid rgb(243 239 230 / 0.14); }
+.sim-cifra span { font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--camel-light); }
+.sim-cifra strong {
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.sim-cifra small { font-size: 12.5px; line-height: 1.45; color: rgb(243 239 230 / 0.78); }
+.sim-legal { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 10px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; line-height: 1.45; }
+.sim-legal span { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+.sim-legal-cumple { background: rgb(159 212 180 / 0.14); color: var(--sim-verde-claro); }
+.sim-legal-cumple span { background: var(--sim-verde-claro); color: var(--marino-dark); }
+.sim-legal-cerca { background: rgb(212 188 150 / 0.16); color: var(--camel-light); }
+.sim-legal-cerca span { background: var(--camel-light); color: var(--marino-dark); }
+.sim-legal-supera { background: rgb(241 163 143 / 0.16); color: var(--sim-ladrillo-claro); }
+.sim-legal-supera span { background: var(--sim-ladrillo-claro); color: var(--marino-dark); }
+.sim-cambio {
+  justify-self: start;
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--camel);
+  color: var(--marino-dark);
+  font-size: 12.5px;
+  font-weight: 700;
+  animation: sim-aparece 0.25s ease;
+}
+@keyframes sim-aparece { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.sim-totales { display: grid; gap: 8px; margin: 0; font-size: 13px; }
+.sim-totales div { display: flex; justify-content: space-between; gap: 12px; }
+.sim-totales dt { color: rgb(243 239 230 / 0.78); }
+.sim-totales dd { margin: 0; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.sim-avisos { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.sim-avisos li { padding: 10px 12px; border-left: 3px solid var(--camel); border-radius: 10px; background: rgb(243 239 230 / 0.08); font-size: 12.5px; line-height: 1.5; }
+.sim-avisos .sim-boton-texto { display: inline-block; margin-top: 4px; color: var(--camel-light); }
+.sim-avisos .sim-boton-texto:hover { color: var(--marfil); }
+
+/* La hoja fija del teléfono: lo esencial, sin tapar el botón del chat. */
+.sim-hoja { display: none; }
+@media (max-width: 959px) {
+  .sim-hoja {
+    position: fixed;
+    z-index: 80;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    gap: 10px;
+    padding: 10px 86px calc(10px + env(safe-area-inset-bottom)) 14px;
+    background: rgb(22 30 43 / 0.96);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: rgb(243 239 230 / 0.78);
+    font-size: 11px;
+    line-height: 1.3;
+  }
+  .sim-hoja span { display: grid; flex: 1 1 auto; min-width: 0; }
+  .sim-hoja b { color: var(--marfil); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  body:has(.sim-hoja) .site-footer { padding-bottom: 96px; }
+}
+
+@media (min-width: 960px) {
+  .sim-grid { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; gap: 28px; }
+  .sim-tablero { position: sticky; top: calc(var(--nav-h) + 16px); }
+  .sim-panel { padding: 26px 28px; }
+  .sim-frase { padding: 28px 32px; }
+}
+
+/* ── Las gráficas ─────────────────────────────── */
+.sim-bloque {
+  display: grid;
+  gap: 12px;
+  padding: 22px 18px;
+  border: 1px solid var(--sim-borde);
+  border-radius: var(--sim-radio);
+  background: var(--white);
+}
+.sim-bloque h3 { font-size: clamp(22px, 3vw, 28px); line-height: 1.15; }
+.sim-bloque-lede { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-muted); }
+.sim-camino-lienzo { position: relative; margin: 42px 0 46px; touch-action: pan-y; cursor: crosshair; }
+.sim-camino-lienzo svg, .sim-comp-lienzo svg { display: block; width: 100%; height: 160px; overflow: visible; }
+.sim-camino-lienzo:focus-visible { outline: 2px solid var(--camel); outline-offset: 4px; border-radius: 6px; }
+.sim-b-obra { fill: var(--camel); }
+.sim-b-firma { fill: var(--cuero); }
+.sim-b-cierre { fill: var(--cuero-light); }
+.sim-b-credito { fill: var(--marino-light); }
+.sim-b-abono { fill: var(--marino); }
+.sim-b-capital { fill: var(--marino); }
+.sim-b-interes { fill: var(--camel); }
+.sim-b-seguros { fill: var(--cuero-light); }
+.sim-deuda { stroke: var(--cuero); stroke-width: 2; stroke-dasharray: 5 4; }
+.sim-cursor { fill: rgb(31 42 61 / 0.14); }
+.sim-marca {
+  position: absolute;
+  bottom: -22px;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.sim-marca-hoy, .sim-marca-izq, .sim-marca-fin { transform: none; }
+.sim-marca-abajo { bottom: -40px; }
+.sim-pico {
+  position: absolute;
+  top: -20px;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cuero);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.sim-pico-izq { transform: none; }
+.sim-pico-der { transform: translateX(-100%); }
+.sim-pico-arriba { top: -38px; }
+.sim-camino-panel { min-height: 46px; padding: 10px 12px; border-radius: 12px; background: var(--marfil); font-size: 13.5px; line-height: 1.5; }
+.sim-camino-panel p { margin: 0; }
+.sim-camino-ayuda { color: var(--text-muted); }
+.sim-leyenda { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0; padding: 0; list-style: none; font-size: 12px; color: var(--text-muted); }
+.sim-leyenda li { display: inline-flex; align-items: center; gap: 6px; }
+.sim-leyenda li::before { content: ""; width: 12px; height: 12px; border-radius: 3px; background: currentColor; }
+.sim-l-obra::before { background: var(--camel) !important; }
+.sim-l-cierre::before { background: var(--cuero-light) !important; }
+.sim-l-credito::before { background: var(--marino-light) !important; }
+.sim-l-abono::before { background: var(--marino) !important; }
+.sim-l-deuda::before { height: 0 !important; border-top: 2px dashed var(--cuero); background: none !important; }
+.sim-l-capital::before { background: var(--marino) !important; }
+.sim-l-interes::before { background: var(--camel) !important; }
+.sim-l-seguros::before { background: var(--cuero-light) !important; }
+.sim-comp-lienzo { display: grid; gap: 6px; }
+.sim-comp-ejes { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
+.sim-tabla summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; list-style: none; }
+.sim-tabla summary::-webkit-details-marker { display: none; }
+.sim-tabla summary::after { content: "+"; font-size: 24px; line-height: 1; color: var(--camel); }
+.sim-tabla[open] summary::after { content: "−"; }
+.sim-fila-anio th button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--marino);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--camel);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.sim-fila-mes th, .sim-fila-mes td { font-size: 12px; color: var(--text-muted); background: var(--marfil); }
+@media (min-width: 960px) { .sim-bloque { padding: 26px 28px; } }
+
+/* ── Acciones y formularios ───────────────────── */
+.sim-acciones-botones { display: flex; flex-wrap: wrap; gap: 10px; }
+.sim-acciones-botones .btn-whatsapp,
+.sim-acciones-botones .btn-primary { min-height: 44px; padding: 11px 20px; font-size: 14px; }
+.sim-copia-manual { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--marino); }
+.sim-copia-manual input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--sim-borde);
+  border-radius: 10px;
+  background: var(--marfil);
+  font: inherit;
+  font-size: 14px;
+}
+.sim-form {
+  display: grid;
+  gap: 14px;
+  max-width: 620px;
+  padding: 20px;
+  border: 1px solid var(--sim-borde);
+  border-radius: var(--sim-radio);
+  background: var(--marfil);
+}
+.sim-form-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sim-form-cabeza h4 { font-size: 22px; }
+.sim-form-campo { display: grid; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--marino); }
+.sim-form-campo input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--sim-borde);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--near-black);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  outline: none;
+}
+.sim-form-campo input:focus { border-color: var(--camel); box-shadow: 0 0 0 3px rgb(194 165 120 / 0.18); }
+.sim-form .btn-primary { justify-content: center; width: 100%; }
+.sim-form .btn-primary:disabled { opacity: 0.6; cursor: wait; }
+.sim-form .form-disclaimer { margin-top: 0; }
+.sim-form-listo { display: flex; align-items: flex-start; gap: 14px; }
+.sim-form-listo p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--marino); }
+.sim-form-marca {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--sim-verde);
+  color: var(--white);
+  font-weight: 800;
+}
+
+/* ── La guía y las preguntas ──────────────────── */
+.simp-guia { padding: 72px 0; background: var(--white); border-top: 1px solid var(--sim-borde); }
+.simp-guia h2, .simp-faq h2 { margin-top: 12px; font-size: clamp(30px, 4vw, 44px); line-height: 1.1; color: var(--marino); }
+.simp-guia-grid { display: grid; gap: 28px 40px; margin-top: 36px; }
+.simp-articulo { scroll-margin-top: calc(var(--nav-h) + 16px); }
+.simp-articulo h3 { font-size: 25px; line-height: 1.2; color: var(--marino); }
+.simp-articulo p { margin: 10px 0 0; font-size: 15px; line-height: 1.7; color: var(--near-black); }
+.simp-articulo .simp-fuente { font-size: 12.5px; color: var(--text-muted); }
+.simp-fuente a { text-decoration: underline; text-underline-offset: 3px; }
+@media (min-width: 860px) { .simp-guia-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.simp-faq { padding: 64px 0 88px; }
+.simp-faq-lista { max-width: 860px; margin-top: 24px; border-top: 1px solid var(--sim-borde); }
+.simp-faq details { border-bottom: 1px solid var(--sim-borde); }
+.simp-faq summary {
+  padding: 18px 36px 18px 0;
+  position: relative;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--marino);
+  cursor: pointer;
+  list-style: none;
+}
+.simp-faq summary::-webkit-details-marker { display: none; }
+.simp-faq summary::after { content: "+"; position: absolute; right: 4px; top: 14px; font-size: 24px; color: var(--camel); }
+.simp-faq details[open] summary::after { content: "−"; }
+.simp-faq details p { margin: 0 0 18px; font-size: 15px; line-height: 1.65; color: var(--near-black); }
+
+/* ── Movimiento: sistema o preferencia (src/lib/motion.ts) ── */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-mov="activo"]) .sim-cambio { animation: none; }
+}
+:root[data-mov="reducido"] .sim-cambio { animation: none; }
+
+/* ── El plan para imprimir o guardar en PDF ───── */
+.sim-plan { display: none; }
+@media print {
+  body.sim-imprimiendo > *:not(.sim-plan) { display: none !important; }
+  body.sim-imprimiendo { background: #fff; }
+  body.sim-imprimiendo .sim-plan {
+    display: block;
+    color: #1c1c1c;
+    font-family: var(--font-sans), "Montserrat", sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.5;
+  }
+  .sim-plan-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 18pt; padding-bottom: 10pt; border-bottom: 1.5pt solid #c2a578; }
+  .sim-plan-cabeza h1 { font-family: var(--font-serif), "Cormorant Garamond", serif; font-size: 22pt; color: #1f2a3d; text-align: right; }
+  .sim-plan-cabeza p { margin: 2pt 0 0; font-size: 9pt; color: #6a6a6a; text-align: right; }
+  .sim-plan section { margin-top: 14pt; break-inside: avoid; }
+  .sim-plan h2 { margin: 0 0 6pt; font-family: var(--font-serif), "Cormorant Garamond", serif; font-size: 14pt; color: #1f2a3d; }
+  .sim-plan p { margin: 0 0 4pt; }
+  .sim-plan dl { display: grid; grid-template-columns: 1fr 1fr; gap: 6pt 18pt; margin: 0; }
+  .sim-plan dt { font-size: 8.5pt; color: #6a6a6a; }
+  .sim-plan dd { margin: 1pt 0 0; font-weight: 700; }
+  .sim-plan ul { margin: 0; padding-left: 14pt; }
+  .sim-plan-pie { margin-top: 18pt; padding-top: 8pt; border-top: 0.75pt solid #e9e2d3; font-size: 8.5pt; color: #6a6a6a; }
+  .sim-plan-enlace { word-break: break-all; color: #1f2a3d; }
+  @page { margin: 16mm; }
+}

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "export:theme": "node scripts/export-theme.mjs",
     "export:theme:tailwind": "npx @google/design.md export DESIGN.md --format tailwind > src/styles/tailwind.theme.json",
-    "lint:design": "npx @google/design.md lint DESIGN.md"
+    "lint:design": "npx @google/design.md lint DESIGN.md",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test src/lib/simulador/motor.test.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

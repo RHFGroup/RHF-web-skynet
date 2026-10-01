@@ -23,6 +23,7 @@ const DESCRIPCION_MORROS_ES =
   "Morros Park es un proyecto de Novus Civitas y Epic diseño+construcción en Serena del Mar, la ciudad planeada de la Zona Norte donde ya funcionan el Hospital Serena del Mar y la sede Caribe de la Universidad de los Andes.";
 
 const TEXTOS: Diccionario = {
+  "Según su constructor: doralcartagena.com/doral-suites": "According to its builder: doralcartagena.com/doral-suites",
   ...ETIQUETAS_AREA,
 
   // ── Lo que se repite ─────────────────────────────────────────────────────
@@ -219,6 +220,7 @@ function traducir(i: Inmueble): Inmueble {
     // El corte, de la fecha en español: «25 de septiembre de 2026» → «September 25, 2026».
     precio: i.precio === null ? null : { ...i.precio, corte: fechaEn(i.precio.corte), fuente: t(i.precio.fuente) },
     fotos: i.fotos.map((f) => ({ ...f, alt: t(f.alt), credito: t(f.credito) })),
+    ...(i.rentaCorta ? { rentaCorta: { fuente: t(i.rentaCorta.fuente) } } : {}),
     plano:
       i.plano === null
         ? null
