@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { fechaISO, PROYECTOS } from "@/data/proyectos";
 import { INMUEBLES } from "@/data/inmuebles";
+import { NOTICIAS } from "@/data/noticias";
 
 /**
  * /sitemap.xml, armado en el build desde la capa de datos.
@@ -24,6 +25,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     { url: `${SITIO}/asesor`, lastModified: "2026-09-25", changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITIO}/inteligencia-de-mercado`, lastModified: "2026-09-29", changeFrequency: "weekly", priority: 0.6 },
+    ...NOTICIAS.map((n) => ({
+      url: `${SITIO}/inteligencia-de-mercado/${n.id}`,
+      lastModified: "2026-10-01",
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    })),
     { url: `${SITIO}/vender`, lastModified: "2026-09-29", changeFrequency: "monthly", priority: 0.7 },
     ...INMUEBLES.map((i) => ({
       url: `${SITIO}/inmuebles/${i.slug}`,

@@ -17,19 +17,21 @@ import "@/styles/secciones.css";
  * más nuevas y trae aquí. Las noticias y sus reglas: src/data/noticias.ts.
  *
  * 29-sep-2026 (informe de Luciano): la sección se llama «Inteligencia de
- * mercado», para darle peso de firma. Lo que no cambia es la atribución: cada
- * noticia dice qué medio la publicó, cuándo, y abre el artículo original.
- * Presentar una noticia ajena como análisis propio sería publicidad engañosa
- * (Ley 1480, art. 30). /noticias redirige aquí (public/_redirects).
+ * mercado», para darle peso de firma.
  *
- * Sin datos estructurados de artículo: las noticias son de sus medios, y
- * aquí solo va el resumen propio con el enlace.
+ * 1-oct-2026 (Rafael: «quiero que estas noticias se vean elaboradas por
+ * nosotros»): cada tarjeta abre un artículo propio con firma
+ * (/inteligencia-de-mercado/[id]). Lo que no cambia es la atribución: los
+ * datos son del medio, que se nombra en la tarjeta y en el texto, y el
+ * artículo enlaza la nota original. Presentar una noticia ajena como
+ * reportería propia sería publicidad engañosa (Ley 1480, art. 30); el
+ * análisis sí es nuestro. /noticias redirige aquí (public/_redirects).
  */
 
 const SITIO = "https://rhfliving.com";
 const TITULO = "Inteligencia de mercado: la Zona Norte de Cartagena | RHF Living";
 const DESCRIPCION =
-  "Inteligencia de mercado de la Zona Norte de Cartagena: obras, inversión, vivienda y turismo en noticias verificadas, cada una con su fuente, su fecha y el enlace al artículo original.";
+  "Inteligencia de mercado de la Zona Norte de Cartagena: obras, inversión, vivienda y turismo, analizados por RHF Living con datos verificados de su fuente.";
 
 export const metadata: Metadata = {
   title: { absolute: TITULO },
@@ -67,8 +69,8 @@ export default function PaginaInteligenciaDeMercado() {
             <p className="section-kicker">Inteligencia de mercado</p>
             <h1 id="np-titulo">La Zona Norte de Cartagena, noticia por noticia</h1>
             <p className="section-lede">
-              Seguimos lo que se construye, se abre y se invierte en el norte de la ciudad. Cada noticia lleva su medio
-              y su fecha, y abre el artículo original.
+              Seguimos lo que se construye, se abre y se invierte en el norte de la ciudad, y te contamos qué significa.
+              Cada análisis cita el medio de donde salen los datos.
             </p>
           </div>
         </section>
@@ -108,7 +110,7 @@ export default function PaginaInteligenciaDeMercado() {
         </section>
       </main>
 
-      <PieSitio avisoImagenes="Las noticias son de sus medios: aquí va un resumen propio y el enlace al artículo original." />
+      <PieSitio avisoImagenes="Análisis de RHF Living con datos de la fuente citada en cada artículo." />
 
       <WhatsAppFlotante trasDe=".np-portada" />
       <Animador />
