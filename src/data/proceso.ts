@@ -54,6 +54,8 @@ export type Paso = {
   confirmado: boolean;
   /** Lo que Rafael tiene que decidir antes de confirmar este paso. */
   pendiente?: string;
+  /** Un enlace del paso a una página del sitio (la ruta en español). */
+  enlace?: { texto: string; href: string };
 };
 
 export const ESTUDIO_JURIDICO = {
@@ -139,6 +141,8 @@ export const PASOS: Paso[] = [
     juridico: false,
     quien: "asesor",
     confirmado: true,
+    // 30-sep-2026: el simulador de compra hace este paso con los números de cada quien.
+    enlace: { texto: "Simula tu cuota y tu plan de pagos", href: "/simulador" },
   },
   {
     titulo: "Seguimiento de obra",

@@ -474,3 +474,19 @@
 :root[data-mov="reducido"] .pa-tarjeta,
 :root[data-mov="reducido"] .pa-izq .pa-tarjeta,
 :root[data-mov="reducido"] .pa-der .pa-tarjeta { opacity: 1; transform: none; }
+
+/* El enlace de un paso (30-sep-2026: el paso 5 lleva al simulador). La
+   tarjeta va sobre el azul de la sección: camel claro, como los números. */
+.pa-tarjeta .pa-enlace {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--camel-light);
+  text-decoration: underline;
+  text-decoration-color: rgb(212 188 150 / 0.55);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+.pa-tarjeta .pa-enlace:hover,
+.pa-tarjeta .pa-enlace:focus-visible { color: var(--marfil); text-decoration-color: var(--marfil); }

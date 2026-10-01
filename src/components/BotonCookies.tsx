@@ -3,11 +3,11 @@
 /**
  * «Preferencias de cookies», en el pie: vuelve a mostrar el aviso para que la
  * persona cambie su decisión (Ley 1581: la autorización se puede revocar).
- * Solo aparece cuando hay contenedor de GTM (src/data/analitica.ts).
+ * Solo aparece cuando hay con qué medir: GTM o GA4 directo (src/data/analitica.ts).
  *
  * 29-sep-2026 (sitio en inglés): el texto va en el idioma de la página.
  */
-import { GTM_ID } from "@/data/analitica";
+import { HAY_ANALITICA } from "@/data/analitica";
 import type { Idioma } from "@/i18n/idioma";
 
 const TEXTOS = {
@@ -16,7 +16,7 @@ const TEXTOS = {
 } satisfies Record<Idioma, Record<string, string>>;
 
 export default function BotonCookies({ texto, idioma = "es" }: { texto?: string; idioma?: Idioma }) {
-  if (!GTM_ID) return null;
+  if (!HAY_ANALITICA) return null;
   return (
     <>
       {" · "}

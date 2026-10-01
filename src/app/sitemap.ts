@@ -34,6 +34,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { rutaEs: "/asesor", lastModified: "2026-09-25", changeFrequency: "monthly", priority: 0.7 },
     { rutaEs: "/inteligencia-de-mercado", lastModified: "2026-09-29", changeFrequency: "weekly", priority: 0.6 },
     { rutaEs: "/vender", lastModified: "2026-09-29", changeFrequency: "monthly", priority: 0.7 },
+    { rutaEs: "/simulador", lastModified: "2026-09-30", changeFrequency: "monthly", priority: 0.8 },
     ...INMUEBLES.map((i) => ({
       rutaEs: `/inmuebles/${i.slug}`,
       lastModified: (i.precio && fechaISO(i.precio.corte)) || "2026-09-25",

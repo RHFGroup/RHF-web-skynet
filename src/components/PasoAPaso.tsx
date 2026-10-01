@@ -27,7 +27,7 @@ import IconoProceso, { AvisoPropuesta } from "@/components/IconoProceso";
 import { IconoEscudo, IconoPersona, IconoWhatsApp } from "@/components/Iconos";
 import { enlaceWhatsApp } from "@/data/contacto";
 import type { Quien } from "@/data/proceso";
-import type { Idioma } from "@/i18n/idioma";
+import { ruta, type Idioma } from "@/i18n/idioma";
 import { proceso } from "@/i18n/modulos/proceso";
 import { MODO_REVISION, seMuestra } from "@/lib/revision";
 import { usePrefersReducedMotion } from "@/lib/motion";
@@ -197,6 +197,11 @@ export default function PasoAPaso({ idioma = "es" }: { idioma?: Idioma }) {
                         </div>
                         <h3>{p.titulo}</h3>
                         <p>{p.texto}</p>
+                        {p.enlace && (
+                          <a className="pa-enlace" href={ruta(idioma, p.enlace.href)} data-ubicacion="paso-a-paso">
+                            {p.enlace.texto} →
+                          </a>
+                        )}
                         {/* Nota para Rafael: solo en las vistas previas. */}
                         {p.pendiente && MODO_REVISION && !p.confirmado && <p className="pa-pendiente">{p.pendiente}</p>}
                       </div>

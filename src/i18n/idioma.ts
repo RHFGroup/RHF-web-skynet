@@ -22,6 +22,7 @@ export const IDIOMAS: Idioma[] = ["es", "en"];
 const FIJAS: Record<string, string> = {
   "/": "/en",
   "/vender": "/en/sell",
+  "/simulador": "/en/mortgage-calculator",
   "/asesor": "/en/advisor",
   "/inteligencia-de-mercado": "/en/market-intelligence",
   "/privacidad": "/en/privacy",

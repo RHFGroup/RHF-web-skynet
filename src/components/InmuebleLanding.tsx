@@ -77,6 +77,10 @@ const TEXTOS = {
     agendar: " Agendar visita",
     meInteresa: "Me interesa",
     dejanosDatos: "O déjanos tus datos",
+    // El simulador de compra (30-sep-2026)
+    simularTitulo: "¿Te alcanza?",
+    simularTexto: "Mira cuánto pagas de cuota inicial, tu cuota y el ingreso que te piden, con tus números.",
+    simular: "Simular cuota",
     kickerOtros: "Inmuebles disponibles",
     tituloOtros: "Otros apartamentos disponibles",
     kickerContacto: "Contacto",
@@ -131,6 +135,9 @@ const TEXTOS = {
     agendar: " Schedule a visit",
     meInteresa: "I'm interested",
     dejanosDatos: "Or leave us your details",
+    simularTitulo: "Can you afford it?",
+    simularTexto: "See your down payment, your monthly payment and the income required, with your own numbers.",
+    simular: "Estimate my payment",
     kickerOtros: "Available properties",
     tituloOtros: "Other available apartments",
     kickerContacto: "Contact",
@@ -230,6 +237,15 @@ export default function InmuebleLanding({ i, idioma = "es" }: { i: Inmueble; idi
                   {p}
                 </p>
               ))}
+              {/* El simulador, con este inmueble ya elegido. Solo con precio publicado. */}
+              {i.precio && (
+                <a className="pp-simular" href={ruta(idioma, `/simulador?p=${i.slug}`)} data-ubicacion="inmueble-datos">
+                  <span>
+                    <strong>{t.simularTitulo}</strong> {t.simularTexto}
+                  </span>
+                  <span className="pp-simular-boton">{t.simular} →</span>
+                </a>
+              )}
             </section>
 
             {/* 3 · El apartamento ──────────────────── */}
@@ -314,6 +330,11 @@ export default function InmuebleLanding({ i, idioma = "es" }: { i: Inmueble; idi
                 {t.agendar}
               </a>
               <MeInteresaButton label={t.meInteresa} className="pp-btn pp-btn-secundario" idioma={idioma} />
+              {i.precio && (
+                <a className="pp-lateral-simular" href={ruta(idioma, `/simulador?p=${i.slug}`)} data-ubicacion="inmueble-lateral">
+                  {t.simular} →
+                </a>
+              )}
               <a className="pp-lateral-form" href="#contacto">
                 {t.dejanosDatos}
               </a>

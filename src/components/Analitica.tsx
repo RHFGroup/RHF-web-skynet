@@ -9,17 +9,28 @@
  *     empuja a `dataLayer`: WhatsApp (cualquier enlace a wa.me), brochures
  *     (cualquier enlace a un .pdf) y «Quiero vender / consignar» (los enlaces
  *     con data-evento). Los formularios empujan su propio evento al enviarse.
- *  2. Si hay contenedor de GTM y la persona no ha decidido, muestra el aviso.
- *  3. Solo con «Aceptar» carga GTM, con el consentimiento de Google ya
- *     concedido. Con «Rechazar» no se carga nada: los eventos se quedan en la
- *     página y no salen a ningún lado.
+ *  2. Si hay con qué medir (GTM o GA4) y la persona no ha decidido, muestra
+ *     el aviso.
+ *  3. Solo con «Aceptar» carga la medición, con el consentimiento de Google ya
+ *     concedido: GTM si hay contenedor; si no, GA4 directo (gtag.js), al que se
+ *     le pasan los eventos de la capa de datos. Con «Rechazar» no se carga
+ *     nada: los eventos se quedan en la página y no salen a ningún lado.
+ *
+ * GA4 directo (1-oct-2026, pedido de Rafael). Probado en Chrome con gtag.js,
+ * interceptando cada envío:
+ *  · la dirección que manda (page_location) va sin el «#», y un cambio solo del
+ *    «#» no cuenta como página vista: el escenario del simulador no sale;
+ *  · los clics salientes y el destino de los formularios sí van con la
+ *    dirección completa. Por eso el simulador fija el `action` de su formulario
+ *    y detiene el clic de sus enlaces de WhatsApp antes de que GA4 lo escuche
+ *    (src/components/simulador/analitica.ts).
  *
  * El idioma (29-sep-2026, sitio en inglés): el aviso vive en el layout raíz y
  * no recibe props. Lee `<html lang>` cada vez que se muestra, y en inglés
  * enlaza a /en/privacy. El consentimiento es el mismo en los dos idiomas.
  */
 import { useEffect, useState } from "react";
-import { CLAVE_CONSENTIMIENTO, GTM_ID, VERSION_AVISO_COOKIES } from "@/data/analitica";
+import { CLAVE_CONSENTIMIENTO, GA4_ID, GTM_ID, HAY_ANALITICA, VERSION_AVISO_COOKIES } from "@/data/analitica";
 import { ruta, type Idioma } from "@/i18n/idioma";
 import "@/styles/cookies.css";
 
@@ -48,7 +59,8 @@ function idiomaDeLaPagina(): Idioma {
 }
 
 type Decision = "aceptado" | "rechazado";
-type W = Window & { dataLayer?: unknown[]; __rhfGtm?: boolean };
+type Gtag = (...args: unknown[]) => void;
+type W = Window & { dataLayer?: unknown[]; __rhfGtm?: boolean; __rhfGa4?: boolean; gtag?: Gtag };
 
 function empujar(datos: Record<string, unknown>) {
   const w = window as W;
@@ -105,6 +117,63 @@ function cargarGTM() {
   document.head.appendChild(s);
 }
 
+/**
+ * Un evento del sitio ({ event, ...datos }) como evento de GA4. Lo demás se
+ * ignora: los comandos de gtag (llegan como `arguments`) y los internos de
+ * Google («gtm.dom», «gtm.load»…), que no tienen nombre válido de GA4.
+ */
+function eventoParaGA4(gtag: Gtag, item: unknown) {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return;
+  const { event, ...datos } = item as Record<string, unknown>;
+  if (typeof event !== "string" || !/^[a-z][a-z0-9_]{0,39}$/i.test(event)) return;
+  gtag("event", event, datos);
+}
+
+/**
+ * Carga GA4 directo (gtag.js) una sola vez, con el consentimiento de Google
+ * concedido, y le pasa los eventos de la capa de datos: los que ya estaban en
+ * la página (como hace GTM al cargar) y los que vengan.
+ */
+function cargarGA4() {
+  const w = window as W;
+  if (!GA4_ID || w.__rhfGa4) return;
+  w.__rhfGa4 = true;
+  const capa = (w.dataLayer ||= []);
+  // gtag.js solo lee los comandos que llegan como `arguments`.
+  // eslint-disable-next-line prefer-rest-params
+  const gtag: Gtag = function (..._args: unknown[]) {
+    // eslint-disable-next-line prefer-rest-params
+    (w.dataLayer as unknown[]).push(arguments);
+  };
+  w.gtag = gtag;
+  gtag("consent", "default", {
+    ad_storage: "granted",
+    analytics_storage: "granted",
+    ad_user_data: "granted",
+    ad_personalization: "granted",
+  });
+  gtag("js", new Date());
+  gtag("config", GA4_ID);
+  const previos = capa.slice();
+  const empujarEnLaCapa = capa.push.bind(capa);
+  capa.push = (...items: unknown[]) => {
+    const n = empujarEnLaCapa(...items);
+    for (const item of items) eventoParaGA4(gtag, item);
+    return n;
+  };
+  for (const item of previos) eventoParaGA4(gtag, item);
+  const s = document.createElement("script");
+  s.async = true;
+  s.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA4_ID)}`;
+  document.head.appendChild(s);
+}
+
+/** Lo que se carga con «Aceptar»: GTM si hay contenedor; si no, GA4 directo. */
+function cargarMedicion() {
+  if (GTM_ID) cargarGTM();
+  else cargarGA4();
+}
+
 /** El nombre del proyecto a partir de la ruta: /proyectos/doral-west/brochure.pdf → doral-west. */
 function proyectoDe(camino: string): string {
   const m = camino.match(/\/(?:en\/)?(?:proyectos|projects|inmuebles|properties)\/([^/]+)/);
@@ -153,9 +222,9 @@ export default function Analitica() {
 
   // El consentimiento.
   useEffect(() => {
-    if (!GTM_ID) return;
+    if (!HAY_ANALITICA) return;
     const d = leerDecision();
-    if (d === "aceptado") cargarGTM();
+    if (d === "aceptado") cargarMedicion();
     // El idioma se lee al mostrar el aviso: en el cliente, nunca en el build.
     const preguntar = () => setAviso(idiomaDeLaPagina());
     if (d === null) preguntar();
@@ -168,7 +237,7 @@ export default function Analitica() {
   const decidir = (estado: Decision) => {
     guardarDecision(estado);
     setAviso(null);
-    if (estado === "aceptado") cargarGTM();
+    if (estado === "aceptado") cargarMedicion();
   };
 
   const t = TEXTOS[aviso];

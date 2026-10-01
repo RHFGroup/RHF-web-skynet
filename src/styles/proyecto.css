@@ -579,3 +579,49 @@
 }
 :root[data-mov="reducido"] .pp-portada { animation: none; }
 :root[data-mov="reducido"] .pp-portada-fotos img { transition: none; }
+
+/* ── El simulador de compra (30-sep-2026) ─────
+   Una invitación bajo los datos clave y un enlace en la columna de
+   contacto: abren /simulador con este proyecto ya elegido. */
+.pp-simular {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-top: 22px;
+  padding: 18px 22px;
+  border: 1px solid var(--marfil-dark);
+  border-left: 4px solid var(--camel);
+  border-radius: 16px;
+  background: var(--white);
+  color: var(--near-black);
+  font-size: 14px;
+  line-height: 1.5;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.pp-simular strong { color: var(--marino); }
+.pp-simular:hover, .pp-simular:focus-visible { border-color: var(--camel); box-shadow: 0 10px 30px rgb(31 42 61 / 0.08); }
+.pp-simular span:first-child { flex: 1 1 260px; }
+.pp-simular-boton {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: var(--marino);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pp-lateral-simular {
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--marino);
+  text-decoration: underline;
+  text-decoration-color: var(--camel);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}

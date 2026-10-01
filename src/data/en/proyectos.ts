@@ -45,6 +45,7 @@ const EN_HOJA_COUNTRY =
   "The builder's sheet “Disponibilidad y precios Doral Cartagena — Doral Country”, exported September 23, 2026, with its price table by floor, “TORRE 1-5”";
 
 const TEXTOS: Diccionario = {
+  "Según su constructor: doralcartagena.com/doral-suites": "According to its builder: doralcartagena.com/doral-suites",
   ...ETIQUETAS_AREA,
 
   // ── Fuentes y créditos que se repiten ───────────────────────────────────
@@ -424,6 +425,7 @@ function traducir(p: Proyecto): Proyecto {
   }
   if (p.faq) q.faq = p.faq.map((f) => ({ pregunta: t(f.pregunta), respuesta: t(f.respuesta) }));
   if (p.avanceObra) q.avanceObra = { ...p.avanceObra, fuente: t(p.avanceObra.fuente) };
+  if (p.rentaCorta) q.rentaCorta = { fuente: t(p.rentaCorta.fuente) };
   return q;
 }
 
