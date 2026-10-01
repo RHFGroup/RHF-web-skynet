@@ -17,7 +17,7 @@ export default function Privacidad() {
     <LegalPage
       titulo="Política de Tratamiento de Datos Personales"
       bajada="Si nos escribes por WhatsApp, por el chat de esta página, por Instagram o por Facebook, si te suscribes al boletín o si dejas tus datos en una feria, quedamos con información tuya. Aquí decimos qué hacemos con ella, por cuánto tiempo, y cómo pedir que la borremos."
-      vigencia="29 de septiembre de 2026"
+      vigencia="1 de octubre de 2026"
     >
       <Seccion titulo="1. Quién responde por tus datos">
         <p>
@@ -294,9 +294,10 @@ export default function Privacidad() {
           propias credenciales, y no está expuesta en la página.
         </p>
         <p>
-          El formulario usa además Cloudflare Turnstile, una verificación
-          automática que distingue a una persona de un programa antes de
-          guardar la consulta. Para la mayoría es invisible: no hay que
+          Los formularios de consulta y del boletín usan además Cloudflare
+          Turnstile, una verificación automática que distingue a una persona
+          de un programa antes de guardar lo que envías. Para la mayoría es
+          invisible: no hay que
           resolver ninguna imagen. Turnstile no instala cookies de seguimiento
           ni usa tus datos para publicidad, y corre en la misma
           infraestructura que ya aloja esta página, así que tu consulta no pasa

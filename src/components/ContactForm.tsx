@@ -6,6 +6,7 @@ import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
 import { PROYECTOS } from "@/data/proyectos";
 import { INMUEBLES } from "@/data/inmuebles";
 import { ruta, type Idioma } from "@/i18n/idioma";
+import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
 
 /**
  * Formulario de contacto.
@@ -236,13 +237,7 @@ function registrarEvento(datos: Record<string, unknown>) {
  * verificación está apagada y solo operan la trampa para bots, el tope por
  * IP y la validación de origen. Se activa con `wrangler secret put`.
  */
-export const TURNSTILE_SITE_KEY = "0x4AAAAAAE8W_1D4uDCgIB5S";
-
-declare global {
-  interface Window {
-    turnstile?: { reset: (contenedor?: HTMLElement) => void };
-  }
-}
+export { TURNSTILE_SITE_KEY };
 export default function ContactForm({
   proyectoInicial = "",
   variante = "contacto",
