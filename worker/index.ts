@@ -18,6 +18,10 @@
  * del día, para la referencia en dólares que muestra la web junto al precio
  * en pesos. El cron la mantiene al día en D1.
  *
+ * Desde el 1-oct-2026 también presta los avisos de Telegram al CRM interno
+ * (crm/, en crm.rhfliving.com) por la clase `Avisos`, y cada aviso de lead trae
+ * el enlace a su ficha en el CRM.
+ *
  * Y desde el 23-sep-2026, un cron: cada 5 minutos el vigía de worker/vigia.ts
  * mira que el agente (chat de la web y WhatsApp) responda, y avisa por
  * Telegram si deja de hacerlo. No toca nada de lo que está acá abajo.
@@ -39,6 +43,7 @@
  *     «ok» sobre algo que no se guardó.
  */
 
+import { WorkerEntrypoint } from "cloudflare:workers";
 import { vigilar } from "./vigia";
 import { confirmarSuscripcion, guardarSuscripcion } from "./boletin";
 import {
@@ -124,6 +129,20 @@ export default {
     ctx.waitUntil(refrescarTRMSiHaceFalta(env));
   },
 } satisfies ExportedHandler<Env>;
+
+/**
+ * Lo que este Worker le presta al CRM interno (crm/, 1-oct-2026): mandar un
+ * mensaje por el bot de avisos que ya está configurado acá, sin copiar sus
+ * secretos a otro Worker. Lo usa para el código de acceso y el resumen del día.
+ *
+ * No tiene dirección pública: solo lo puede llamar un Worker de la cuenta que
+ * tenga este enlazado como servicio (`AVISOS` en crm/wrangler.jsonc).
+ */
+export class Avisos extends WorkerEntrypoint<Env> {
+  async telegram(html: string): Promise<{ ok: boolean; motivo?: string }> {
+    return enviarTelegram(this.env, String(html).slice(0, 4000));
+  }
+}
 
 async function guardarConsulta(
   request: Request,
@@ -343,9 +362,27 @@ async function notificarTelegram(
     c.mensaje ? `<b>Mensaje:</b> ${esc(c.mensaje)}` : null,
     "",
     wa ? `<a href="${wa}">Responder por WhatsApp</a>` : null,
+    // La ficha en el CRM (crm/, 1-oct-2026). Exige iniciar sesión. Las vistas
+    // previas guardan en su propia base, que el CRM de producción no ve.
+    c.id && !c.vistaPrevia ? `<a href="${CRM_URL}/c/${c.id}">Abrir en el CRM</a>` : null,
     `<i>${esc(fecha)} · ${c.origen ? esc(c.origen) + " · " : ""}#${c.id ?? "?"}</i>`,
   ].filter(Boolean);
 
+  return enviarTelegram(env, lineas.join("\n"));
+}
+
+/** La dirección del CRM interno (crm/README.md). */
+const CRM_URL = "https://crm.rhfliving.com";
+
+/**
+ * Manda un mensaje (HTML de Telegram) al chat de los avisos. Nunca lanza:
+ * devuelve el motivo si falla, y nunca incluye el token.
+ */
+async function enviarTelegram(env: Env, texto: string): Promise<{ ok: boolean; motivo?: string }> {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+    console.error("[telegram] SIN CONFIGURAR: faltan TELEGRAM_BOT_TOKEN y/o TELEGRAM_CHAT_ID.");
+    return { ok: false, motivo: "sin_configurar" };
+  }
   try {
     const r = await fetch(
       `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,
@@ -354,7 +391,7 @@ async function notificarTelegram(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: env.TELEGRAM_CHAT_ID,
-          text: lineas.join("\n"),
+          text: texto,
           parse_mode: "HTML",
           disable_web_page_preview: true,
         }),
