@@ -4,7 +4,7 @@ La web mide con Google Tag Manager o, mientras no haya contenedor, con GA4 direc
 
 ## Mientras no haya contenedor: GA4 directo (1-oct-2026)
 
-Rafael creó la propiedad de GA4 (flujo web, ID `G-WPZ0XN2C6J`) antes que el contenedor de GTM. Mientras `GTM_ID` esté vacío, la web carga GA4 directo con la etiqueta de Google (`gtag.js`) y `GA4_ID` (`src/data/analitica.ts`), con la misma regla: nada se carga sin «Aceptar» en el aviso de cookies.
+Rafael creó la propiedad de GA4 antes que el contenedor de GTM. El flujo web que se usa es `G-NVZVX1E69Q`, desde el 1-oct-2026 (antes, `G-WPZ0XN2C6J`). Mientras `GTM_ID` esté vacío, la web carga GA4 directo con la etiqueta de Google (`gtag.js`) y `GA4_ID` (`src/data/analitica.ts`), con la misma regla: nada se carga sin «Aceptar» en el aviso de cookies.
 
 - **Los eventos** de la capa de datos (`click_whatsapp`, `generate_lead`, `simulator_*`…) llegan a GA4 con los mismos nombres y parámetros: `src/components/Analitica.tsx` los pasa con `gtag("event", …)`.
 - **Lo que GA4 mide solo** (medición mejorada): páginas vistas, también al navegar dentro del sitio, desplazamiento, clics salientes, descargas y formularios.

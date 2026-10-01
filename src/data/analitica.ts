@@ -33,8 +33,11 @@
  */
 export const GTM_ID = "";
 
-/** El flujo web de rhfliving.com en GA4. Se usa solo mientras GTM_ID esté vacío. */
-export const GA4_ID: string = "G-WPZ0XN2C6J";
+/**
+ * El flujo web de rhfliving.com en GA4. Se usa solo mientras GTM_ID esté vacío.
+ * Desde el 1-oct-2026 es G-NVZVX1E69Q, el que pasó Rafael; antes era G-WPZ0XN2C6J.
+ */
+export const GA4_ID: string = "G-NVZVX1E69Q";
 
 /** ¿Hay con qué medir? Sin GTM ni GA4 no se carga nada ni se pregunta por las cookies. */
 export const HAY_ANALITICA = Boolean(GTM_ID || GA4_ID);
