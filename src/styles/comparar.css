@@ -1,0 +1,318 @@
+/* ─────────────────────────────────────────────────────────────
+   EL COMPARADOR (/comparar y /en/compare)
+   5-oct-2026 · fase 5 de los prompts de Luciano.
+
+   Móvil primero, con la paleta del sitio: la opción A va en marino y la
+   B en camel (más oscuro en texto y en trama, para que se lea sobre
+   marfil). El color nunca es la única señal: cada cifra lleva el nombre
+   de su opción al lado.
+   ───────────────────────────────────────────────────────────── */
+
+.cmpp {
+  --cmp-a: #1f2a3d;
+  --cmp-b: #a8875a;
+  --cmp-b-texto: #6b4a2f;
+  --cmp-borde: var(--marfil-dark);
+  --cmp-pista: #ddd3bf;
+  --cmp-radio: 20px;
+}
+
+/* ── La portada ───────────────────────────────── */
+.cmpp-portada { padding: 48px 0 24px; }
+.cmpp-portada h1 {
+  margin-top: 14px;
+  max-width: 860px;
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: 1.06;
+  color: var(--marino);
+}
+.cmpp-portada .section-lede { max-width: 720px; }
+.cmpp-puntos { display: grid; gap: 8px; margin: 22px 0 0; padding: 0; list-style: none; max-width: 780px; font-size: 14px; line-height: 1.5; }
+.cmpp-puntos li { position: relative; padding-left: 24px; }
+.cmpp-puntos li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.45em;
+  width: 12px;
+  height: 7px;
+  border-left: 2px solid var(--camel);
+  border-bottom: 2px solid var(--camel);
+  transform: rotate(-45deg);
+}
+.cmpp-comparador { padding: 8px 0 56px; }
+
+/* ── Piezas comunes ───────────────────────────── */
+.cmp { display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); color: var(--near-black); }
+.cmp :where(button, select) { font-family: inherit; }
+.cmp :where(button, select, summary, a, [tabindex]):focus-visible { outline: 2px solid var(--camel); outline-offset: 2px; }
+.cmp h2 { margin-top: 10px; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; color: var(--marino); }
+.cmp h3 { color: var(--marino); }
+.cmp-a { --cmp-color: var(--cmp-a); --cmp-texto: var(--cmp-a); }
+.cmp-b { --cmp-color: var(--cmp-b); --cmp-texto: var(--cmp-b-texto); }
+.cmp-lede { margin: 8px 0 0; max-width: 760px; font-size: 14.5px; line-height: 1.6; color: var(--text-muted); }
+.cmp-nota { margin: 14px 0 0; max-width: 860px; font-size: 12.5px; line-height: 1.6; color: var(--text-muted); }
+.cmp-subtitulo { margin-top: 34px; font-size: 24px; line-height: 1.2; }
+.cmp-enlace { font-size: 14px; font-weight: 600; color: var(--marino); text-decoration: underline; text-underline-offset: 3px; }
+.cmp-alerta { color: var(--cuero); }
+.cmp-usd { display: block; font-size: 12.5px; color: var(--text-muted); }
+.cmp-aviso { padding: 18px; border-radius: 14px; background: var(--white); border: 1px solid var(--cmp-borde); }
+.cmp-bloque {
+  padding: 28px 18px;
+  border: 1px solid var(--cmp-borde);
+  border-radius: var(--cmp-radio);
+  background: var(--white);
+  min-width: 0;
+}
+@media (min-width: 760px) { .cmp-bloque { padding: 40px; } }
+
+/* ── Controles ────────────────────────────────── */
+.cmp-controles {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--cmp-borde);
+  border-radius: var(--cmp-radio);
+  background: var(--white);
+}
+.cmp-grupos { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .cmp-grupos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cmp-grupo {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--cmp-borde);
+  border-radius: 14px;
+  background: var(--marfil);
+  text-align: left;
+  color: var(--marino);
+  cursor: pointer;
+}
+.cmp-grupo strong { font-size: 15px; }
+.cmp-grupo span { font-size: 12.5px; line-height: 1.45; color: var(--text-muted); }
+.cmp-grupo[aria-pressed="true"] { border-color: var(--marino); background: var(--marino); color: var(--white); }
+.cmp-grupo[aria-pressed="true"] span { color: var(--marfil-dark); }
+
+.cmp-selectores { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .cmp-selectores { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cmp-selector { display: grid; gap: 6px; min-width: 0; }
+.cmp-selector > span { font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.cmp-selector-a > span { color: var(--cmp-a); }
+.cmp-selector-b > span { color: var(--cmp-b-texto); }
+.cmp-selector select {
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 40px 12px 14px;
+  border: 1px solid var(--cmp-borde);
+  border-left: 5px solid var(--cmp-a);
+  border-radius: 12px;
+  background: var(--white)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231f2a3d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 14px center;
+  appearance: none;
+  -webkit-appearance: none;
+  color: var(--near-black);
+  font-size: 16px;
+  font-weight: 600;
+}
+.cmp-selector-b select { border-left-color: var(--cmp-b); }
+
+.cmp-perfiles { min-width: 0; margin: 0; padding: 0; border: 0; }
+.cmp-perfiles legend { padding: 0; margin-bottom: 8px; font-size: 13.5px; font-weight: 700; color: var(--marino); }
+.cmp-perfiles-botones { display: flex; flex-wrap: wrap; gap: 8px; }
+.cmp-perfil {
+  min-height: 42px;
+  padding: 9px 18px;
+  border: 1px solid var(--marino);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--marino);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cmp-perfil[aria-pressed="true"] { background: var(--marino); color: var(--white); }
+.cmp-perfil-nota { margin: 8px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--text-muted); }
+
+/* ── Las dos cabeceras ────────────────────────── */
+.cmp-cabezas { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .cmp-cabezas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cmp-cabeza {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid var(--cmp-borde);
+  border-top: 5px solid var(--cmp-a);
+  border-radius: 16px;
+  background: var(--white);
+  min-width: 0;
+}
+.cmp-cabeza-b { border-top-color: var(--cmp-b); }
+.cmp-cabeza-letra { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.cmp-cabeza h3 { font-size: 26px; line-height: 1.15; }
+.cmp-cabeza-zona { margin: 0; font-size: 13.5px; color: var(--text-muted); }
+.cmp-cabeza-precio { display: grid; gap: 2px; margin: 6px 0 4px; }
+.cmp-cabeza-precio strong { font-size: 20px; color: var(--marino); }
+.cmp-cabeza-precio small { font-size: 12px; line-height: 1.45; color: var(--text-muted); }
+
+/* ── El puntaje: las donas ───────────────────── */
+.cmp-donas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 24px; max-width: 560px; }
+.cmp-dona-caja { display: grid; justify-items: center; gap: 8px; text-align: center; min-width: 0; }
+.cmp-dona-caja > p { margin: 0; font-size: 14px; font-weight: 700; color: var(--cmp-texto); }
+.cmp-dona-caja.cmp-gana > p::after { content: " ●"; color: var(--camel); }
+.cmp-dona { position: relative; width: min(100%, 200px); aspect-ratio: 1; margin: 0; }
+.cmp-dona canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.cmp-dona figcaption { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.cmp-dona figcaption strong { font-family: var(--font-serif), "Cormorant Garamond", serif; font-size: clamp(38px, 9vw, 52px); line-height: 1; color: var(--marino); }
+.cmp-dona figcaption span { font-size: 12px; color: var(--text-muted); }
+
+.cmp-decisivo {
+  margin-top: 24px;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--marfil);
+  border-left: 4px solid var(--camel);
+}
+.cmp-decisivo-kicker { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cuero); }
+.cmp-decisivo-frase { margin: 6px 0 0; font-family: var(--font-serif), "Cormorant Garamond", serif; font-size: 24px; line-height: 1.25; color: var(--marino); }
+.cmp-decisivo-datos { display: grid; gap: 10px; margin: 14px 0 0; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .cmp-decisivo-datos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cmp-decisivo-datos dt { font-size: 12.5px; font-weight: 700; color: var(--cmp-texto); }
+.cmp-contrapeso { margin: 14px 0 0; font-size: 14px; line-height: 1.55; color: var(--near-black); }
+.cmp-contrapeso span { color: var(--text-muted); }
+.cmp-decisivo-datos dd { margin: 2px 0 0; font-size: 14px; line-height: 1.5; }
+
+/* ── El puntaje: las barras divergentes ──────── */
+.cmp-div { margin-top: 18px; }
+.cmp-div-total { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+.cmp-div-lado { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.cmp-div-lado-a { justify-content: flex-end; }
+.cmp-div-cifra { font-size: 15px; font-weight: 800; min-width: 2ch; }
+.cmp-div-lado-a .cmp-div-cifra { color: var(--cmp-a); }
+.cmp-div-lado-b .cmp-div-cifra { color: var(--cmp-b-texto); }
+.cmp-div-pila { display: flex; flex: 1; height: 22px; border-radius: 6px; background: var(--marfil); overflow: hidden; }
+.cmp-div-pila-a { flex-direction: row-reverse; }
+.cmp-seg { height: 100%; transition: width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.cmp-div-pila-a .cmp-seg-0 { background: var(--cmp-a); }
+.cmp-div-pila-a .cmp-seg-1 { background: #3a4a66; }
+.cmp-div-pila-b .cmp-seg-0 { background: var(--cmp-b); }
+.cmp-div-pila-b .cmp-seg-1 { background: #c2a578; }
+.cmp-div-nombres { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 4px; font-size: 12px; font-weight: 700; }
+.cmp-div-nombres span:first-child { text-align: right; color: var(--cmp-a); }
+.cmp-div-nombres span:last-child { color: var(--cmp-b-texto); }
+.cmp-div-filas { display: grid; gap: 14px; margin: 22px 0 0; padding: 0; list-style: none; }
+.cmp-div-fila { display: grid; grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1fr) 52px; gap: 4px 3px; align-items: center; }
+.cmp-div-titulo { grid-column: 1 / -1; display: flex; justify-content: center; gap: 8px; margin: 0; font-size: 13.5px; font-weight: 600; color: var(--marino); text-align: center; flex-wrap: wrap; }
+.cmp-div-titulo small { font-weight: 500; color: var(--text-muted); }
+.cmp-div-barra { position: relative; height: 22px; }
+.cmp-div-pista, .cmp-div-lleno { position: absolute; top: 0; bottom: 0; border-radius: 4px; transition: width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.cmp-div-barra-a .cmp-div-pista, .cmp-div-barra-a .cmp-div-lleno { right: 0; }
+.cmp-div-barra-b .cmp-div-pista, .cmp-div-barra-b .cmp-div-lleno { left: 0; }
+.cmp-div-pista { background: var(--marfil); }
+.cmp-div-barra-a .cmp-div-lleno { background: var(--cmp-a); }
+.cmp-div-barra-b .cmp-div-lleno { background: var(--cmp-b); }
+.cmp-div-valor { font-size: 12px; font-weight: 700; line-height: 1.2; }
+.cmp-div-valor-a { text-align: right; color: var(--cmp-a); }
+.cmp-div-valor-b { text-align: left; color: var(--cmp-b-texto); }
+
+/* ── Los escenarios ───────────────────────────── */
+.cmp-escenarios { display: grid; gap: 16px; margin-top: 22px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 960px) { .cmp-escenarios { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cmp-escenario { display: grid; align-content: start; gap: 6px; padding: 18px; border-radius: 16px; background: var(--marfil); min-width: 0; }
+.cmp-escenario h3 { font-size: 22px; }
+.cmp-veredicto { margin: 8px 0 4px; font-weight: 700; font-size: 15px; line-height: 1.45; color: var(--marino); }
+.cmp-acciones { display: grid; gap: 8px; margin: 12px 0 0; }
+
+/* ── Las tablas ───────────────────────────────── */
+.cmp-tabla-marco { margin-top: 22px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.cmp-tabla { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.5; }
+.cmp-tabla th, .cmp-tabla td { padding: 12px 10px; border-bottom: 1px solid var(--cmp-borde); text-align: left; vertical-align: top; }
+.cmp-tabla thead th { font-size: 13px; font-weight: 800; border-bottom: 2px solid currentColor; }
+.cmp-tabla thead th.cmp-a { color: var(--cmp-a); }
+.cmp-tabla thead th.cmp-b { color: var(--cmp-b-texto); }
+.cmp-tabla tbody th { width: 30%; font-weight: 600; color: var(--marino); }
+.cmp-tabla small { display: block; margin-top: 4px; font-size: 12px; line-height: 1.45; color: var(--text-muted); }
+.cmp-tabla-corta { margin-top: 8px; background: var(--white); border-radius: 12px; table-layout: fixed; }
+.cmp-tabla-corta th, .cmp-tabla-corta td { padding: 10px 8px; overflow-wrap: anywhere; }
+.cmp-tabla-corta tbody th { width: 34%; }
+.cmp-matriz { min-width: 560px; }
+.cmp-lista { margin: 0; padding-left: 18px; }
+.cmp-pesos { min-width: 560px; }
+.cmp-pesos td { text-align: center; font-weight: 700; color: var(--marino); }
+.cmp-pesos .cmp-activo { background: var(--marfil); }
+
+/* En el teléfono, la matriz y los pesos no se deslizan de lado: el nombre
+   del dato va arriba, a todo lo ancho, y las cifras debajo, en columnas. */
+@media (max-width: 639px) {
+  .cmp-matriz, .cmp-pesos { min-width: 0; }
+  .cmp-matriz :is(thead, tbody), .cmp-pesos :is(thead, tbody) { display: block; }
+  .cmp-matriz tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cmp-pesos tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cmp-matriz thead th:first-child, .cmp-pesos thead th:first-child { display: none; }
+  .cmp-matriz tbody th, .cmp-pesos tbody th { grid-column: 1 / -1; width: auto; padding-bottom: 2px; border-bottom: 0; }
+  .cmp-matriz td, .cmp-pesos td { overflow-wrap: anywhere; }
+}
+
+/* ── Las columnas de valor ────────────────────── */
+.cmp-cols { display: grid; gap: 14px; margin-top: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 900px) { .cmp-cols { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.cmp-cols-grupo { display: grid; align-content: start; gap: 10px; margin: 0; padding: 14px; border-radius: 14px; background: var(--marfil); min-width: 0; }
+.cmp-cols-grupo figcaption { font-size: 13px; font-weight: 600; line-height: 1.35; color: var(--marino); min-height: 2.7em; }
+.cmp-cols-par { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: end; }
+.cmp-col { display: grid; justify-items: center; gap: 6px; min-width: 0; text-align: center; }
+.cmp-col-cifra { font-size: 13px; font-weight: 800; color: var(--near-black); white-space: nowrap; }
+.cmp-col-pozo { position: relative; width: 100%; max-width: 54px; height: 120px; display: flex; align-items: flex-end; border-bottom: 1px solid var(--cmp-borde); }
+.cmp-col-barra { width: 100%; border-radius: 6px 6px 0 0; transition: height 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.cmp-col-a .cmp-col-barra { background: color-mix(in srgb, var(--cmp-a) 55%, white); }
+.cmp-col-b .cmp-col-barra { background: color-mix(in srgb, var(--cmp-b) 55%, white); }
+.cmp-col-hero.cmp-col-a .cmp-col-barra { background: var(--cmp-a); }
+.cmp-col-hero.cmp-col-b .cmp-col-barra { background: var(--cmp-b); }
+.cmp-col-vacia .cmp-col-pozo { border-bottom-style: dashed; }
+.cmp-col-vacia .cmp-col-cifra { font-weight: 600; color: var(--text-muted); }
+.cmp-col-nombre { display: grid; gap: 2px; font-size: 11.5px; font-weight: 700; line-height: 1.3; overflow-wrap: break-word; hyphens: auto; }
+.cmp-col-a .cmp-col-nombre { color: var(--cmp-a); }
+.cmp-col-b .cmp-col-nombre { color: var(--cmp-b-texto); }
+.cmp-col-nombre em { font-style: normal; font-weight: 600; font-size: 11px; color: var(--cuero); }
+
+/* ── El área por plazo ────────────────────────── */
+.cmp-area { margin-top: 16px; padding: 16px; border-radius: 16px; background: var(--marfil); }
+.cmp-area-cabeza { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; }
+.cmp-area-plazo { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.cmp-area-dato { display: grid; margin: 0; }
+.cmp-area-dato span { font-size: 12px; font-weight: 700; color: var(--cmp-texto); }
+.cmp-area-dato strong { font-size: 20px; color: var(--marino); }
+.cmp-area-lienzo { position: relative; height: 220px; margin-top: 12px; cursor: crosshair; touch-action: pan-y; }
+.cmp-area-lienzo svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.cmp-area-guia { stroke: var(--cmp-borde); stroke-width: 1; }
+.cmp-area-linea { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
+.cmp-area-linea-a { stroke: var(--cmp-a); }
+.cmp-area-linea-b { stroke: var(--cmp-b); stroke-dasharray: 6 4; }
+.cmp-area-cursor { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.cmp-area-punto { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--cmp-color); border: 2px solid var(--white); pointer-events: none; }
+.cmp-area-eje { position: relative; height: 18px; margin-top: 6px; font-size: 11.5px; color: var(--text-muted); }
+.cmp-area-eje span { position: absolute; transform: translateX(-50%); }
+.cmp-area-eje span:first-child { transform: none; }
+.cmp-area-eje span:last-child { transform: translateX(-100%); }
+.cmp-area-eje-titulo { margin: 4px 0 0; font-size: 12px; text-align: center; color: var(--text-muted); }
+
+/* ── Cierre ───────────────────────────────────── */
+.cmp-cierre { margin: 0; text-align: center; }
+.cmp-wa { display: inline-flex; padding: 14px 24px; border-radius: 14px; font-weight: 700; }
+
+/* ── Preguntas ────────────────────────────────── */
+.cmpp-faq { padding: 24px 0 88px; }
+.cmpp-faq h2 { margin-top: 12px; font-size: clamp(30px, 4vw, 44px); line-height: 1.1; color: var(--marino); }
+.cmpp-faq-lista { max-width: 860px; margin-top: 24px; border-top: 1px solid var(--cmp-borde); }
+.cmpp-faq details { border-bottom: 1px solid var(--cmp-borde); }
+.cmpp-faq summary { position: relative; padding: 18px 36px 18px 0; font-size: 16px; font-weight: 600; color: var(--marino); cursor: pointer; list-style: none; }
+.cmpp-faq summary::-webkit-details-marker { display: none; }
+.cmpp-faq summary::after { content: "+"; position: absolute; right: 4px; top: 14px; font-size: 24px; color: var(--camel); }
+.cmpp-faq details[open] summary::after { content: "−"; }
+.cmpp-faq details p { margin: 0 0 18px; font-size: 15px; line-height: 1.65; }
+
+/* ── Movimiento: sistema o preferencia (src/lib/motion.ts) ── */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-mov="activo"]) :is(.cmp-seg, .cmp-div-pista, .cmp-div-lleno, .cmp-col-barra) { transition: none; }
+}
+:root[data-mov="reducido"] :is(.cmp-seg, .cmp-div-pista, .cmp-div-lleno, .cmp-col-barra) { transition: none; }

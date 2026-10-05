@@ -81,6 +81,8 @@ const TEXTOS = {
     simularTitulo: "¿Te alcanza?",
     simularTexto: "Mira cuánto pagas de cuota inicial, tu cuota y el ingreso que te piden, con tus números.",
     simular: "Simular cuota",
+    // El comparador (5-oct-2026)
+    comparar: "Compáralo con otra opción de la cartera",
     kickerOtros: "Inmuebles disponibles",
     tituloOtros: "Otros apartamentos disponibles",
     kickerContacto: "Contacto",
@@ -138,6 +140,7 @@ const TEXTOS = {
     simularTitulo: "Can you afford it?",
     simularTexto: "See your down payment, your monthly payment and the income required, with your own numbers.",
     simular: "Estimate my payment",
+    comparar: "Compare it with another option in our portfolio",
     kickerOtros: "Available properties",
     tituloOtros: "Other available apartments",
     kickerContacto: "Contact",
@@ -246,6 +249,9 @@ export default function InmuebleLanding({ i, idioma = "es" }: { i: Inmueble; idi
                   <span className="pp-simular-boton">{t.simular} →</span>
                 </a>
               )}
+              <a className="pp-comparar" href={`${ruta(idioma, "/comparar")}?p=${i.slug}`} data-ubicacion="inmueble-datos">
+                {t.comparar} →
+              </a>
             </section>
 
             {/* 3 · El apartamento ──────────────────── */}
