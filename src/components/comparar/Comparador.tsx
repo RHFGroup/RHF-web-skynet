@@ -16,6 +16,8 @@ import { CRITERIOS, ESCENARIOS, PESOS, cuotaInicialMinima, curvaIngreso, evaluar
 import type { Grupo, Opcion } from "@/components/comparar/opciones";
 import { TEXTOS } from "@/components/comparar/textos";
 import { AreaPlazo, BarrasDivergentes, Columnas, DonaDither } from "@/components/comparar/Graficas";
+import Versus from "@/components/comparar/Versus";
+import { TEXTOS_VS } from "@/components/comparar/textos";
 import { pesos, pesosCorto, porcentaje } from "@/components/simulador/formato";
 import { evento } from "@/components/simulador/analitica";
 import { useReferenciaUSD } from "@/components/simulador/Dolares";
@@ -115,6 +117,10 @@ export default function Comparador({ idioma, opciones, reglas }: { idioma: Idiom
   const r = useMemo(() => (oa && ob ? evaluar(oa.datos, ob.datos, perfil) : null), [oa, ob, perfil]);
   const inv = useMemo(() => (oa && ob ? evaluar(oa.datos, ob.datos, "mixto", ESCENARIOS.inversion) : null), [oa, ob]);
   const hab = useMemo(() => (oa && ob ? evaluar(oa.datos, ob.datos, "mixto", ESCENARIOS.habitabilidad) : null), [oa, ob]);
+  // Las dos conclusiones del tablero «Versus»: el perfil completo de cada uno.
+  const rInv = useMemo(() => (oa && ob ? evaluar(oa.datos, ob.datos, "inversionista") : null), [oa, ob]);
+  const rViv = useMemo(() => (oa && ob ? evaluar(oa.datos, ob.datos, "vivir") : null), [oa, ob]);
+  const tvs = TEXTOS_VS[idioma];
 
   const ingreso = (o: Opcion | undefined) =>
     o?.precio ? ingresoRequerido(o.precio.desde, { financiado: reglas.financiado, tasaEA: reglas.tasa, plazoAnios: reglas.plazo, limite: reglas.limite }) : null;
@@ -157,6 +163,7 @@ export default function Comparador({ idioma, opciones, reglas }: { idioma: Idiom
 
   return (
     <div className="cmp">
+      <div className="vs">
       {/* ── Los controles ─────────────────────────── */}
       <div className="cmp-controles">
         <div className="cmp-grupos" role="group" aria-label={t.grupoAria}>
@@ -217,10 +224,40 @@ export default function Comparador({ idioma, opciones, reglas }: { idioma: Idiom
         </fieldset>
       </div>
 
-      {!distintas || !oa || !ob || !r || !inv || !hab ? (
+      {!distintas || !oa || !ob || !r || !inv || !hab || !rInv || !rViv ? (
         <p className="cmp-aviso">{t.mismaOpcion}</p>
       ) : (
         <>
+          <Versus
+            idioma={idioma}
+            oa={oa}
+            ob={ob}
+            r={r}
+            inversion={rInv}
+            vivir={rViv}
+            nombrePerfil={nombrePerfil}
+            valor={valor}
+            titulos={Object.fromEntries(CRITERIOS.map((c) => [c, t.criterios[c].titulo])) as Record<Criterio, string>}
+            ingreso={(o) => ingreso(o)}
+          />
+          <p className="cmp-cierre">
+            <a
+              className="btn-primary cmp-wa"
+              href={enlaceWhatsApp(t.mensajeWhatsapp(oa.nombre, ob.nombre, nombrePerfil))}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t.whatsapp}
+            </a>
+          </p>
+        </>
+      )}
+      </div>
+
+      {distintas && oa && ob && r && inv && hab && (
+        <details className="cmp-detalle">
+          <summary>{tvs.verDetalle}</summary>
+          <div className="cmp-detalle-cuerpo">
           {/* ── Las dos opciones ─────────────────────── */}
           <div className="cmp-cabezas">
             {[oa, ob].map((o, i) => (
@@ -592,17 +629,8 @@ export default function Comparador({ idioma, opciones, reglas }: { idioma: Idiom
             </div>
           </section>
 
-          <p className="cmp-cierre">
-            <a
-              className="btn-primary cmp-wa"
-              href={enlaceWhatsApp(t.mensajeWhatsapp(oa.nombre, ob.nombre, nombrePerfil))}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t.whatsapp}
-            </a>
-          </p>
-        </>
+          </div>
+        </details>
       )}
     </div>
   );

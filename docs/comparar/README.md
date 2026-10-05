@@ -10,6 +10,23 @@
 | ¿Cómo entra el retorno o la plusvalía? | **Solo lo verificado.** No hay ROI, flujo de caja ni valorización: ninguna de esas cifras tiene hoy una fuente por proyecto |
 | ¿Qué entra en el selector? | Dos selectores: uno para los proyectos y otro para las entregas inmediatas |
 
+## El tablero «Versus» (5-oct-2026, segunda versión)
+
+Rafael pidió combinar el comparador con un formato «Versus»: radar de 8 ejes, una tabla de «Mayores diferencias» y dos conclusiones, más corto y con mejores animaciones. Decidió tres cosas:
+
+- **Los ejes:** los 8 criterios con dato, con sus nombres donde aplican: Precio de entrada, Plazo y entrega y Amenidades. ROI, ubicación, diseño, sustentabilidad y esquema de pagos no entran, porque no tienen fuente por proyecto.
+- **El tema:** oscuro con la marca. La opción A va en azul neón (`#4cc9ff`) y la B en camel brillante (`#e8c48a`).
+- **El orden:** el Versus va arriba y el resto (donas, escenarios, matriz y plazo) queda en «Ver el detalle completo».
+
+Va en `src/components/comparar/Versus.tsx`:
+
+- **Radar en SVG.** Crece desde el centro al entrar en pantalla y cambia con resorte. Al tocar o enfocar un eje, muestra las dos cifras.
+- **«Mayores diferencias».** Hasta 6 métricas, ordenadas por lo contundente de la diferencia, con badges de ventaja como «−$213,5 M», «+1 alcoba» o «Entrega inmediata».
+- **Las conclusiones.** Una para «Para invertir» y otra para «Para vivir», con el ganador y el criterio que más pesa.
+- **Debajo de la tabla, los datos del 2.16.1 de cada opción:** precio con corte, área con etiqueta y ubicación. Así el precio nunca sale suelto, aunque el detalle esté plegado.
+
+Con movimiento reducido, nada se anima.
+
 ## Los dos grupos
 
 Las opciones salen de `src/data/proyectos.ts` y `src/data/inmuebles.ts` (`src/components/comparar/opciones.ts`). No se escriben a mano.

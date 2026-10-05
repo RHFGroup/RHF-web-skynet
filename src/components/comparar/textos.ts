@@ -302,3 +302,168 @@ export const TEXTOS: Record<Idioma, Textos> = {
     reglaKicker: "How it's calculated",
   },
 };
+
+/**
+ * El tablero «Versus» (5-oct-2026): radar de 8 ejes, mayores diferencias y
+ * las dos conclusiones. Decisión de Rafael: los 8 ejes son los que tienen
+ * dato con fuente, con sus nombres donde aplican.
+ */
+type TextosVS = {
+  kicker: string;
+  titulo: string;
+  puntajePara: (perfil: string) => string;
+  ejes: Record<Criterio, string>;
+  radarAria: (a: string, b: string) => string;
+  radarAyuda: string;
+  sinDato: string;
+  diferencias: string;
+  metrica: string;
+  ventaja: string;
+  empate: string;
+  filas: {
+    precio: string;
+    precioM2: string;
+    ingreso: string;
+    entrega: string;
+    rentaCorta: string;
+    alcobas: string;
+    zonas: string;
+    parqueadero: string;
+    exterior: string;
+  };
+  menos: (cifra: string) => string;
+  mas: (n: number, unidad: string) => string;
+  alcoba: (n: number) => string;
+  amenidad: (n: number) => string;
+  porMes: string;
+  porM2: string;
+  soloPublica: string;
+  inmediata: string;
+  conFecha: string;
+  aprobada: string;
+  privado: string;
+  exterior: Record<"lote" | "terraza" | "balcon", string>;
+  cierreInvertir: string;
+  cierreVivir: string;
+  gana: (nombre: string, pa: string, pb: string) => string;
+  parejas: string;
+  porque: (criterio: string, a: string, b: string) => string;
+  verDetalle: string;
+  nota: string;
+  legal: (precio: string, corte: string) => string;
+  consultar: string;
+  sinUbicacion: string;
+};
+
+export const TEXTOS_VS: Record<Idioma, TextosVS> = {
+  es: {
+    kicker: "Versus",
+    titulo: "Frente a frente",
+    puntajePara: (perfil) => `Puntaje para «${perfil}» · criterio RHF Living con lo documentado`,
+    ejes: {
+      precio: "Precio de entrada",
+      entrega: "Plazo y entrega",
+      rentaCorta: "Renta corta",
+      espacio: "Alcobas",
+      exterior: "Exterior propio",
+      parqueadero: "Parqueadero",
+      zonasComunes: "Amenidades",
+      informacion: "Documentación",
+    },
+    radarAria: (a, b) => `Radar de 8 ejes, de 0 a 100: ${a} contra ${b}.`,
+    radarAyuda: "Toca un eje para ver las dos cifras.",
+    sinDato: "Sin dato",
+    diferencias: "Mayores diferencias",
+    metrica: "Métrica",
+    ventaja: "Ventaja",
+    empate: "Empate",
+    filas: {
+      precio: "Precio desde",
+      precioM2: "Precio por m²",
+      ingreso: "Ingreso que pide el banco",
+      entrega: "Entrega",
+      rentaCorta: "Renta corta",
+      alcobas: "Alcobas",
+      zonas: "Zonas comunes",
+      parqueadero: "Parqueadero",
+      exterior: "Exterior",
+    },
+    menos: (cifra) => `−${cifra}`,
+    mas: (n, unidad) => `+${n} ${unidad}`,
+    alcoba: (n) => (n === 1 ? "alcoba" : "alcobas"),
+    amenidad: (n) => (n === 1 ? "zona común" : "zonas comunes"),
+    porMes: "/mes",
+    porM2: "/m²",
+    soloPublica: "Publica el dato",
+    inmediata: "Entrega inmediata",
+    conFecha: "Fecha publicada",
+    aprobada: "Aprobada",
+    privado: "Privado",
+    exterior: { lote: "Lote propio", terraza: "Terraza", balcon: "Balcón" },
+    cierreInvertir: "Para invertir",
+    cierreVivir: "Para vivir",
+    gana: (nombre, pa, pb) => `${nombre} queda adelante: ${pa} contra ${pb}.`,
+    parejas: "Quedan parejas con lo documentado.",
+    porque: (criterio, a, b) => `Pesa sobre todo ${criterio.toLowerCase()}: ${a} frente a ${b}.`,
+    verDetalle: "Ver el detalle completo",
+    nota: "Sin ROI ni valorización proyectada: ningún proyecto tiene fuente para esas cifras. Cada eje sale de un dato publicado.",
+    legal: (precio, corte) => `desde ${precio}, precio de referencia en pesos al ${corte}, sujeto a disponibilidad`,
+    consultar: "precio: consultar",
+    sinUbicacion: "ubicación del proyecto no publicada por el promotor",
+  },
+  en: {
+    kicker: "Versus",
+    titulo: "Head to head",
+    puntajePara: (perfil) => `Score for “${perfil}” · RHF Living's criterion on documented facts`,
+    ejes: {
+      precio: "Entry price",
+      entrega: "Delivery",
+      rentaCorta: "Short-term rental",
+      espacio: "Bedrooms",
+      exterior: "Private outdoor",
+      parqueadero: "Parking",
+      zonasComunes: "Amenities",
+      informacion: "Documentation",
+    },
+    radarAria: (a, b) => `8-axis radar, 0 to 100: ${a} versus ${b}.`,
+    radarAyuda: "Tap an axis to see both figures.",
+    sinDato: "No data",
+    diferencias: "Biggest differences",
+    metrica: "Metric",
+    ventaja: "Edge",
+    empate: "Even",
+    filas: {
+      precio: "Starting price",
+      precioM2: "Price per m²",
+      ingreso: "Income the bank asks for",
+      entrega: "Delivery",
+      rentaCorta: "Short-term rental",
+      alcobas: "Bedrooms",
+      zonas: "Shared amenities",
+      parqueadero: "Parking",
+      exterior: "Outdoor",
+    },
+    menos: (cifra) => `−${cifra}`,
+    mas: (n, unidad) => `+${n} ${unidad}`,
+    alcoba: (n) => (n === 1 ? "bedroom" : "bedrooms"),
+    amenidad: (n) => (n === 1 ? "amenity" : "amenities"),
+    porMes: "/mo",
+    porM2: "/m²",
+    soloPublica: "Publishes it",
+    inmediata: "Ready now",
+    conFecha: "Published date",
+    aprobada: "Approved",
+    privado: "Private",
+    exterior: { lote: "Own lot", terraza: "Terrace", balcon: "Balcony" },
+    cierreInvertir: "To invest",
+    cierreVivir: "To live in",
+    gana: (nombre, pa, pb) => `${nombre} comes out ahead: ${pa} to ${pb}.`,
+    parejas: "They come out even on documented facts.",
+    porque: (criterio, a, b) => `${criterio} weighs the most: ${a} versus ${b}.`,
+    verDetalle: "See the full detail",
+    nota: "No projected ROI or appreciation: no project has a source for those figures. Every axis comes from a published fact.",
+    legal: (precio, corte) => `from ${precio}, reference price in Colombian pesos as of ${corte}, subject to availability`,
+    consultar: "price on request",
+    sinUbicacion: "the developer doesn't publish the project's location",
+  },
+};
