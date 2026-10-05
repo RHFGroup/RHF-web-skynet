@@ -603,6 +603,7 @@
 .pp-simular strong { color: var(--marino); }
 .pp-simular:hover, .pp-simular:focus-visible { border-color: var(--camel); box-shadow: 0 10px 30px rgb(31 42 61 / 0.08); }
 .pp-simular span:first-child { flex: 1 1 260px; }
+.pp-comparar { display: inline-block; margin-top: 14px; font-size: 14px; font-weight: 600; color: var(--marino); text-decoration: underline; text-underline-offset: 3px; }
 .pp-simular-boton {
   display: inline-flex;
   align-items: center;
