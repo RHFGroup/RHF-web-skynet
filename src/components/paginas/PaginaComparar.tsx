@@ -164,7 +164,7 @@ export default function PaginaComparar({ idioma = "es" }: { idioma?: Idioma }) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(datosEstructurados(idioma)) }} />
-      <CabeceraSitio mensaje={t.whatsapp} idioma={idioma} rutaEs="/comparar" />
+      <CabeceraSitio mensaje={t.whatsapp} actual="comparar" idioma={idioma} rutaEs="/comparar" />
 
       <main className="cmpp">
         <section className="cmpp-portada" aria-labelledby="cmpp-titulo">
