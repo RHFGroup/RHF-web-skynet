@@ -8,13 +8,13 @@
    crm/README.md. */
 @font-face {
   font-family: "Cormorant Garamond";
-  src: url("/fuentes/cormorant-garamond.woff2") format("woff2");
+  src: url("fuentes/cormorant-garamond.woff2") format("woff2");
   font-weight: 300 700;
   font-display: swap;
 }
 @font-face {
   font-family: "Montserrat";
-  src: url("/fuentes/montserrat.woff2") format("woff2");
+  src: url("fuentes/montserrat.woff2") format("woff2");
   font-weight: 300 700;
   font-display: swap;
 }
@@ -699,19 +699,7 @@ details[open] > summary {
 }
 
 .acceso input {
-  font-size: 24px;
-  letter-spacing: 0.3em;
-  text-align: center;
-}
-
-.acceso-otra {
-  max-width: 420px;
-  margin: 8px auto 0;
-  text-align: center;
-}
-
-.acceso-otra .enlace {
-  color: var(--blanco);
+  font-size: 20px;
 }
 
 /* En pantallas anchas, las pestañas se quedan abajo pero centradas. */

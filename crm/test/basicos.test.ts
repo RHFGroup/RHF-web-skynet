@@ -7,6 +7,49 @@ import { telefonoE164, correoNormal, separarContacto, enlaceWhatsApp } from "../
 import { fuenteDeOrigen } from "../src/fuentes.ts";
 import { html, crudo, esc } from "../src/html.ts";
 import { hoy, sumarDias, fechaValida, fechaHoraValida, hace, fechaLocal } from "../src/tiempo.ts";
+import { huellaDe, claveCorrecta, huellaValida } from "../src/clave.ts";
+import { rutaCRM, esNavegacion, csrfDe } from "../src/seguridad.ts";
+
+test("la clave se verifica contra su huella, y nada más", async () => {
+  const huella = await huellaDe("Mi clave del CRM, con tilde", 10_000);
+  assert.match(huella, /^pbkdf2-sha256\$10000\$[A-Za-z0-9_-]{22}\$[A-Za-z0-9_-]{43}$/);
+  assert.equal(await claveCorrecta("Mi clave del CRM, con tilde", huella), true);
+  // La misma tilde escrita como dos caracteres (NFD) también entra.
+  assert.equal(await claveCorrecta("Mi clave del CRM, con tilde".normalize("NFD"), huella), true);
+  assert.equal(await claveCorrecta("mi clave del crm, con tilde", huella), false);
+  assert.equal(await claveCorrecta("", huella), false);
+  assert.equal(await claveCorrecta("Mi clave del CRM, con tilde", undefined), false);
+  assert.equal(huellaValida(huella), true);
+  assert.equal(huellaValida("pbkdf2-sha256$500$abc$def"), false);
+  assert.equal(huellaValida("sha1$10000$x$y"), false);
+  assert.equal(huellaValida(undefined), false);
+});
+
+test("la ruta secreta: «/r/» y de 16 a 64 caracteres seguros", () => {
+  assert.equal(rutaCRM({ CRM_RUTA: "/r/k3m9v2q8x7w4t6n5" }), "/r/k3m9v2q8x7w4t6n5");
+  assert.equal(rutaCRM({ CRM_RUTA: " /r/k3m9v2q8x7w4t6n5 " }), "/r/k3m9v2q8x7w4t6n5");
+  assert.equal(rutaCRM({ CRM_RUTA: "/k3m9v2q8x7w4t6n5" }), null, "sin /r/, el sitio no la deja llegar al Worker");
+  assert.equal(rutaCRM({ CRM_RUTA: "/r/corta" }), null);
+  assert.equal(rutaCRM({ CRM_RUTA: "/r/con/barra-1234567890" }), null);
+  assert.equal(rutaCRM({ CRM_RUTA: "r/sin-barra-1234567890" }), null);
+  assert.equal(rutaCRM({}), null);
+});
+
+test("solo las navegaciones reciben páginas (Fetch Metadata)", () => {
+  const con = (h: Record<string, string>) => new Request("https://rhfliving.com/x", { headers: h });
+  assert.equal(esNavegacion(con({ "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Dest": "document" })), true);
+  assert.equal(esNavegacion(con({})), true, "un navegador viejo, sin las cabeceras");
+  assert.equal(esNavegacion(con({ "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "empty" })), false, "fetch()");
+  assert.equal(esNavegacion(con({ "Sec-Fetch-Mode": "same-origin", "Sec-Fetch-Dest": "empty" })), false);
+  assert.equal(esNavegacion(con({ "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Dest": "iframe" })), false, "iframe");
+});
+
+test("el token anti-CSRF sale del token de la sesión", async () => {
+  const a = await csrfDe("A".repeat(43));
+  assert.match(a, /^[0-9a-f]{32}$/);
+  assert.equal(a, await csrfDe("A".repeat(43)));
+  assert.notEqual(a, await csrfDe("B".repeat(43)));
+});
 
 test("el mismo celular colombiano escrito de cuatro formas da el mismo E.164", () => {
   for (const t of ["300 123 4567", "3001234567", "+57 300 1234567", "573001234567", "(300) 123-4567"]) {

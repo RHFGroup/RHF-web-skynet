@@ -7,6 +7,7 @@ DELETE FROM crm_contactos;
 DELETE FROM crm_tareas;
 DELETE FROM crm_auditoria;
 DELETE FROM crm_codigos;
+DELETE FROM crm_ingresos;
 DELETE FROM crm_sesiones;
 DELETE FROM crm_ingesta;
 DELETE FROM consultas;
@@ -14,4 +15,4 @@ DELETE FROM suscripcion_eventos;
 DELETE FROM suscriptores;
 DELETE FROM sqlite_sequence
  WHERE name IN ('crm_actividades', 'crm_oportunidades', 'crm_contactos', 'crm_tareas', 'crm_auditoria',
-                'crm_codigos', 'consultas', 'suscripcion_eventos', 'suscriptores');
+                'crm_codigos', 'crm_ingresos', 'consultas', 'suscripcion_eventos', 'suscriptores');

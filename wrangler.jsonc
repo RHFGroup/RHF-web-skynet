@@ -6,8 +6,9 @@
   "compatibility_date": "2026-09-10",
 
   // Desde el 18-sep-2026 el Worker tiene código propio, además de servir los
-  // assets. `run_worker_first` lo limita a /api/*: todo lo demás se sirve como
-  // asset igual que antes, sin pasar por el Worker.
+  // assets. `run_worker_first` lo limita a /api/* y, desde el 6-oct-2026, a
+  // /r/* (el CRM): todo lo demás se sirve como asset igual que antes, sin
+  // pasar por el Worker.
   "main": "./worker/index.ts",
 
   "assets": {
@@ -15,16 +16,31 @@
     "binding": "ASSETS",
     "not_found_handling": "404-page",
     "html_handling": "auto-trailing-slash",
-    "run_worker_first": ["/api/*"]
+    // /r/*: el CRM (crm/), en su ruta secreta /r/<secreto>. Sin esto, una
+    // dirección que no es un asset recibe la página 404 sin llegar al Worker.
+    // El secreto que sigue a /r/ no va acá (el repo es público): es CRM_RUTA.
+    "run_worker_first": ["/api/*", "/r/*"]
   },
 
   // El vigía de los agentes (worker/vigia.ts): cada 5 minutos mira que el
   // chat de la web y el webhook de WhatsApp respondan, y avisa por Telegram si
-  // dejan de hacerlo. Existe por la caída del 23-sep-2026. Los previews de
-  // Workers Builds no corren crons: solo corre la versión de producción.
+  // dejan de hacerlo. Existe por la caída del 23-sep-2026. Y el resumen del
+  // día del CRM (crm/), a las 12:30 UTC: las 7:30 a. m. de Colombia. Los
+  // previews de Workers Builds no corren crons: solo corre la versión de
+  // producción.
   "triggers": {
-    "crons": ["*/5 * * * *"]
+    "crons": ["*/5 * * * *", "30 12 * * *"]
   },
+
+  // El CRM (crm/) vive en este mismo Worker, en una ruta secreta bajo /r/ (el
+  // secreto CRM_RUTA: no va acá porque el repo es público). Su hoja de
+  // estilos, su script y sus fuentes van embebidos como módulos
+  // (worker/crm-recursos.ts), no en out/: así no quedan públicos en una
+  // dirección conocida.
+  "rules": [
+    { "type": "Text", "globs": ["**/crm/public/crm.css", "**/crm/public/crm.js"], "fallthrough": true },
+    { "type": "Data", "globs": ["**/crm/public/fuentes/*.woff2"], "fallthrough": true }
+  ],
 
   // Las consultas del formulario. La lectura se hace con
   // `wrangler d1 execute rhf-leads --remote --command "SELECT ..."`.

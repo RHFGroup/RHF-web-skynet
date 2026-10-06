@@ -1,22 +1,34 @@
 /**
- * El CRM interno de RHF: crm.rhfliving.com (1-oct-2026, Prompt 3 de Luciano,
- * fase 2).
+ * El CRM interno de RHF (Prompt 3 de Luciano, fase 2).
+ *
+ * Desde el 6-oct-2026 vive dentro del Worker del sitio, en una ruta secreta de
+ * rhfliving.com (el secreto `CRM_RUTA`), y se entra con una clave (el secreto
+ * `CRM_CLAVE`). Pedido de Rafael: «un link de rhfliving.com que pida clave».
+ * Así no hace falta otro Worker, ni otro dominio, ni pasos en el panel de
+ * Cloudflare. worker/index.ts le pasa cada petición con `atenderCRM`, que
+ * responde null si la dirección no es la del CRM.
  *
  * Una ficha por persona con todo lo que llegó por el sitio (formularios,
  * /vender, guía, simulador, WhatsApp y chat del agente), las etapas de
  * compradores y propietarios, notas, tareas, el boletín y las herramientas de
  * la Ley 1581.
  *
- * Seguridad, en el servidor y en cada ruta:
+ * Por dentro, el CRM trabaja con direcciones cortas («/hoy», «/contacto/3»):
+ * acá se les quita la ruta secreta al entrar y se les antepone al salir, en
+ * las redirecciones y en los enlaces y formularios de cada página.
+ *
+ * Seguridad, en el servidor y en cada ruta (ver también src/acceso.ts):
  *  - sin sesión, todo responde 403 (la página de acceso, si es un navegador);
- *  - toda escritura exige el mismo origen;
- *  - CSP estricta: solo el script y la hoja de estilos propios, sin nada en línea;
- *  - fuera de los buscadores (noindex, robots.txt) y sin analítica;
+ *  - toda escritura exige el mismo origen y el token anti-CSRF de la sesión;
+ *  - las páginas solo se entregan a navegaciones (Fetch Metadata);
+ *  - CSP estricta: solo el script y la hoja de estilos propios, sin nada en
+ *    línea; sin marcos; ventana aislada (COOP);
+ *  - fuera de los buscadores (noindex) y sin analítica;
  *  - lo que escribe un lead se escapa siempre (src/html.ts).
  */
-import type { Env } from "./env";
-import { nuevoCtx, esVistaPrevia, existeTabla, type Ctx } from "./base";
-import { sesionDe, mismoOrigen, pedirCodigo, entrar, salir, salirDeTodo } from "./acceso";
+import type { Env, Opciones } from "./env";
+import { nuevoCtx, esVistaPrevia, existeTabla, rutaCRM, type Ctx } from "./base";
+import { sesionDe, mismoOrigen, esNavegacion, entrarConClave, hayClave, iguales, salir, salirDeTodo } from "./acceso";
 import { ingerir, contactoDeConsulta, POR_PETICION } from "./ingesta";
 import type { Html } from "./html";
 import { html } from "./html";
@@ -41,7 +53,9 @@ import {
   altaManual,
 } from "./acciones";
 import { exportarContacto, marcarReclamo, suprimir, bajaBoletin, reactivarBoletin, csvBoletin } from "./proteccion";
-import { mandarResumen } from "./resumen";
+
+export { mandarResumen } from "./resumen";
+export { rutaCRM } from "./base";
 
 /** Las cabeceras de seguridad de todas las respuestas. */
 const CABECERAS: Record<string, string> = {
@@ -49,14 +63,43 @@ const CABECERAS: Record<string, string> = {
     "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; " +
     "connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
   "X-Robots-Tag": "noindex, nofollow, noarchive",
-  "Referrer-Policy": "same-origin",
+  // Solo el origen, nunca la dirección: así la ruta secreta no sale ni hacia
+  // las páginas públicas del mismo sitio (ni hacia su analítica).
+  "Referrer-Policy": "strict-origin",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
+  // Una ventana del CRM no comparte contexto con la página que la abrió: un
+  // script del sitio público que la abra con window.open no puede leerla.
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Resource-Policy": "same-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
   "Strict-Transport-Security": "max-age=31536000",
 };
+
+const ESTATICOS_PUBLICOS = /^\/(crm\.css|fuentes\/[a-z0-9-]+\.woff2)$/;
+const ESTATICOS = /^\/(crm\.css|crm\.js|fuentes\/[a-z0-9-]+\.woff2)$/;
+
+/**
+ * La entrada desde worker/index.ts. Devuelve null si la petición no es del
+ * CRM: entonces el sitio la atiende como siempre.
+ */
+export async function atenderCRM(request: Request, env: Env, opciones: Opciones): Promise<Response | null> {
+  const ruta = rutaCRM(env);
+  if (!ruta) return null;
+  const externa = new URL(request.url);
+  if (externa.pathname !== ruta && !externa.pathname.startsWith(`${ruta}/`)) return null;
+
+  const url = new URL(externa);
+  url.pathname = externa.pathname.slice(ruta.length) || "/";
+  const c = nuevoCtx(env, request, url, ruta, opciones.avisar, opciones.esperar ?? (() => {}));
+  try {
+    const r = await atender(c, opciones);
+    return conCabeceras(await conRuta(r, c));
+  } catch (e) {
+    console.error(JSON.stringify({ crm: "error", detalle: e instanceof Error ? e.message.slice(0, 300) : "?" }));
+    return conCabeceras(new Response("Algo falló en el CRM. Vuelve a intentarlo en un momento.", { status: 500 }));
+  }
+}
 
 function conCabeceras(r: Response): Response {
   const h = new Headers(r.headers);
@@ -65,91 +108,91 @@ function conCabeceras(r: Response): Response {
   return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
 }
 
+/**
+ * Antepone la ruta secreta a las direcciones internas que salen: la de cada
+ * redirección y, en las páginas, los `href`, `action` y `src` que empiezan con
+ * «/». Y esconde el token anti-CSRF en cada formulario que escribe.
+ *
+ * El HTML de las páginas lo arma el propio CRM y todo lo que viene de un lead
+ * llega escapado (las comillas como `&quot;`, `<` como `&lt;`), así que estos
+ * reemplazos solo alcanzan los atributos que escribe el código.
+ */
+async function conRuta(r: Response, c: Ctx): Promise<Response> {
+  const h = new Headers(r.headers);
+  const destino = h.get("Location");
+  if (destino && destino.startsWith("/") && !destino.startsWith("//")) h.set("Location", `${c.ruta}${destino}`);
+  if (!(h.get("Content-Type") ?? "").startsWith("text/html") || !r.body) {
+    return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
+  }
+  let cuerpo = (await r.text()).replace(/\b(href|action|src)="\/(?!\/)/g, `$1="${c.ruta}/`);
+  if (c.csrf) {
+    cuerpo = cuerpo.replace(
+      /<form\b[^>]*\bmethod="post"[^>]*>/g,
+      (m) => `${m}<input type="hidden" name="_csrf" value="${c.csrf}">`,
+    );
+  }
+  return new Response(cuerpo, { status: r.status, statusText: r.statusText, headers: h });
+}
+
 function htmlResponse(contenido: Html, status = 200, extra?: Record<string, string>): Response {
   return new Response(contenido.valor, { status, headers: { "Content-Type": "text/html; charset=utf-8", ...extra } });
 }
 
-const ESTATICOS_PUBLICOS = /^\/(crm\.css|fuentes\/[a-z0-9-]+\.woff2)$/;
-const ESTATICOS = /^\/(crm\.css|crm\.js|fuentes\/[a-z0-9-]+\.woff2)$/;
+function texto(t: string, status: number): Response {
+  return new Response(t, { status, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+}
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    try {
-      return conCabeceras(await atender(request, env));
-    } catch (e) {
-      console.error(JSON.stringify({ crm: "error", detalle: e instanceof Error ? e.message.slice(0, 300) : "?" }));
-      return conCabeceras(new Response("Algo falló en el CRM. Vuelve a intentarlo en un momento.", { status: 500 }));
-    }
-  },
-
-  // El resumen del día (ver crm/wrangler.jsonc).
-  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(mandarResumen(env));
-  },
-} satisfies ExportedHandler<Env>;
-
-async function atender(request: Request, env: Env): Promise<Response> {
-  const c = nuevoCtx(env, request);
+async function atender(c: Ctx, opciones: Opciones): Promise<Response> {
   const { pathname } = c.url;
-  const metodo = request.method;
+  const metodo = c.request.method;
   const vistaPrevia = esVistaPrevia(c.url);
 
-  if (pathname === "/robots.txt") {
-    return new Response("User-agent: *\nDisallow: /\n", { headers: { "Content-Type": "text/plain; charset=utf-8" } });
-  }
-  if (metodo === "GET" && ESTATICOS_PUBLICOS.test(pathname)) return estatico(c);
+  if (metodo === "GET" && ESTATICOS_PUBLICOS.test(pathname)) return estatico(c, opciones);
 
-  if (!(await existeTabla(c.db, "crm_sesiones"))) {
-    return new Response("Falta aplicar la migración 0006 del CRM en esta base (ver crm/README.md).", {
-      status: 503,
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    });
+  // Solo navegaciones: un fetch() o un <iframe> de otra página, nunca.
+  if (!(metodo === "GET" && ESTATICOS.test(pathname)) && !esNavegacion(c.request)) return prohibido();
+
+  if (!(await existeTabla(c.db, "crm_sesiones")) || !(await existeTabla(c.db, "crm_ingresos"))) {
+    return texto("Falta aplicar las migraciones 0006 y 0007 del CRM en esta base (ver crm/README.md).", 503);
   }
 
   // ── El acceso ──────────────────────────────────────────────────────────
   if (pathname === "/acceso" && metodo === "GET") {
     if (await sesionDe(c)) return volverA("/hoy");
-    return htmlResponse(paginaAcceso({ paso: c.url.searchParams.get("paso") === "codigo" ? "codigo" : "inicio", vistaPrevia }));
+    return htmlResponse(paginaAcceso({ hayClave: hayClave(c), vistaPrevia }));
   }
-  if (pathname === "/acceso/codigo" && metodo === "POST") {
+  if (pathname === "/acceso" && metodo === "POST") {
     if (!mismoOrigen(c)) return prohibido();
-    const r = await pedirCodigo(c);
-    if (r.ok) return volverA("/acceso", { paso: "codigo" });
-    return htmlResponse(paginaAcceso({ paso: "inicio", error: r.error, vistaPrevia }), 429);
-  }
-  if (pathname === "/acceso/entrar" && metodo === "POST") {
-    if (!mismoOrigen(c)) return prohibido();
-    const f = await formulario(request);
+    const f = await formulario(c.request);
     if (!f) return prohibido();
-    const r = await entrar(c, String(f.get("codigo") ?? ""));
+    const r = await entrarConClave(c, String(f.get("clave") ?? ""));
     if (r.ok) {
       return new Response(null, { status: 303, headers: { Location: "/hoy", "Set-Cookie": r.cookie } });
     }
-    return htmlResponse(paginaAcceso({ paso: "codigo", error: r.error, vistaPrevia }), 401);
+    return htmlResponse(paginaAcceso({ hayClave: hayClave(c), error: r.error, vistaPrevia }), r.estado);
   }
 
   // ── Todo lo demás exige sesión ─────────────────────────────────────────
-  const usuario = await sesionDe(c);
-  if (!usuario) {
-    const navegador = metodo === "GET" && (request.headers.get("Accept") ?? "").includes("text/html");
-    return navegador
-      ? htmlResponse(paginaAcceso({ paso: "inicio", vistaPrevia }), 403)
-      : new Response("Sin sesión.", { status: 403, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  const sesion = await sesionDe(c);
+  if (!sesion) {
+    const navegador = metodo === "GET" && (c.request.headers.get("Accept") ?? "").includes("text/html");
+    return navegador ? htmlResponse(paginaAcceso({ hayClave: hayClave(c), vistaPrevia }), 403) : texto("Sin sesión.", 403);
   }
-  c.usuario = usuario;
+  c.usuario = sesion.usuario;
+  c.csrf = sesion.csrf;
 
-  if (metodo === "GET") return await get(c, vistaPrevia);
+  if (metodo === "GET") return await get(c, vistaPrevia, opciones);
   if (metodo === "POST") {
     if (!mismoOrigen(c)) return prohibido();
-    const f = await formulario(request);
-    if (!f) return prohibido();
+    const f = await formulario(c.request);
+    if (!f || !iguales(String(f.get("_csrf") ?? ""), c.csrf)) return prohibido();
     return await post(c, f, vistaPrevia);
   }
   return new Response("Método no permitido.", { status: 405, headers: { Allow: "GET, POST" } });
 }
 
 function prohibido(): Response {
-  return new Response("No permitido.", { status: 403, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  return texto("No permitido.", 403);
 }
 
 /** El cuerpo del formulario, con tope de tamaño. */
@@ -165,13 +208,17 @@ async function formulario(request: Request): Promise<FormData | null> {
   }
 }
 
-async function estatico(c: Ctx): Promise<Response> {
-  const r = await c.env.ASSETS.fetch(c.request);
-  const h = new Headers(r.headers);
-  // Los archivos llevan la versión en la dirección (?v=…): se pueden guardar
-  // en el teléfono, pero nunca en un caché compartido.
-  h.set("Cache-Control", "private, max-age=86400");
-  return new Response(r.body, { status: r.status, headers: h });
+/** La hoja de estilos, el script y las fuentes (crm/public, embebidos en el Worker). */
+function estatico(c: Ctx, opciones: Opciones): Response {
+  const p = c.url.pathname;
+  // Llevan la versión en la dirección (?v=…): se pueden guardar en el
+  // teléfono, pero nunca en un caché compartido.
+  const cache = { "Cache-Control": "private, max-age=86400" };
+  if (p === "/crm.css") return new Response(opciones.recursos.css, { headers: { "Content-Type": "text/css; charset=utf-8", ...cache } });
+  if (p === "/crm.js") return new Response(opciones.recursos.js, { headers: { "Content-Type": "text/javascript; charset=utf-8", ...cache } });
+  const fuente = opciones.recursos.fuentes[p.replace(/^\/fuentes\//, "").replace(/\.woff2$/, "")];
+  if (fuente) return new Response(fuente, { headers: { "Content-Type": "font/woff2", ...cache } });
+  return texto("No existe.", 404);
 }
 
 function id(texto: string | undefined): number | null {
@@ -179,9 +226,9 @@ function id(texto: string | undefined): number | null {
   return n > 0 && n < 1e9 ? n : null;
 }
 
-async function get(c: Ctx, vistaPrevia: boolean): Promise<Response> {
+async function get(c: Ctx, vistaPrevia: boolean, opciones: Opciones): Promise<Response> {
   const ruta = c.url.pathname;
-  if (ESTATICOS.test(ruta)) return estatico(c);
+  if (ESTATICOS.test(ruta)) return estatico(c, opciones);
   if (ruta === "/" || ruta === "") return volverA("/hoy");
 
   // El enlace del aviso de Telegram: /c/<id de la consulta>. Si la consulta

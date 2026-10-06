@@ -1,11 +1,18 @@
 /**
- * Lo que el Worker del CRM recibe de Cloudflare (ver crm/wrangler.jsonc).
+ * Lo que el CRM recibe del Worker del sitio (worker/index.ts), que lo monta en
+ * su ruta secreta desde el 6-oct-2026 (pedido de Rafael: «un link de
+ * rhfliving.com que pida clave»).
  */
 
-/** Lo que expone el Worker del sitio para el CRM (`Avisos` en worker/index.ts). */
-export interface Avisos {
-  /** Manda un mensaje (HTML de Telegram) al chat de Rafael. Nunca lanza. */
-  telegram(html: string): Promise<{ ok: boolean; motivo?: string }>;
+/** Manda un mensaje (HTML de Telegram) al chat de los avisos. Nunca lanza. */
+export type Avisar = (html: string) => Promise<{ ok: boolean; motivo?: string }>;
+
+/** La hoja de estilos, el script y las fuentes de crm/public, ya cargados. */
+export interface Recursos {
+  css: string;
+  js: string;
+  /** Por nombre de archivo, sin la extensión: «cormorant-garamond», «montserrat». */
+  fuentes: Record<string, ArrayBuffer | Uint8Array>;
 }
 
 export interface Env {
@@ -13,14 +20,25 @@ export interface Env {
   DB: D1Database;
   /** La base de las vistas previas: rhf-leads-preview. Ver `baseDe`. */
   DB_PREVIEW?: D1Database;
-  /** La hoja de estilos, el script y las fuentes (crm/public). */
-  ASSETS: Fetcher;
-  /** El Worker del sitio, que manda los avisos de Telegram. */
-  AVISOS: Avisos;
   /**
-   * Solo para probar en local (.dev.vars): el código de acceso sale también
-   * en la consola. Nunca existe en producción ni en las vistas previas, y el
-   * Worker lo ignora fuera de 127.0.0.1 y localhost.
+   * La ruta secreta del CRM, por ejemplo «/r/k3m9…»: «/r/» y de 16 a 64
+   * letras, números, «-» o «_». Es un secreto de Cloudflare y no va en el
+   * código, porque el repo es público. Sin ella, el CRM no existe: cualquier
+   * dirección sigue siendo del sitio.
    */
-  CRM_CODIGO_EN_CONSOLA?: string;
+  CRM_RUTA?: string;
+  /**
+   * La huella de la clave de Rafael, `pbkdf2-sha256$<iteraciones>$<sal>$<hash>`
+   * (ver crm/dev/poner-clave.mjs). La clave misma no se guarda en ninguna parte.
+   * Sin la huella, nadie puede entrar.
+   */
+  CRM_CLAVE?: string;
+}
+
+/** Lo que el Worker del sitio le pasa al CRM en cada petición. */
+export interface Opciones {
+  avisar: Avisar;
+  recursos: Recursos;
+  /** Para lo que puede terminar después de responder (el aviso de una sesión nueva). */
+  esperar?: (p: Promise<unknown>) => void;
 }

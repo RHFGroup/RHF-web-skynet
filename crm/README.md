@@ -1,6 +1,18 @@
-# CRM interno de RHF · crm.rhfliving.com
+# CRM interno de RHF · rhfliving.com/‹ruta secreta›
 
-El CRM privado de Rafael (Prompt 3 de Luciano, fase 2, 1-oct-2026). Es un Worker aparte del sitio (`rhf-crm`), con su propia dirección. Usa la misma base D1 que el sitio (`rhf-leads`).
+El CRM privado de Rafael (Prompt 3 de Luciano, fase 2).
+
+- **Dónde vive:** desde el 6-oct-2026, dentro del Worker del sitio (`rhf-web-skynet`), en una ruta secreta de rhfliving.com.
+- **Cómo se entra:** con una clave.
+- **El pedido de Rafael:** «un link de rhfliving.com que pida clave», sin pagar nada más.
+- **La base:** la misma del sitio (`rhf-leads`).
+
+La ruta y la clave **no van en el código**, porque el repo es público. Son dos secretos de Cloudflare:
+
+| Secreto | Qué es |
+|---|---|
+| `CRM_RUTA` | La ruta, por ejemplo `/r/k3m9…`: `/r/` y de 16 a 64 letras, números, `-` o `_`. Sin ella, el CRM no existe y toda dirección sigue siendo del sitio. |
+| `CRM_CLAVE` | La huella de la clave, `pbkdf2-sha256$<iteraciones>$<sal>$<hash>` (`src/clave.ts`). La clave misma no se guarda en ninguna parte. Sin la huella, nadie entra. |
 
 ## Qué hace
 
@@ -36,10 +48,11 @@ El CRM privado de Rafael (Prompt 3 de Luciano, fase 2, 1-oct-2026). Es un Worker
   - exportar los datos de una persona;
   - marcar un reclamo en trámite;
   - suprimir: borra los datos en el CRM, en `consultas` y en el boletín, y pide escribir el nombre para confirmar.
-- **Auditoría:** quién vio, exportó, editó o suprimió qué, y cuándo.
+- **Auditoría:** quién entró, vio, exportó, editó o suprimió qué, y cuándo.
 - **Telegram:**
-  - cada aviso de lead del sitio trae el enlace a su ficha (`/c/<id de la consulta>`);
-  - todos los días a las 7:30 a. m. llega un resumen.
+  - cada aviso de lead del sitio trae el enlace a su ficha (`<ruta>/c/<id de la consulta>`);
+  - todos los días a las 7:30 a. m. llega un resumen (el cron `30 12 * * *` del sitio);
+  - avisa cuando se abre una sesión nueva y cuando la entrada se cierra por claves equivocadas.
 
 Quedan para la versión siguiente:
 
@@ -55,70 +68,73 @@ Quedan para la versión siguiente:
 
 ## Seguridad
 
-- **Acceso:** un código de 6 dígitos que llega por Telegram, al chat de Rafael con el bot de avisos (decisión de Rafael: gratis y sin tarjeta).
-  - Vence en 5 minutos y sirve una vez.
-  - Topes: 5 intentos por código, un código por minuto, 5 por hora.
-  - En la base se guarda solo la huella SHA-256.
-- **Sesión:** 30 días, en una cookie `__Host-` con `HttpOnly`, `Secure` y `SameSite=Lax`.
-  - En la base, solo su huella.
+- **La clave:**
+  - se compara con la huella PBKDF2-SHA256 del secreto `CRM_CLAVE`;
+  - tiene topes: 5 claves equivocadas por conexión en 15 minutos;
+  - si en una hora hay 20 equivocadas, desde donde sea, la entrada se cierra esa hora y llega un aviso por Telegram (tabla `crm_ingresos`, migración 0007).
+- **La sesión:**
+  - dura 30 días, en una cookie `__Secure-` con `HttpOnly`, `Secure` y `SameSite=Lax`;
+  - lleva `Path` de la ruta secreta, así que el navegador no la manda a las páginas públicas;
+  - en la base se guarda solo su huella;
   - «Más» → cerrar la sesión en este equipo o en todos.
-- **Cada ruta exige sesión en el servidor**, también los archivos y las exportaciones. Sin sesión responde 403.
-- **Cada escritura exige el mismo origen** (`Origin`, o `Sec-Fetch-Site: same-origin`).
-- **CSP estricta:** solo `crm.css` y `crm.js` propios, sin nada en línea.
-- **Fuera de los buscadores y sin analítica:** `noindex`, `robots.txt` que bloquea todo y ninguna etiqueta de GTM, GA4 ni el píxel.
-- **Lo que escribe un lead se escapa siempre** (`src/html.ts`): su texto es un dato, no una instrucción.
-- **Los registros** no llevan datos personales. Los registros automáticos de cada petición están apagados.
-- **Las vistas previas** de Workers Builds usan la base de pruebas (`rhf-leads-preview`) y piden el mismo código.
+- **Cada ruta exige sesión en el servidor,** también los archivos y las exportaciones. Sin sesión responde 403.
 
-**Sin secretos nuevos.** Los mensajes de Telegram salen por el Worker del sitio: la clase `Avisos` de `worker/index.ts`, enlazada como servicio.
+**Por compartir el origen con el sitio público.** En rhfliving.com corren scripts de terceros: el chat, Google y Meta. Por eso hay tres defensas más:
+
+- **Toda escritura exige** el mismo origen y el token anti-CSRF de la sesión. El token va escondido en cada formulario, y un script de otra página no lo puede leer.
+- **Solo navegaciones (Fetch Metadata).** Las páginas se entregan solo a la pestaña que navega: un `fetch()` o un `<iframe>` desde otra página reciben 403.
+- **Ventanas y referer.** `Cross-Origin-Opener-Policy: same-origin`: una página pública que abra el CRM en otra ventana no puede leerla. `Referrer-Policy: strict-origin`: la ruta secreta no sale como referer, ni siquiera hacia las páginas del mismo sitio.
+
+**Además:**
+
+- **CSP estricta:** solo `crm.css` y `crm.js` propios, sin nada en línea, y sin marcos.
+- **Fuera de los buscadores y sin analítica:** `noindex`, y ninguna etiqueta de GTM, GA4 ni el píxel.
+- **Lo que escribe un lead se escapa siempre** (`src/html.ts`): su texto es un dato, no una instrucción.
+- **Los registros** no llevan datos personales, y los registros automáticos de cada petición están apagados.
+- **Las vistas previas** de Workers Builds usan la base de pruebas (`rhf-leads-preview`), con la misma ruta y la misma clave.
+
+**Cómo llega el CRM al Worker.** Con `not_found_handling: "404-page"`, una dirección que no es un asset recibe la página 404 sin pasar por el Worker. Por eso `run_worker_first` incluye `/r/*`: es lo único de la ruta que aparece en `wrangler.jsonc`, y lo que sigue a `/r/` es el secreto. La hoja de estilos, el script y las fuentes van embebidos como módulos (`worker/crm-recursos.ts`, reglas `rules` de `wrangler.jsonc`), no en `out/`. Así solo existen bajo la ruta secreta.
 
 ## Plan gratis
 
 - **Workers Free:** 100.000 peticiones al día, 10 ms de CPU y 50 sentencias de D1 por petición.
   - La ingesta procesa 5 consultas por petición. Si hay más, la página se vuelve a pedir sola hasta ponerse al día.
   - El servidor de pruebas avisa si alguna petición pasa de 50 (cabecera `X-D1-Sentencias`).
+  - PBKDF2 con 20.000 iteraciones cabe en los 10 ms.
 - **D1 Free:** hasta 500 MB por base.
-- **Cron:** el CRM usa uno de los 5 que permite la cuenta.
+- **Cron:** el sitio usa dos de los 5 de la cuenta (el vigía y el resumen del CRM).
 
-## Puesta en marcha (una sola vez, en el panel de Cloudflare)
+## Puesta en marcha (una sola vez)
 
-1. **Workers Builds** para este Worker: Workers & Pages → Create → Import a repository → `RHFGroup/RHF-web-skynet`.
-   - Nombre del proyecto: `rhf-crm`.
-   - Build command: vacío.
-   - Deploy command: `npx wrangler deploy -c crm/wrangler.jsonc`.
-   - Non-production branch deploy command: `npx wrangler versions upload -c crm/wrangler.jsonc`.
-   - Root directory: `/`.
-2. **Migración:** `npx wrangler d1 migrations apply rhf-leads --remote`.
-   - Crea las tablas `crm_*` (0006).
+1. **La ruta y la clave,** desde el Mac, en la carpeta del repo, con wrangler logueado:
+   - `node crm/dev/poner-clave.mjs ruta` genera una ruta al azar (`/r/…`), la guarda en `CRM_RUTA` y la muestra.
+   - `node crm/dev/poner-clave.mjs clave` pide la clave en un cuadro del Mac, dos veces, y guarda su huella en `CRM_CLAVE`. La clave no pasa por la Terminal.
+   - Los dos usan `wrangler versions secret put`: crean una versión con el secreto sin publicarla, y el próximo deploy lo lleva. Nunca por el panel de Cloudflare, que publica la última versión subida.
+2. **Los merges:** primero el #51, y después el PR del CRM (#55).
+3. **Las migraciones en producción:** `npx wrangler d1 migrations apply rhf-leads --remote`.
+   - Crea las tablas `crm_*` (0006 y 0007).
    - Corre también de la 0002 a la 0005, que son `IF NOT EXISTS`.
-   - Sin ella, el CRM responde «Falta aplicar la migración 0006».
-3. **La dirección.** En el Worker `rhf-crm`: Settings → Domains & Routes → Add → Custom Domain → `crm.rhfliving.com`.
-4. **Ruta sin Worker** para `crm.rhfliving.com/*`. Sin ella, la ruta comodín `*.rhfliving.com/*` del sitio se come el subdominio (igual que pasó con `a2a`).
-   - Con el OAuth de wrangler: `POST /zones/<zona>/workers/routes` con `{"pattern":"crm.rhfliving.com/*","script":null}`.
-5. **Rafael toca «Iniciar»** en @Skynet_dsh_bot. Si no, Telegram responde «chat not found» y el código no llega.
+   - Sin ellas, el CRM responde «Falta aplicar las migraciones 0006 y 0007».
 
-El orden de los merges: #46, #51 y después el PR del CRM. El Worker del sitio tiene que estar publicado con la clase `Avisos` para que el código llegue.
+**Para cambiar la clave,** se corre de nuevo `node crm/dev/poner-clave.mjs clave`. La nueva vale desde el próximo deploy.
 
 ## Probar en local
 
-**Rápido, en Node y sin wrangler.** Base en memoria con las migraciones y `crm/dev/semilla.sql`; el código de acceso sale en `GET /__dev/codigo`:
+**Rápido, en Node y sin wrangler.** Base en memoria con las migraciones y `crm/dev/semilla.sql`. La ruta y la clave de prueba están en `crm/dev/servidor.ts`.
 
 ```sh
-npx tsx --tsconfig crm/tsconfig.json crm/dev/servidor.ts      # http://127.0.0.1:8790
+npx tsx --tsconfig crm/tsconfig.json crm/dev/servidor.ts      # http://127.0.0.1:8790/r/prueba-crm-0123456789abcdef
 PW=<ruta de playwright> node crm/dev/prueba-e2e.mjs <carpeta de capturas>
 node --test "crm/test/*.test.ts"                              # Node 23.6+ (en Node 22: --experimental-strip-types)
 ```
 
-**De verdad, con wrangler** (los dos Workers juntos, para que funcione el servicio `AVISOS`):
+**De verdad, con wrangler** (el Worker del sitio con el CRM adentro). En `.dev.vars` de la raíz van `CRM_RUTA` y `CRM_CLAVE` de prueba:
 
 ```sh
-echo "CRM_CODIGO_EN_CONSOLA=1" > crm/.dev.vars
-npx wrangler d1 migrations apply rhf-leads --local -c crm/wrangler.jsonc --persist-to /tmp/rhf-crm-local
-npx wrangler d1 execute rhf-leads --local -c crm/wrangler.jsonc --persist-to /tmp/rhf-crm-local --file crm/dev/semilla.sql
-npx wrangler dev -c crm/wrangler.jsonc -c wrangler.jsonc --persist-to /tmp/rhf-crm-local --port 8798
+npx wrangler d1 migrations apply rhf-leads --local --persist-to /tmp/rhf-crm-local
+npx wrangler d1 execute rhf-leads --local --persist-to /tmp/rhf-crm-local --file crm/dev/semilla.sql
+npx wrangler dev --persist-to /tmp/rhf-crm-local --port 8798 --test-scheduled
 ```
-
-El código sale en la consola de wrangler: `[acceso] código local: …`. `CRM_CODIGO_EN_CONSOLA` solo funciona en 127.0.0.1 y localhost.
 
 ## Las fuentes
 

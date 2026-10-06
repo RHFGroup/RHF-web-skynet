@@ -18,9 +18,12 @@
  * del día, para la referencia en dólares que muestra la web junto al precio
  * en pesos. El cron la mantiene al día en D1.
  *
- * Desde el 1-oct-2026 también presta los avisos de Telegram al CRM interno
- * (crm/, en crm.rhfliving.com) por la clase `Avisos`, y cada aviso de lead trae
- * el enlace a su ficha en el CRM.
+ * Desde el 6-oct-2026 también monta el CRM interno (crm/) en una ruta secreta
+ * de rhfliving.com, con clave: los secretos `CRM_RUTA` y `CRM_CLAVE` (ver
+ * crm/README.md). En wrangler.jsonc solo aparece el prefijo «/r/»
+ * (`run_worker_first`): la ruta secreta que sigue no está en el código, porque
+ * el repo es público. Cada aviso de lead trae el enlace a su ficha, y el cron
+ * «30 12 * * *» manda el resumen del día del CRM.
  *
  * Y desde el 23-sep-2026, un cron: cada 5 minutos el vigía de worker/vigia.ts
  * mira que el agente (chat de la web y WhatsApp) responda, y avisa por
@@ -43,8 +46,9 @@
  *     «ok» sobre algo que no se guardó.
  */
 
-import { WorkerEntrypoint } from "cloudflare:workers";
 import { vigilar } from "./vigia";
+import { atenderCRM, mandarResumen, rutaCRM } from "../crm/src/index";
+import { RECURSOS_CRM } from "./crm-recursos";
 import { confirmarSuscripcion, guardarSuscripcion } from "./boletin";
 import {
   baseDe,
@@ -85,7 +89,16 @@ export interface Env {
    *  endpoint nunca queda abierto por omisión. Se carga con
    *  `wrangler secret put AGENTE_TOKEN`. */
   AGENTE_TOKEN?: string;
+  /** La ruta secreta del CRM, por ejemplo «/r/k3m9…» (crm/README.md). Sin ella,
+   *  el CRM no existe y toda dirección sigue siendo del sitio. */
+  CRM_RUTA?: string;
+  /** La huella de la clave del CRM (crm/src/clave.ts). La pone
+   *  crm/dev/poner-clave.mjs; la clave misma no se guarda en ninguna parte. */
+  CRM_CLAVE?: string;
 }
+
+/** El cron del resumen del día del CRM: 12:30 UTC, las 7:30 a. m. de Colombia. */
+const CRON_RESUMEN_CRM = "30 12 * * *";
 
 /** Versión del texto de autorización, si el cliente no manda la suya. */
 const AVISO_POR_DEFECTO = "2026-09-18";
@@ -93,6 +106,15 @@ const AVISO_POR_DEFECTO = "2026-09-18";
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    // El CRM, en su ruta secreta. Si la dirección no es la suya, responde null
+    // y todo sigue como antes.
+    const crm = await atenderCRM(request, env, {
+      avisar: (html) => enviarTelegram(env, html.slice(0, 4000)),
+      recursos: RECURSOS_CRM,
+      esperar: (p) => ctx.waitUntil(p),
+    });
+    if (crm) return crm;
 
     if (url.pathname === "/api/consulta") {
       return guardarConsulta(request, env, ctx);
@@ -122,27 +144,18 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  // El cron de wrangler.jsonc. Ver worker/vigia.ts.
+  // Los crons de wrangler.jsonc: el resumen del CRM a las 7:30 a. m. y, cada 5
+  // minutos, el vigía (worker/vigia.ts), los avisos pendientes y la TRM.
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    if (controller.cron === CRON_RESUMEN_CRM) {
+      ctx.waitUntil(mandarResumen(env, (html) => enviarTelegram(env, html)));
+      return;
+    }
     ctx.waitUntil(vigilar(env, new Date(controller.scheduledTime)));
     ctx.waitUntil(reintentarAvisos(env));
     ctx.waitUntil(refrescarTRMSiHaceFalta(env));
   },
 } satisfies ExportedHandler<Env>;
-
-/**
- * Lo que este Worker le presta al CRM interno (crm/, 1-oct-2026): mandar un
- * mensaje por el bot de avisos que ya está configurado acá, sin copiar sus
- * secretos a otro Worker. Lo usa para el código de acceso y el resumen del día.
- *
- * No tiene dirección pública: solo lo puede llamar un Worker de la cuenta que
- * tenga este enlazado como servicio (`AVISOS` en crm/wrangler.jsonc).
- */
-export class Avisos extends WorkerEntrypoint<Env> {
-  async telegram(html: string): Promise<{ ok: boolean; motivo?: string }> {
-    return enviarTelegram(this.env, String(html).slice(0, 4000));
-  }
-}
 
 async function guardarConsulta(
   request: Request,
@@ -362,17 +375,14 @@ async function notificarTelegram(
     c.mensaje ? `<b>Mensaje:</b> ${esc(c.mensaje)}` : null,
     "",
     wa ? `<a href="${wa}">Responder por WhatsApp</a>` : null,
-    // La ficha en el CRM (crm/, 1-oct-2026). Exige iniciar sesión. Las vistas
-    // previas guardan en su propia base, que el CRM de producción no ve.
-    c.id && !c.vistaPrevia ? `<a href="${CRM_URL}/c/${c.id}">Abrir en el CRM</a>` : null,
+    // La ficha en el CRM (crm/, en su ruta secreta). Exige la clave. Las
+    // vistas previas guardan en su propia base, que el CRM de producción no ve.
+    c.id && !c.vistaPrevia && rutaCRM(env) ? `<a href="https://rhfliving.com${rutaCRM(env)}/c/${c.id}">Abrir en el CRM</a>` : null,
     `<i>${esc(fecha)} · ${c.origen ? esc(c.origen) + " · " : ""}#${c.id ?? "?"}</i>`,
   ].filter(Boolean);
 
   return enviarTelegram(env, lineas.join("\n"));
 }
-
-/** La dirección del CRM interno (crm/README.md). */
-const CRM_URL = "https://crm.rhfliving.com";
 
 /**
  * Manda un mensaje (HTML de Telegram) al chat de los avisos. Nunca lanza:

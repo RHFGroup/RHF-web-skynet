@@ -1,14 +1,23 @@
 /**
  * El resumen del día por Telegram, a las 7:30 a. m. de Colombia (Prompt 3,
  * §2.6). Solo cifras y el enlace: los nombres se ven al entrar.
+ *
+ * Lo dispara el cron «30 12 * * *» del Worker del sitio (worker/index.ts).
  */
-import type { Env } from "./env";
+import type { Avisar, Env } from "./env";
+import { existeTabla, rutaCRM } from "./base";
 import { ingerir } from "./ingesta";
 import { hoy, sumarDias } from "./tiempo";
 
-export async function mandarResumen(env: Env): Promise<void> {
+export async function mandarResumen(env: Env, avisar: Avisar): Promise<void> {
   const db = env.DB;
+  const ruta = rutaCRM(env);
   try {
+    // Sin la ruta o sin las tablas, el CRM todavía no está en marcha: nada que contar.
+    if (!ruta || !(await existeTabla(db, "crm_contactos"))) {
+      console.log(JSON.stringify({ resumen: "sin_crm" }));
+      return;
+    }
     // Primero, lo que haya llegado por el sitio desde la última vez.
     await ingerir(db);
     const hoyLocal = hoy();
@@ -37,9 +46,9 @@ export async function mandarResumen(env: Env): Promise<void> {
       `• Tareas de hoy: <b>${tareas?.n ?? 0}</b>${(vencidas?.n ?? 0) > 0 ? ` (+${vencidas?.n} atrasadas)` : ""}`,
       `• Recorridos hoy y mañana: <b>${recorridos?.n ?? 0}</b>`,
       "",
-      `<a href="https://crm.rhfliving.com/hoy">Abrir el CRM</a>`,
+      `<a href="https://rhfliving.com${ruta}/hoy">Abrir el CRM</a>`,
     ];
-    const r = await env.AVISOS.telegram(lineas.join("\n"));
+    const r = await avisar(lineas.join("\n"));
     console.log(JSON.stringify({ resumen: r.ok ? "enviado" : "fallo", motivo: r.ok ? undefined : r.motivo }));
   } catch (e) {
     console.error(JSON.stringify({ resumen: "error", detalle: e instanceof Error ? e.message.slice(0, 200) : "?" }));

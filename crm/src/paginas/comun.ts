@@ -5,7 +5,7 @@ import { html, crudo, type Html } from "../html";
 import { etapaDe, PUNTAJES, FUENTES, type Tipo } from "../datos";
 
 /** Sube cuando cambian crm.css o crm.js, para que el teléfono no use la copia vieja. */
-export const VERSION_ESTATICOS = "1";
+export const VERSION_ESTATICOS = "2";
 
 /** Los avisos que vienen en la dirección (`?ok=…`). Solo códigos: nunca texto libre. */
 const AVISOS: Record<string, string> = {
@@ -75,7 +75,7 @@ export function pagina(opciones: {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="referrer" content="same-origin">
+<meta name="referrer" content="strict-origin">
 <meta name="theme-color" content="#1F2A3D">
 <link rel="icon" href="data:,">
 <title>${opciones.titulo} · CRM RHF</title>

@@ -1,15 +1,22 @@
 /**
  * La base, el usuario y la auditoría.
  */
-import type { Env } from "./env";
+import type { Avisar, Env } from "./env";
 import { USUARIO } from "./datos";
 
-/** ¿La petición llegó a una vista previa de Workers Builds? */
+export { rutaCRM } from "./seguridad";
+
+/**
+ * ¿La petición llegó a una vista previa de Workers Builds? El CRM vive dentro
+ * del Worker del sitio, así que sus vistas previas son las del sitio:
+ * `<versión o rama>-rhf-web-skynet.<subdominio>.workers.dev` (la misma regla
+ * de worker/comun.ts).
+ */
 export function esVistaPrevia(url: URL): boolean {
-  return /^[a-z0-9-]+-rhf-crm\.[a-z0-9-]+\.workers\.dev$/.test(url.hostname);
+  return /^[a-z0-9-]+-rhf-web-skynet\.[a-z0-9-]+\.workers\.dev$/.test(url.hostname);
 }
 
-/** ¿Es una prueba en el Mac (wrangler dev)? */
+/** ¿Es una prueba en el Mac (wrangler dev o el arnés de Node)? */
 export function esLocal(url: URL): boolean {
   return url.hostname === "127.0.0.1" || url.hostname === "localhost";
 }
@@ -30,21 +37,42 @@ export function ahoraIso(): string {
 export type Ctx = {
   env: Env;
   db: D1Database;
+  /**
+   * La dirección **interna**: sin la ruta secreta delante («/hoy»,
+   * «/contacto/3»…). Las páginas y las redirecciones se escriben con estas
+   * direcciones, y src/index.ts les antepone la ruta secreta al responder.
+   */
   url: URL;
+  /** La ruta secreta, por ejemplo «/k3m9…». */
+  ruta: string;
   request: Request;
   usuario: string;
   ip: string | null;
+  avisar: Avisar;
+  esperar: (p: Promise<unknown>) => void;
+  /** El token anti-CSRF de la sesión abierta (src/acceso.ts), o "" sin sesión. */
+  csrf: string;
 };
 
-export function nuevoCtx(env: Env, request: Request): Ctx {
-  const url = new URL(request.url);
+export function nuevoCtx(
+  env: Env,
+  request: Request,
+  url: URL,
+  ruta: string,
+  avisar: Avisar,
+  esperar: (p: Promise<unknown>) => void,
+): Ctx {
   return {
     env,
     db: baseDe(env, url),
     url,
+    ruta,
     request,
     usuario: USUARIO,
     ip: request.headers.get("CF-Connecting-IP"),
+    avisar,
+    esperar,
+    csrf: "",
   };
 }
 
@@ -79,9 +107,9 @@ export function sentenciaAuditoria(
 }
 
 /**
- * ¿Existe la tabla? Las del CRM llegan con la migración 0006 y las del boletín
- * con la 0005. Se recuerda lo que existe; lo que falta se vuelve a mirar, por
- * si la migración se aplicó mientras el Worker seguía vivo.
+ * ¿Existe la tabla? Las del CRM llegan con las migraciones 0006 y 0007, y las
+ * del boletín con la 0005. Se recuerda lo que existe; lo que falta se vuelve a
+ * mirar, por si la migración se aplicó mientras el Worker seguía vivo.
  */
 const tablas = new WeakMap<D1Database, Set<string>>();
 export async function existeTabla(db: D1Database, nombre: string): Promise<boolean> {

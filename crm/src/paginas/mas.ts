@@ -43,7 +43,7 @@ export function paginaMas(c: Ctx, vistaPrevia: boolean): Html {
 <section class="tarjeta">
   <h2>Sesión</h2>
   <form method="post" action="/salir"><button class="boton-sec" type="submit">Cerrar la sesión en este equipo</button></form>
-  <form method="post" action="/salir/todo"><button class="boton-sec" type="submit" data-confirmar="¿Cerrar la sesión en todos los equipos? Vas a tener que pedir otro código.">Cerrar la sesión en todos los equipos</button></form>
+  <form method="post" action="/salir/todo"><button class="boton-sec" type="submit" data-confirmar="¿Cerrar la sesión en todos los equipos? Vas a tener que volver a escribir la clave en cada uno.">Cerrar la sesión en todos los equipos</button></form>
 </section>`,
   });
 }
