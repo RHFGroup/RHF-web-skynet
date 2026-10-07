@@ -126,4 +126,3 @@ export function diasQuieta(o: { ultima_actividad_en: string | null; cerrada: num
   if (o.cerrada || o.etapa === "nutrir" || !o.ultima_actividad_en) return null;
   return Math.floor((ahora.getTime() - new Date(o.ultima_actividad_en).getTime()) / 86_400_000);
 }
-

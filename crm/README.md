@@ -49,6 +49,16 @@ La ruta y la clave **no van en el código**, porque el repo es público. Son dos
   - marcar un reclamo en trámite;
   - suprimir: borra los datos en el CRM, en `consultas` y en el boletín, y pide escribir el nombre para confirmar.
 - **Auditoría:** quién entró, vio, exportó, editó o suprimió qué, y cuándo.
+
+**Desde el 7-oct-2026 (el tablero):**
+
+- **Embudo para arrastrar** (`/embudo`), de compradores y de propietarios: las tarjetas se mueven entre etapas, también de vuelta. En el teléfono se mantiene el dedo sobre la tarjeta; sin arrastrar, «Mover a…». Perdido y Descartado piden el motivo en un diálogo, y cancelar devuelve la tarjeta. Cada columna dice cuántos hay y cuántos llevan más días de la cuenta.
+- **Velocidad de respuesta (SLA):** la espera de cada lead nuevo se cuenta en minutos hábiles (lunes a sábado, de 8 a 18, hora de Colombia, `src/horario.ts`). A los 10 minutos llega un aviso por Telegram y a los 15 otro, «se venció», sin el nombre del lead. Tocar WhatsApp, Llamar o Correo en el CRM anota el intento y cierra la espera. Una espera de más de 2 horas hábiles se marca sin avisar.
+- **Higiene de la base:** tarea «Retomar» a los 7 y a los 15 días sin actividad; a los 30, el comprador pasa solo a Nutrir (`src/higiene.ts`).
+- **Calificación:** presupuesto, forma de pago y para qué compra, en rangos (`src/data/calificacion.ts`), y el canal por el que llegó, deducido de la atribución del sitio (`src/canales.ts`).
+- **Chats** (`/conversaciones`): lo que la IA conversó por WhatsApp y por el chat de la web, en una bandeja con filtros y búsqueda, y en la ficha de cada persona. Llegan de `agente/sincronizar_conversaciones.py` por `POST /api/conversaciones-agente` (`src/conversaciones.ts`). Si pasan 30 minutos sin el latido del sincronizador, la bandeja lo avisa.
+- **Tablero** (`/tablero`), para revisar cada lunes si la inversión en anuncios se vuelve pipeline: las 5 métricas (leads nuevos, velocidad de respuesta, presentaciones, costo por lead calificado y pipeline), el embudo por etapa con sus tasas, la respuesta por tramos y los leads por canal. La inversión de cada semana se carga a mano. Las gráficas son SVG hecho en el servidor, cada una con su tabla.
+- **Interfaz oscura** en todo el CRM.
 - **Telegram:**
   - cada aviso de lead del sitio trae el enlace a su ficha (`<ruta>/c/<id de la consulta>`);
   - todos los días a las 7:30 a. m. llega un resumen (el cron `30 12 * * *` del sitio);
@@ -57,10 +67,8 @@ La ruta y la clave **no van en el código**, porque el repo es público. Son dos
 Quedan para la versión siguiente:
 
 - las cadencias automáticas de seguimiento (21 días, día 60, confirmaciones de recorrido);
-- las métricas y el costo por lead;
 - los guiones de WhatsApp (Rafael pasa los textos);
-- la importación CSV de Meta;
-- el tablero para arrastrar entre etapas;
+- la importación CSV de Meta y la inversión leída de las cuentas de anuncios;
 - unir dos fichas a mano;
 - los Ajustes editables;
 - la foto del formato de autorización;
@@ -102,7 +110,8 @@ Quedan para la versión siguiente:
   - El servidor de pruebas avisa si alguna petición pasa de 50 (cabecera `X-D1-Sentencias`).
   - PBKDF2 con 20.000 iteraciones cabe en los 10 ms.
 - **D1 Free:** hasta 500 MB por base.
-- **Cron:** el sitio usa dos de los 5 de la cuenta (el vigía y el resumen del CRM).
+- **Cron:** el sitio usa dos de los 5 de la cuenta. Desde el 7-oct-2026, uno corre cada minuto (el SLA y la higiene; cada 5 minutos, además, el vigía, los reintentos de avisos y la TRM) y el otro manda el resumen del día. Son 1.440 corridas al día, lejos de las 100.000 peticiones del plan; cada una cabe en 50 sentencias (la prueba lo mide).
+- **Los chats** llegan en lotes de hasta 50 conversaciones y 400 mensajes, guardados en 5 sentencias con `json_each`. El latido del sincronizador es una sentencia cada 5 minutos.
 
 ## Puesta en marcha (una sola vez)
 
@@ -113,8 +122,10 @@ Quedan para la versión siguiente:
 2. **Los merges:** primero el #51, y después el PR del CRM (#55).
 3. **Las migraciones en producción:** `npx wrangler d1 migrations apply rhf-leads --remote`.
    - Crea las tablas `crm_*` (0006 y 0007).
+   - La 0008 (7-oct-2026) agrega las columnas de la calificación, la atribución, el SLA y las fases, y las tablas de la inversión y de los chats. Solo agrega: no cambia ni borra nada.
    - Corre también de la 0002 a la 0005, que son `IF NOT EXISTS`.
-   - Sin ellas, el CRM responde «Falta aplicar las migraciones 0006 y 0007».
+   - Sin ellas, el CRM responde «Falta aplicar las migraciones».
+4. **Los chats de la IA,** con el OK de Rafael: instalar el sincronizador en el servidor del agente (`agente/LEEME.md`). Usa el mismo token del agente (`AGENTE_TOKEN`), que ya existe.
 
 **Para cambiar la clave,** se corre de nuevo `node crm/dev/poner-clave.mjs clave`. La nueva vale desde el próximo deploy.
 
@@ -125,8 +136,13 @@ Quedan para la versión siguiente:
 ```sh
 npx tsx --tsconfig crm/tsconfig.json crm/dev/servidor.ts      # http://127.0.0.1:8790/r/prueba-crm-0123456789abcdef
 PW=<ruta de playwright> node crm/dev/prueba-e2e.mjs <carpeta de capturas>
+PW=<ruta de playwright> node crm/dev/prueba-tablero.mjs <carpeta de capturas>   # embudo, SLA, higiene, chats y tablero
 node --test "crm/test/*.test.ts"                              # Node 23.6+ (en Node 22: --experimental-strip-types)
 ```
+
+Con `SEMILLA_DEMO=1`, el arnés carga además `crm/dev/semilla-demo.sql`: leads de mentira en todas las etapas, para ver el embudo y el tablero con datos. Las dos pruebas de punta a punta se corren cada una con el arnés recién arrancado.
+
+En WebKit, las capturas de Playwright (`caret`, `animations`) inyectan un `<style>` que la CSP del CRM bloquea: la revisión de la consola se corre sin capturas.
 
 **De verdad, con wrangler** (el Worker del sitio con el CRM adentro). En `.dev.vars` de la raíz van `CRM_RUTA` y `CRM_CLAVE` de prueba:
 

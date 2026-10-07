@@ -224,4 +224,3 @@ ${reactivar.results.length
     accion: html`<a class="boton-barra" href="/nuevo">${icono("mas_uno")}<span>Lead</span></a>`,
   });
 }
-

@@ -303,7 +303,9 @@ svg {
   margin: 22px 0 10px;
 }
 
-.subtitulo-chico {
+/* También dentro de una tarjeta, donde `.tarjeta h3` le quitaba el margen. */
+.subtitulo-chico,
+.tarjeta .subtitulo-chico {
   font-size: 13px;
   margin: 22px 0 10px;
   color: var(--texto-2);
