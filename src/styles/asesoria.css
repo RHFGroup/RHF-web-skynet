@@ -1,0 +1,286 @@
+/* ─────────────────────────────────────────────────────────────
+   LA PÁGINA DE CAPTACIÓN (/asesoria, /en/lets-talk) Y SU GRACIAS
+   7-oct-2026. Una sola acción: el formulario en tres toques.
+
+   Móvil primero: en el teléfono la tarjeta sale arriba, debajo del
+   título, y el respaldo (quién te escribe) va después. Botones de
+   56 px, texto de los campos de 17 px (el iPhone no hace zoom).
+   Paleta del sitio: marino, camel, marfil.
+   ───────────────────────────────────────────────────────────── */
+
+.ase {
+  --ase-fondo: #121a28;
+  --ase-texto: #f3efe6;
+  --ase-suave: #b9c0cc;
+  --ase-acento: #c2a578;
+  --ase-acento-vivo: #e1c08a;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  color: var(--ase-texto);
+  background:
+    radial-gradient(60% 50% at 85% 10%, rgb(194 165 120 / 0.18), transparent 70%),
+    radial-gradient(70% 60% at 0% 100%, rgb(58 74 102 / 0.55), transparent 70%),
+    var(--ase-fondo);
+  overflow-x: clip;
+  position: relative;
+}
+/* Un brillo que se mueve muy despacio detrás de todo. */
+.ase::before {
+  content: "";
+  position: absolute;
+  inset: -20% -10% auto auto;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(225 192 138 / 0.16), transparent 60%);
+  animation: ase-deriva 18s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes ase-deriva { to { transform: translate(-18vmax, 22vmax) scale(1.15); } }
+
+.ase :where(button, input, a):focus-visible { outline: 2px solid var(--ase-acento-vivo); outline-offset: 3px; }
+
+/* ── Cabeza mínima ───────────────────────────── */
+.ase-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 18px 0;
+}
+.ase-marca img { display: block; height: 34px; width: auto; }
+.ase-idiomas { display: flex; gap: 4px; padding: 3px; border: 1px solid rgb(243 239 230 / 0.25); border-radius: 999px; }
+.ase-idiomas a { padding: 5px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 700; color: var(--ase-suave); text-decoration: none; }
+.ase-idiomas a[aria-current="page"] { background: var(--ase-texto); color: var(--ase-fondo); }
+
+/* ── El héroe ─────────────────────────────────── */
+.ase-hero {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "intro" "tarjeta" "respaldo";
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 8px 0 40px;
+}
+@media (min-width: 960px) {
+  .ase-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 480px);
+    grid-template-areas: "intro tarjeta" "respaldo tarjeta";
+    column-gap: 64px;
+    align-items: start;
+    padding: 36px 0 72px;
+  }
+}
+.ase-intro { grid-area: intro; animation: ase-sube 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.ase-respaldo { grid-area: respaldo; animation: ase-sube 0.7s 0.15s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes ase-sube { from { opacity: 0; transform: translateY(16px); } }
+.ase-kicker { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ase-acento-vivo); }
+.ase-intro h1 {
+  margin: 12px 0 0;
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-size: clamp(32px, 5.2vw, 60px);
+  font-weight: 600;
+  line-height: 1.04;
+  color: var(--ase-texto);
+}
+.ase-lede { margin: 14px 0 0; max-width: 560px; font-size: 16px; line-height: 1.6; color: var(--ase-suave); }
+
+.ase-firma { display: flex; align-items: center; gap: 14px; }
+.ase-firma img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; object-position: 50% 18%; border: 2px solid var(--ase-acento); }
+.ase-firma div { display: grid; gap: 2px; }
+.ase-firma strong { font-size: 15.5px; }
+.ase-firma span { font-size: 13px; color: var(--ase-suave); }
+.ase-confianza { display: grid; gap: 10px; margin: 18px 0 0; padding: 0; list-style: none; max-width: 560px; }
+.ase-confianza li {
+  position: relative;
+  padding-left: 28px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  animation: ase-sube 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(0.3s + var(--i) * 0.12s);
+}
+.ase-confianza li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.4em;
+  width: 13px;
+  height: 7px;
+  border-left: 2px solid var(--ase-acento-vivo);
+  border-bottom: 2px solid var(--ase-acento-vivo);
+  transform: rotate(-45deg);
+}
+
+/* ── La tarjeta del formulario ───────────────── */
+.ase-tarjeta {
+  grid-area: tarjeta;
+  position: relative;
+  padding: 20px 18px 18px;
+  border-radius: 24px;
+  background: #fff;
+  color: var(--near-black, #1c1c1c);
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.35), 0 0 0 1px rgb(255 255 255 / 0.06);
+  min-width: 0;
+  animation: ase-aparece 0.6s 0.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (min-width: 640px) { .ase-tarjeta { padding: 28px; } }
+@keyframes ase-aparece { from { opacity: 0; transform: translateY(24px) scale(0.98); } }
+.ase-tarjeta :where(button, input) { font-family: inherit; }
+.ase-cabeza { display: flex; align-items: center; justify-content: space-between; min-height: 28px; }
+.ase-contador { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted, #6a6a6a); }
+.ase-atras { padding: 4px 8px; border: 0; background: none; font-size: 13.5px; font-weight: 600; color: var(--marino, #1f2a3d); cursor: pointer; }
+.ase-barra { height: 6px; margin: 10px 0 18px; border-radius: 999px; background: #efe9dc; overflow: hidden; }
+.ase-barra span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #c2a578, #e1c08a); transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+.ase-paso h2 { margin: 0; font-family: var(--font-serif), "Cormorant Garamond", serif; font-size: clamp(26px, 6vw, 32px); line-height: 1.1; color: var(--marino, #1f2a3d); outline: none; }
+.ase-paso-adelante { animation: ase-entra-der 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.ase-paso-atras { animation: ase-entra-izq 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes ase-entra-der { from { opacity: 0; transform: translateX(28px); } }
+@keyframes ase-entra-izq { from { opacity: 0; transform: translateX(-28px); } }
+.ase-nota { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--text-muted, #6a6a6a); }
+
+.ase-opciones { display: grid; gap: 10px; margin-top: 16px; }
+.ase-opcion {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  min-height: 56px;
+  padding: 14px 44px 14px 16px;
+  border: 1.5px solid #e4dccb;
+  border-radius: 16px;
+  background: #fbf9f4;
+  text-align: left;
+  color: var(--marino, #1f2a3d);
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s, transform 0.12s, box-shadow 0.18s;
+  animation: ase-sube 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(0.05s + var(--i) * 0.05s);
+}
+.ase-opcion:hover { border-color: #c2a578; background: #fff; box-shadow: 0 8px 24px rgb(31 42 61 / 0.08); }
+.ase-opcion:active { transform: scale(0.98); }
+.ase-opcion[aria-pressed="true"] { border-color: #1f2a3d; background: #1f2a3d; color: #fff; }
+.ase-opcion[aria-pressed="true"] .ase-opcion-nota { color: #d8dce4; }
+.ase-opcion-texto { font-size: 16.5px; font-weight: 700; }
+.ase-opcion-nota { font-size: 13px; color: var(--text-muted, #6a6a6a); }
+.ase-opcion-flecha { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 18px; color: #c2a578; transition: transform 0.18s; }
+.ase-opcion:hover .ase-opcion-flecha { transform: translate(4px, -50%); }
+
+/* El paso de los datos */
+.ase-form { display: grid; gap: 14px; }
+.ase-elegido { margin: 0; padding: 8px 12px; border-radius: 10px; background: #f6f1e6; font-size: 13px; font-weight: 600; color: #6b4a2f; }
+.ase-campo { display: grid; gap: 6px; }
+.ase-campo span { font-size: 13.5px; font-weight: 700; color: var(--marino, #1f2a3d); }
+.ase-campo input {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1.5px solid #e4dccb;
+  border-radius: 14px;
+  background: #fff;
+  font-size: 17px;
+  color: #1c1c1c;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.ase-campo input:focus { outline: none; border-color: #1f2a3d; box-shadow: 0 0 0 4px rgb(194 165 120 / 0.25); }
+.ase-campo small { font-size: 12px; color: var(--text-muted, #6a6a6a); }
+.ase-trampa { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.ase-autoriza { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; font-size: 12px; line-height: 1.5; color: #4a4a4a; }
+.ase-autoriza input { width: 20px; height: 20px; margin-top: 1px; accent-color: #1f2a3d; }
+.ase-autoriza a { color: #1f2a3d; text-decoration: underline; }
+.ase-error { margin: 0; padding: 10px 12px; border-radius: 10px; background: #fbeae6; font-size: 13.5px; line-height: 1.5; color: #8a2f22; }
+.ase-error a { font-weight: 700; color: #8a2f22; }
+.ase-enviar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1f2a3d, #2c3b56);
+  color: #fff;
+  font-size: 16.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 30px rgb(31 42 61 / 0.3);
+  transition: transform 0.12s, box-shadow 0.18s;
+}
+.ase-enviar:hover { box-shadow: 0 16px 36px rgb(31 42 61 / 0.4); }
+.ase-enviar:active { transform: scale(0.98); }
+.ase-enviar:disabled { opacity: 0.7; cursor: wait; }
+.ase-enviar span { transition: transform 0.18s; }
+.ase-enviar:hover span { transform: translateX(4px); }
+.ase-turnstile:empty { display: none; }
+.ase-turnstile { margin-top: 10px; }
+
+/* ── Así sigue ────────────────────────────────── */
+.ase-como { position: relative; z-index: 1; width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 8px 0 48px; }
+.ase-como h2 { margin: 0 0 16px; font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ase-suave); }
+.ase-como ol { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 760px) { .ase-como ol { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.ase-como li { display: grid; gap: 4px; padding: 18px; border-radius: 18px; background: rgb(255 255 255 / 0.05); border: 1px solid rgb(255 255 255 / 0.08); }
+.ase-como-n { display: grid; place-items: center; width: 30px; height: 30px; margin-bottom: 6px; border-radius: 50%; background: var(--ase-acento); color: var(--ase-fondo); font-weight: 800; font-size: 14px; }
+.ase-como strong { font-size: 16px; }
+.ase-como li span:last-child { font-size: 14px; line-height: 1.5; color: var(--ase-suave); }
+
+/* ── Pie mínimo ───────────────────────────────── */
+.ase-pie { position: relative; z-index: 1; margin-top: auto; width: min(1180px, calc(100% - 32px)); margin-inline: auto; padding: 20px 0 28px; border-top: 1px solid rgb(255 255 255 / 0.08); font-size: 12px; line-height: 1.6; color: var(--ase-suave); }
+.ase-pie p { margin: 0 0 4px; }
+.ase-pie a { color: var(--ase-suave); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── La página de gracias ────────────────────── */
+.ase-hero-gracias { position: relative; z-index: 1; display: grid; place-items: center; width: min(640px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0 56px; flex: 1; }
+.ase-gracias { display: grid; justify-items: center; gap: 16px; width: 100%; text-align: center; }
+.ase-check { width: 84px; height: 84px; }
+.ase-check circle { fill: none; stroke: var(--ase-acento-vivo); stroke-width: 2.5; stroke-dasharray: 151; stroke-dashoffset: 151; animation: ase-traza 0.7s 0.1s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
+.ase-check path { fill: none; stroke: var(--ase-texto); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 40; stroke-dashoffset: 40; animation: ase-traza 0.4s 0.75s cubic-bezier(0.65, 0, 0.45, 1) forwards; }
+@keyframes ase-traza { to { stroke-dashoffset: 0; } }
+.ase-gracias h1 { margin: 0; font-family: var(--font-serif), "Cormorant Garamond", serif; font-size: clamp(36px, 8vw, 56px); line-height: 1.05; animation: ase-sube 0.6s 0.5s both; }
+.ase-gracias-lede { margin: 0; max-width: 480px; font-size: 16.5px; line-height: 1.6; color: var(--ase-suave); animation: ase-sube 0.6s 0.65s both; }
+.ase-gracias-resumen { width: 100%; animation: ase-sube 0.6s 0.8s both; }
+.ase-gracias-resumen p { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ase-suave); }
+.ase-gracias-resumen ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ase-gracias-resumen li { padding: 7px 14px; border-radius: 999px; background: rgb(255 255 255 / 0.08); border: 1px solid rgb(225 192 138 / 0.4); font-size: 14px; font-weight: 600; }
+.ase-wa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+  min-height: 58px;
+  margin-top: 6px;
+  padding: 14px 22px;
+  border-radius: 16px;
+  background: #25d366;
+  color: #062b14;
+  font-size: 16.5px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 14px 34px rgb(37 211 102 / 0.3);
+  animation: ase-sube 0.6s 0.95s both, ase-pulso 2.6s 2s ease-in-out infinite;
+}
+@keyframes ase-pulso { 50% { box-shadow: 0 14px 44px rgb(37 211 102 / 0.55); } }
+.ase-mientras { display: grid; gap: 10px; width: 100%; max-width: 420px; margin-top: 18px; text-align: left; animation: ase-sube 0.6s 1.1s both; }
+.ase-mientras-titulo { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ase-suave); text-align: center; }
+.ase-mientras-tarjeta { display: grid; gap: 2px; padding: 14px 16px; border-radius: 14px; background: rgb(255 255 255 / 0.06); border: 1px solid rgb(255 255 255 / 0.1); color: var(--ase-texto); text-decoration: none; transition: background 0.18s; }
+.ase-mientras-tarjeta:hover { background: rgb(255 255 255 / 0.1); }
+.ase-mientras-tarjeta strong { font-size: 15px; }
+.ase-mientras-tarjeta span { font-size: 13px; color: var(--ase-suave); }
+.ase-volver { margin-top: 8px; font-size: 13.5px; color: var(--ase-suave); }
+
+/* ── Movimiento: sistema o preferencia (src/lib/motion.ts) ── */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-mov="activo"]) :is(.ase::before, .ase-intro, .ase-respaldo, .ase-confianza li, .ase-tarjeta, .ase-paso-adelante, .ase-paso-atras, .ase-opcion, .ase-gracias h1, .ase-gracias-lede, .ase-gracias-resumen, .ase-wa, .ase-mientras) { animation: none; }
+  :root:not([data-mov="activo"]) .ase-check :is(circle, path) { animation: none; stroke-dashoffset: 0; }
+}
+:root[data-mov="reducido"] :is(.ase::before, .ase-intro, .ase-respaldo, .ase-confianza li, .ase-tarjeta, .ase-paso-adelante, .ase-paso-atras, .ase-opcion, .ase-gracias h1, .ase-gracias-lede, .ase-gracias-resumen, .ase-wa, .ase-mientras) { animation: none; }
+:root[data-mov="reducido"] .ase-check :is(circle, path) { animation: none; stroke-dashoffset: 0; }
