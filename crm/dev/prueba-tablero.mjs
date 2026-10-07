@@ -101,6 +101,8 @@ caso("mover la etapa marca la fase, cierra la espera y mide la respuesta", ana.f
 });
 caso("la tarjeta quedó en la columna nueva", (await page.locator('.columna[data-etapa="contactado"] .tarjeta-lead', { hasText: "Ana Prueba" }).count()) === 1);
 caso("los conteos de las columnas se actualizan", (await page.locator('.columna[data-etapa="nuevo"] [data-cuenta]').innerText()) === "6");
+const totalContactado = await page.locator('.columna[data-etapa="contactado"] [data-total]').innerText();
+caso("y el valor de la columna se mueve con la tarjeta, como en GHL", /^\$[\d.,]+ M$/.test(totalContactado), totalContactado);
 
 // Perdido pide el motivo; cancelar deja todo como estaba.
 await arrastrar("Simón Simulador", "perdido");
@@ -204,14 +206,31 @@ caso("una espera de más de 2 horas hábiles se marca sin avisar", m.mensajes.le
 // ── La higiene ──────────────────────────────────────────────────────────
 const emily = await op("Emily Form");
 await sql(`UPDATE crm_oportunidades SET espera_desde = NULL, ultima_actividad_en = '2026-09-29T15:00:00.000Z' WHERE id = ${emily.id}`);
-m = await minuto("2026-10-07T15:31:00Z");
+// La higiene corre dos veces por hora (minutos 7 y 37, crm/src/cron.ts).
+m = await minuto("2026-10-07T15:36:00Z");
+caso("fuera de sus minutos la higiene no corre", (await sql(`SELECT COUNT(*) AS n FROM crm_tareas WHERE oportunidad_id = ${emily.id} AND hecha_en IS NULL`))[0].n === 0);
+m = await minuto("2026-10-07T15:37:00Z");
 const tareaEmily = await sql(`SELECT titulo, regla, vence_en FROM crm_tareas WHERE oportunidad_id = ${emily.id} AND hecha_en IS NULL`);
 caso("7 días sin actividad: tarea «Retomar» para hoy", tareaEmily.length === 1 && tareaEmily[0].regla === "higiene_7" && tareaEmily[0].vence_en === "2026-10-07", tareaEmily);
 await sql(`UPDATE crm_oportunidades SET ultima_actividad_en = '2026-09-01T15:00:00.000Z' WHERE id = ${emily.id}`);
-m = await minuto("2026-10-07T15:32:00Z");
+m = await minuto("2026-10-07T16:07:00Z");
 const emily30 = await op("Emily Form");
 caso("30 días sin actividad: el comprador pasa solo a Nutrir", emily30.etapa === "nutrir" && emily30.higiene_nivel === 30);
 caso("y su tarea de higiene queda hecha", (await sql(`SELECT COUNT(*) AS n FROM crm_tareas WHERE oportunidad_id = ${emily.id} AND hecha_en IS NULL`))[0].n === 0);
+
+// ── El SLA fuera de horario y las esperas viejas (plan gratis) ─────────────
+// Llega a las 6:10 p. m. del miércoles: el reloj no corre de noche, y el
+// aviso de los 10 minutos sale el jueves a las 8:10 a. m.
+await sql(`INSERT INTO consultas (creado_en, nombre, contacto, mensaje, autoriza, version_aviso, origen) VALUES ('2026-10-07T23:10:00.000Z', 'Noche Lead', '3005557777', 'Hola', 1, '2026-10-07', '/')`);
+m = await minuto("2026-10-08T01:00:00Z");
+caso("de noche el SLA no corre ni avisa", m.mensajes.length === 0 && (await op("Noche Lead")).sla_aviso_en === null, m.mensajes);
+m = await minuto("2026-10-08T13:10:30Z");
+caso("al día siguiente, a los 10 minutos hábiles, avisa", m.mensajes.length === 1 && m.mensajes[0].includes("hace 10 minutos"), m.mensajes);
+// Una espera de hace más de una semana ya no se lee cada minuto.
+await sql(`INSERT INTO consultas (creado_en, nombre, contacto, mensaje, autoriza, version_aviso, origen) VALUES ('2026-09-28T14:00:00.000Z', 'Antiguo Lead', '3005556666', 'Hola', 1, '2026-09-18', '/')`);
+m = await minuto("2026-10-08T13:11:30Z");
+const antiguo = await op("Antiguo Lead");
+caso("una espera de hace más de 7 días queda fuera del SLA", m.mensajes.length === 0 && antiguo.espera_desde !== null && antiguo.sla_vencido_en === null, antiguo.sla_vencido_en);
 
 // ── Los chats de la IA ──────────────────────────────────────────────────
 const lote = {

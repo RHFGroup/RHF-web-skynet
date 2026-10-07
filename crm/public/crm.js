@@ -226,11 +226,30 @@
       estado = null;
     }
 
+    // «$2,4 M», como pesosCortos del servidor (crm/src/paginas/comun.ts).
+    function pesosCortos(n) {
+      if (!n) return "";
+      if (n >= 1e6) {
+        var m = n / 1e6;
+        return "$" + m.toLocaleString("es-CO", { maximumFractionDigits: m < 10 ? 1 : 0 }) + " M";
+      }
+      if (n >= 1e3) return "$" + Math.round(n / 1e3).toLocaleString("es-CO") + " mil";
+      return "$" + Math.round(n).toLocaleString("es-CO");
+    }
+
     function actualizarConteos() {
       k.querySelectorAll(".columna").forEach(function (c) {
-        var n = c.querySelectorAll(".tarjeta-lead").length;
+        var tarjetas = c.querySelectorAll(".tarjeta-lead");
+        var n = tarjetas.length;
         var b = c.querySelector("[data-cuenta]");
         if (b) b.textContent = String(n);
+        // El valor de la columna, como en el embudo de GHL: se mueve con la tarjeta.
+        var total = 0;
+        tarjetas.forEach(function (t) {
+          total += Number(t.getAttribute("data-valor")) || 0;
+        });
+        var v = c.querySelector("[data-total]");
+        if (v) v.textContent = pesosCortos(total);
         var vacia = c.querySelector(".columna-vacia");
         if (vacia) vacia.hidden = n > 0;
       });

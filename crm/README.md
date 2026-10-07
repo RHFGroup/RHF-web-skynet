@@ -110,7 +110,8 @@ Quedan para la versión siguiente:
   - El servidor de pruebas avisa si alguna petición pasa de 50 (cabecera `X-D1-Sentencias`).
   - PBKDF2 con 20.000 iteraciones cabe en los 10 ms.
 - **D1 Free:** hasta 500 MB por base.
-- **Cron:** el sitio usa dos de los 5 de la cuenta. Desde el 7-oct-2026, uno corre cada minuto (el SLA y la higiene; cada 5 minutos, además, el vigía, los reintentos de avisos y la TRM) y el otro manda el resumen del día. Son 1.440 corridas al día, lejos de las 100.000 peticiones del plan; cada una cabe en 50 sentencias (la prueba lo mide).
+- **Cron:** el sitio usa dos de los 5 de la cuenta. Desde el 7-oct-2026, uno corre cada minuto y el otro manda el resumen del día. El de cada minuto trae las consultas nuevas y, solo en horario hábil, vigila el SLA; la higiene corre dos veces por hora (minutos 7 y 37), y cada 5 minutos corren el vigía, los reintentos de avisos y la TRM. Son 1.440 corridas al día, lejos de las 100.000 peticiones del plan, y cada una cabe en 50 sentencias (la prueba lo mide).
+- **Lecturas de D1:** el plan gratis permite 5 millones de filas leídas al día para todo el sitio; si se pasa, D1 deja de responder hasta la medianoche UTC, también al formulario. Por eso las consultas del cron van por índices y miran solo lo reciente: el SLA, las esperas de la última semana; la higiene, dos veces por hora y no cada minuto. Así el gasto no crece con la base.
 - **Los chats** llegan en lotes de hasta 50 conversaciones y 400 mensajes, guardados en 5 sentencias con `json_each`. El latido del sincronizador es una sentencia cada 5 minutos.
 
 ## Puesta en marcha (una sola vez)

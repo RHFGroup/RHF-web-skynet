@@ -94,7 +94,7 @@ export async function paginaEmbudo(c: Ctx, vistaPrevia: boolean): Promise<Html> 
     const espera = f.espera_desde ? minutosHabiles(new Date(f.espera_desde), ahora) : null;
     const programado = (f.proxima_accion_en ?? "") >= hoyLocal || (f.recorrido_en ?? "").slice(0, 10) >= hoyLocal;
     const estancada = !f.cerrada && metaDias !== undefined && dias > metaDias && !programado && espera === null;
-    return html`<article class="tarjeta-lead" data-op="${f.id}" data-etapa="${f.etapa}" tabindex="-1">
+    return html`<article class="tarjeta-lead" data-op="${f.id}" data-etapa="${f.etapa}" data-valor="${v.valor ?? 0}" tabindex="-1">
   <header class="tarjeta-lead-cabeza">
     <span class="avatar avatar--chico" aria-hidden="true">${iniciales(f.nombre)}</span>
     <a class="tarjeta-lead-nombre" href="/contacto/${f.contacto_id}">${f.nombre || "Sin nombre"}</a>
@@ -132,7 +132,7 @@ export async function paginaEmbudo(c: Ctx, vistaPrevia: boolean): Promise<Html> 
     return html`<section class="columna columna--${e.tono}" data-etapa="${e.id}"${e.pideMotivo ? crudo(' data-pide-motivo="1"') : ""} aria-labelledby="col-${e.id}">
   <header class="columna-cabeza">
     <h2 id="col-${e.id}"><i class="punto etapa-punto--${e.tono}" aria-hidden="true"></i>${e.nombre}</h2>
-    <p class="columna-cifras"><b data-cuenta>${lista.length}</b><span>${total ? pesosCortos(total) : ""}</span></p>
+    <p class="columna-cifras"><b data-cuenta>${lista.length}</b><span data-total>${total ? pesosCortos(total) : ""}</span></p>
   </header>
   <div class="columna-cuerpo">
     ${lista.map((f) => tarjeta(f, e.metaDias))}

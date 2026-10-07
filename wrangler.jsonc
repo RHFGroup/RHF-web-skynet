@@ -23,10 +23,11 @@
   },
 
   // Dos crons (el plan gratis permite 5 por cuenta):
-  //  - cada minuto (desde el 7-oct-2026; antes, cada 5): el SLA de la primera
-  //    respuesta y la higiene del CRM. Cada 5 minutos, además, el vigía de los
-  //    agentes (worker/vigia.ts, por la caída del 23-sep-2026), los avisos
-  //    pendientes y la TRM;
+  //  - cada minuto (desde el 7-oct-2026; antes, cada 5): las consultas nuevas
+  //    al CRM y, en horario hábil, el SLA de la primera respuesta; dos veces
+  //    por hora, la higiene (crm/src/cron.ts). Cada 5 minutos, además, el
+  //    vigía de los agentes (worker/vigia.ts, por la caída del 23-sep-2026),
+  //    los avisos pendientes y la TRM;
   //  - a las 12:30 UTC, las 7:30 a. m. de Colombia: el resumen del día del CRM.
   // Los previews de Workers Builds no corren crons: solo corre la versión de
   // producción.

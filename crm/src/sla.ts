@@ -28,6 +28,8 @@ import { horaCorta } from "./tiempo";
 
 /** Más de esto, en minutos hábiles, ya no avisa: se marca y se sigue. */
 export const SIN_AVISO_DESDE = 120;
+/** Hasta cuántos días atrás mira el SLA (las esperas más viejas ya se marcaron). */
+const VENTANA_DIAS = 7;
 /** Avisos por corrida del cron (uno por minuto): Telegram y el tope de 50 sentencias. */
 const AVISOS_POR_CORRIDA = 5;
 
@@ -95,11 +97,15 @@ export async function vigilarSla(db: D1Database, avisar: Avisar, ruta: string, a
     .prepare(
       `SELECT o.id, o.contacto_id, o.tipo, o.canal, o.interes, o.espera_desde, o.sla_aviso_en, o.sla_vencido_en
          FROM crm_oportunidades o JOIN crm_contactos c ON c.id = o.contacto_id
-        WHERE o.espera_desde IS NOT NULL AND o.cerrada = 0
+        WHERE o.espera_desde IS NOT NULL AND o.espera_desde >= ?1 AND o.cerrada = 0
           AND (o.sla_aviso_en IS NULL OR o.sla_vencido_en IS NULL)
           AND c.estado_datos != 'suprimido'
         ORDER BY o.espera_desde ASC LIMIT 20`,
     )
+    // Solo las esperas de la última semana: las más viejas ya se avisaron o
+    // se marcaron. Así, los leads que nunca se contestan no se vuelven a leer
+    // cada minuto para siempre (el plan gratis cuenta cada fila leída).
+    .bind(new Date(ahora.getTime() - VENTANA_DIAS * 86_400_000).toISOString())
     .all<Pendiente>();
   let enviados = 0;
   const iso = ahora.toISOString();
