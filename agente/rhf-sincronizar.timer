@@ -1,0 +1,11 @@
+# Corre el sincronizador cada minuto (agente/LEEME.md).
+[Unit]
+Description=RHF: sincroniza las conversaciones del agente con el CRM cada minuto
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=60s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target
