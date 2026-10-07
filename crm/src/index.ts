@@ -29,6 +29,7 @@
 import type { Env, Opciones } from "./env";
 import { nuevoCtx, esVistaPrevia, existeTabla, rutaCRM, type Ctx } from "./base";
 import { sesionDe, mismoOrigen, esNavegacion, entrarConClave, hayClave, iguales, salir, salirDeTodo } from "./acceso";
+import { esAccionDeScript } from "./seguridad";
 import { ingerir, contactoDeConsulta, POR_PETICION } from "./ingesta";
 import type { Html } from "./html";
 import { html } from "./html";
@@ -39,6 +40,9 @@ import { paginaFicha } from "./paginas/ficha";
 import { paginaAlta } from "./paginas/alta";
 import { paginaBoletin } from "./paginas/boletin";
 import { paginaMas, paginaAuditoria } from "./paginas/mas";
+import { paginaEmbudo } from "./paginas/embudo";
+import { paginaConversaciones, paginaConversacion } from "./paginas/conversaciones";
+import { paginaTablero } from "./paginas/tablero";
 import { pagina } from "./paginas/comun";
 import {
   volverA,
@@ -51,11 +55,15 @@ import {
   editarDatos,
   nuevaOportunidad,
   altaManual,
+  registrarIntento,
+  guardarInversion,
 } from "./acciones";
 import { exportarContacto, marcarReclamo, suprimir, bajaBoletin, reactivarBoletin, csvBoletin } from "./proteccion";
 
 export { mandarResumen } from "./resumen";
 export { rutaCRM } from "./base";
+export { trabajoDeCadaMinuto } from "./cron";
+export { leerLote, guardarLote, LIMITES_CONVERSACIONES } from "./conversaciones";
 
 /** Las cabeceras de seguridad de todas las respuestas. */
 const CABECERAS: Record<string, string> = {
@@ -78,6 +86,8 @@ const CABECERAS: Record<string, string> = {
 
 const ESTATICOS_PUBLICOS = /^\/(crm\.css|fuentes\/[a-z0-9-]+\.woff2)$/;
 const ESTATICOS = /^\/(crm\.css|crm\.js|fuentes\/[a-z0-9-]+\.woff2)$/;
+/** Las únicas escrituras que crm.js hace con fetch() (ver `esAccionDeScript`). */
+const ACCIONES_DE_SCRIPT = /^\/(oportunidad\/\d{1,9}\/etapa|contacto\/\d{1,9}\/intento)$/;
 
 /**
  * La entrada desde worker/index.ts. Devuelve null si la petición no es del
@@ -130,6 +140,12 @@ async function conRuta(r: Response, c: Ctx): Promise<Response> {
       /<form\b[^>]*\bmethod="post"[^>]*>/g,
       (m) => `${m}<input type="hidden" name="_csrf" value="${c.csrf}">`,
     );
+    // Para lo que crm.js manda con fetch() (el embudo y los intentos de
+    // contacto): el mismo token, y la ruta secreta para armar la dirección.
+    cuerpo = cuerpo.replace(
+      "</head>",
+      `<meta name="crm-csrf" content="${c.csrf}"><meta name="crm-ruta" content="${c.ruta}"></head>`,
+    );
   }
   return new Response(cuerpo, { status: r.status, statusText: r.statusText, headers: h });
 }
@@ -149,11 +165,17 @@ async function atender(c: Ctx, opciones: Opciones): Promise<Response> {
 
   if (metodo === "GET" && ESTATICOS_PUBLICOS.test(pathname)) return estatico(c, opciones);
 
-  // Solo navegaciones: un fetch() o un <iframe> de otra página, nunca.
-  if (!(metodo === "GET" && ESTATICOS.test(pathname)) && !esNavegacion(c.request)) return prohibido();
+  // Solo navegaciones: un fetch() o un <iframe> de otra página, nunca. La
+  // excepción son las dos escrituras de crm.js, que además exigen sesión,
+  // mismo origen y el token (abajo).
+  const deScript = esAccionDeScript(c.request) && ACCIONES_DE_SCRIPT.test(pathname);
+  if (!(metodo === "GET" && ESTATICOS.test(pathname)) && !esNavegacion(c.request) && !deScript) return prohibido();
 
   if (!(await existeTabla(c.db, "crm_sesiones")) || !(await existeTabla(c.db, "crm_ingresos"))) {
     return texto("Falta aplicar las migraciones 0006 y 0007 del CRM en esta base (ver crm/README.md).", 503);
+  }
+  if (!(await existeTabla(c.db, "crm_inversion")) || !(await existeTabla(c.db, "agente_conversaciones"))) {
+    return texto("Falta aplicar la migración 0008 del CRM en esta base (ver crm/README.md).", 503);
   }
 
   // ── El acceso ──────────────────────────────────────────────────────────
@@ -186,13 +208,28 @@ async function atender(c: Ctx, opciones: Opciones): Promise<Response> {
     if (!mismoOrigen(c)) return prohibido();
     const f = await formulario(c.request);
     if (!f || !iguales(String(f.get("_csrf") ?? ""), c.csrf)) return prohibido();
-    return await post(c, f, vistaPrevia);
+    const r = await post(c, f, vistaPrevia);
+    return deScript ? comoJson(r) : r;
   }
   return new Response("Método no permitido.", { status: 405, headers: { Allow: "GET, POST" } });
 }
 
 function prohibido(): Response {
   return texto("No permitido.", 403);
+}
+
+/**
+ * Lo que responde una acción a crm.js: si salió bien y, si no, el código del
+ * error (los mismos de `?error=` en la dirección). Nunca datos de nadie.
+ */
+function comoJson(r: Response): Response {
+  const destino = r.headers.get("Location") ?? "";
+  const error = new URL(destino, "https://crm.invalid").searchParams.get("error");
+  const ok = r.status === 303 && !error;
+  return new Response(JSON.stringify(ok ? { ok: true } : { ok: false, error: error ?? "fallo" }), {
+    status: ok ? 200 : 422,
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+  });
 }
 
 /** El cuerpo del formulario, con tope de tamaño. */
@@ -264,6 +301,9 @@ async function get(c: Ctx, vistaPrevia: boolean, opciones: Opciones): Promise<Re
   }
 
   if (ruta === "/hoy") return htmlResponse(await paginaHoy(c, vistaPrevia));
+  if (ruta === "/embudo") return htmlResponse(await paginaEmbudo(c, vistaPrevia));
+  if (ruta === "/tablero") return htmlResponse(await paginaTablero(c, vistaPrevia));
+  if (ruta === "/conversaciones") return htmlResponse(await paginaConversaciones(c, vistaPrevia));
   if (ruta === "/leads") return htmlResponse(await paginaLeads(c, "compra", vistaPrevia));
   if (ruta === "/propietarios") return htmlResponse(await paginaLeads(c, "venta", vistaPrevia));
   if (ruta === "/nuevo") return htmlResponse(paginaAlta(c, vistaPrevia));
@@ -271,6 +311,13 @@ async function get(c: Ctx, vistaPrevia: boolean, opciones: Opciones): Promise<Re
   if (ruta === "/boletin/activos.csv") return csvBoletin(c);
   if (ruta === "/mas") return htmlResponse(paginaMas(c, vistaPrevia));
   if (ruta === "/auditoria") return htmlResponse(await paginaAuditoria(c, vistaPrevia));
+
+  m = ruta.match(/^\/conversacion\/(\d+)$/);
+  if (m) {
+    const k = id(m[1]);
+    const p = k ? await paginaConversacion(c, k, vistaPrevia) : null;
+    if (p) return htmlResponse(p);
+  }
 
   m = ruta.match(/^\/contacto\/(\d+)(\/exportar)?$/);
   if (m) {
@@ -297,7 +344,9 @@ async function post(c: Ctx, f: FormData, vistaPrevia: boolean): Promise<Response
     return r instanceof Response ? r : htmlResponse(paginaAlta(c, vistaPrevia, r), 422);
   }
 
-  let m = ruta.match(/^\/contacto\/(\d+)\/(nota|tarea|datos|oportunidad|reclamo|suprimir)$/);
+  if (ruta === "/inversion") return guardarInversion(c, f);
+
+  let m = ruta.match(/^\/contacto\/(\d+)\/(nota|tarea|datos|oportunidad|reclamo|suprimir|intento)$/);
   if (m) {
     const contacto = id(m[1]);
     if (!contacto) return volverA("/hoy");
@@ -314,6 +363,8 @@ async function post(c: Ctx, f: FormData, vistaPrevia: boolean): Promise<Response
         return marcarReclamo(c, contacto, f);
       case "suprimir":
         return suprimir(c, contacto, f);
+      case "intento":
+        return registrarIntento(c, contacto, f);
     }
   }
   m = ruta.match(/^\/oportunidad\/(\d+)\/(etapa|puntaje|detalle)$/);

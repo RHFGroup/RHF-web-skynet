@@ -27,6 +27,21 @@ export async function exportarContacto(c: Ctx, id: number): Promise<Response> {
   if (contacto.correo && (await existeTabla(c.db, "suscriptores"))) {
     boletin = (await c.db.prepare(`SELECT * FROM suscriptores WHERE correo = ?`).bind(contacto.correo).all()).results;
   }
+  // Sus conversaciones con el agente de atención (7-oct-2026).
+  let conversaciones: unknown[] = [];
+  if (await existeTabla(c.db, "agente_conversaciones")) {
+    conversaciones = (
+      await c.db
+        .prepare(
+          `SELECT k.sesion, k.canal, k.iniciada_en, k.ultimo_en, m.rol, m.texto, m.en
+             FROM agente_conversaciones k JOIN agente_mensajes m ON m.conversacion_id = k.id
+            WHERE k.contacto_id = ?1 OR (?2 IS NOT NULL AND k.telefono = ?2)
+            ORDER BY k.id, m.en, m.id`,
+        )
+        .bind(id, contacto.telefono)
+        .all()
+    ).results;
+  }
   await auditar(c, "exportar", "contacto", id);
   const cuerpo = {
     exportado_en: ahoraIso(),
@@ -37,6 +52,7 @@ export async function exportarContacto(c: Ctx, id: number): Promise<Response> {
     tareas: tareas.results,
     consultas_del_sitio: consultas.results,
     boletin,
+    conversaciones_con_el_agente: conversaciones,
   };
   return new Response(JSON.stringify(cuerpo, null, 2), {
     headers: {
@@ -91,7 +107,7 @@ export async function suprimir(c: Ctx, id: number, f: FormData): Promise<Respons
     c.db
       .prepare(
         `UPDATE consultas
-            SET nombre = ?, contacto = ?, proyecto = NULL, mensaje = NULL, ip = NULL, user_agent = NULL
+            SET nombre = ?, contacto = ?, proyecto = NULL, mensaje = NULL, ip = NULL, user_agent = NULL, atribucion = NULL
           WHERE id IN (SELECT consulta_id FROM crm_actividades WHERE contacto_id = ? AND consulta_id IS NOT NULL)`,
       )
       .bind(SUPRIMIDO, SUPRIMIDO, id),
@@ -108,6 +124,7 @@ export async function suprimir(c: Ctx, id: number, f: FormData): Promise<Respons
       .prepare(
         `UPDATE crm_oportunidades
             SET interes = NULL, proposito = NULL, presupuesto = NULL, forma_pago = NULL, plazo = NULL,
+                rango_presupuesto = NULL, pago = NULL, valor_estimado = NULL, espera_desde = NULL,
                 proxima_accion = NULL, unidad = NULL, puntaje_motivo = NULL, cerrada = 1, actualizado_en = ?
           WHERE contacto_id = ?`,
       )
@@ -119,6 +136,15 @@ export async function suprimir(c: Ctx, id: number, f: FormData): Promise<Respons
       .bind(id, ahora, "Datos suprimidos por solicitud del titular (Ley 1581)", c.usuario),
     sentenciaAuditoria(c, "suprimir", "contacto", id, "solicitud del titular"),
   ];
+
+  // Sus conversaciones con el agente: se borran, mensajes y conversación.
+  if (await existeTabla(c.db, "agente_conversaciones")) {
+    const suyas = `SELECT id FROM agente_conversaciones WHERE contacto_id = ?1 OR (?2 IS NOT NULL AND telefono = ?2)`;
+    sentencias.push(
+      c.db.prepare(`DELETE FROM agente_mensajes WHERE conversacion_id IN (${suyas})`).bind(id, contacto.telefono),
+      c.db.prepare(`DELETE FROM agente_conversaciones WHERE id IN (${suyas})`).bind(id, contacto.telefono),
+    );
+  }
 
   if (contacto.correo && (await existeTabla(c.db, "suscriptores"))) {
     sentencias.push(

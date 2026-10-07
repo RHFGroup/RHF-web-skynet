@@ -20,31 +20,64 @@ export type Etapa = {
   pideMotivo?: boolean;
   /** Color de la ficha de la etapa (clase CSS `etapa--…`). */
   tono: "nuevo" | "avance" | "caliente" | "gano" | "pausa" | "perdio";
+  /**
+   * La fase del embudo del tablero (7-oct-2026): 0 Lead entrante,
+   * 1 Contactado, 2 Presentación, 3 Cotización o reservación, 4 Cierre.
+   * Nutrir, Perdido y Descartado no tienen: quedan en la más alta a la que
+   * llegó la oportunidad.
+   */
+  fase?: Fase;
+  /**
+   * Cuántos días es normal pasar en esta etapa. Pasado eso, sin una próxima
+   * acción programada, el tablero la muestra como estancada.
+   */
+  metaDias?: number;
 };
 
 export const ETAPAS: Record<Tipo, Etapa[]> = {
   compra: [
-    { id: "nuevo", nombre: "Nuevo", tono: "nuevo" },
-    { id: "contactado", nombre: "Contactado", tono: "avance" },
-    { id: "calificado", nombre: "Calificado", tono: "avance" },
-    { id: "recorrido_agendado", nombre: "Recorrido agendado", tono: "caliente" },
-    { id: "recorrido_hecho", nombre: "Recorrido hecho", tono: "caliente" },
-    { id: "propuesta", nombre: "Propuesta enviada", tono: "caliente" },
-    { id: "separo", nombre: "Separó", tono: "gano", cierra: true },
+    { id: "nuevo", nombre: "Nuevo", tono: "nuevo", fase: 0, metaDias: 1 },
+    { id: "contactado", nombre: "Contactado", tono: "avance", fase: 1, metaDias: 3 },
+    { id: "calificado", nombre: "Calificado", tono: "avance", fase: 1, metaDias: 5 },
+    { id: "recorrido_agendado", nombre: "Recorrido agendado", tono: "caliente", fase: 2, metaDias: 7 },
+    { id: "recorrido_hecho", nombre: "Recorrido hecho", tono: "caliente", fase: 2, metaDias: 3 },
+    { id: "propuesta", nombre: "Propuesta enviada", tono: "caliente", fase: 3, metaDias: 7 },
+    { id: "separo", nombre: "Separó", tono: "gano", cierra: true, fase: 4 },
     { id: "nutrir", nombre: "Nutrir", tono: "pausa" },
     { id: "perdido", nombre: "Perdido", tono: "perdio", cierra: true, pideMotivo: true },
   ],
   venta: [
-    { id: "nuevo", nombre: "Nuevo", tono: "nuevo" },
-    { id: "contactado", nombre: "Contactado", tono: "avance" },
-    { id: "visita", nombre: "Visita al inmueble", tono: "avance" },
-    { id: "consignado", nombre: "Consignado", tono: "caliente" },
-    { id: "publicado", nombre: "Publicado", tono: "caliente" },
-    { id: "negociacion", nombre: "En negociación", tono: "caliente" },
-    { id: "vendido", nombre: "Vendido", tono: "gano", cierra: true },
+    { id: "nuevo", nombre: "Nuevo", tono: "nuevo", fase: 0, metaDias: 1 },
+    { id: "contactado", nombre: "Contactado", tono: "avance", fase: 1, metaDias: 3 },
+    { id: "visita", nombre: "Visita al inmueble", tono: "avance", fase: 2, metaDias: 7 },
+    { id: "consignado", nombre: "Consignado", tono: "caliente", fase: 3, metaDias: 14 },
+    { id: "publicado", nombre: "Publicado", tono: "caliente", fase: 3, metaDias: 45 },
+    { id: "negociacion", nombre: "En negociación", tono: "caliente", fase: 3, metaDias: 10 },
+    { id: "vendido", nombre: "Vendido", tono: "gano", cierra: true, fase: 4 },
     { id: "descartado", nombre: "Descartado", tono: "perdio", cierra: true, pideMotivo: true },
   ],
 };
+
+/** Las cinco fases del embudo del tablero, como las pidió Rafael (7-oct-2026). */
+export type Fase = 0 | 1 | 2 | 3 | 4;
+export const FASES: { id: Fase; nombre: string; columna: string | null }[] = [
+  { id: 0, nombre: "Lead entrante", columna: null },
+  { id: 1, nombre: "Contactado", columna: "fase_contactado_en" },
+  { id: 2, nombre: "Presentación o Zoom", columna: "fase_presentacion_en" },
+  { id: 3, nombre: "Cotización o reservación", columna: "fase_cotizacion_en" },
+  { id: 4, nombre: "Cierre", columna: "fase_cierre_en" },
+];
+
+/**
+ * Las columnas de fase que hay que marcar al llegar a una etapa: la suya y
+ * las anteriores (quien separó también pasó por la presentación, aunque no
+ * se haya registrado). Nunca se borran al retroceder.
+ */
+export function columnasDeFase(tipo: Tipo, etapa: string): string[] {
+  const f = etapaDe(tipo, etapa)?.fase;
+  if (f === undefined) return [];
+  return FASES.filter((x) => x.columna && x.id <= f).map((x) => x.columna as string);
+}
 
 export function etapaDe(tipo: Tipo, id: string): Etapa | undefined {
   return ETAPAS[tipo].find((e) => e.id === id);

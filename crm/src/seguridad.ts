@@ -32,6 +32,30 @@ export function esNavegacion(request: Request): boolean {
   return modo === "navigate" && (destino === null || destino === "document");
 }
 
+/**
+ * ¿Es una acción de crm.js? Arrastrar una tarjeta del embudo y anotar el
+ * intento de contacto se hacen con fetch(), sin recargar la página
+ * (7-oct-2026). Solo se aceptan:
+ *  - POST;
+ *  - con la cabecera `X-CRM: 1`, que un formulario no puede poner, y que una
+ *    página de otro origen solo podría mandar después de un preflight CORS que
+ *    este Worker nunca aprueba;
+ *  - con la Fetch Metadata de un fetch() del mismo origen, si el navegador la
+ *    manda.
+ * Y como toda escritura: sesión, mismo origen y el token anti-CSRF, que un
+ * script de las páginas públicas no tiene cómo leer. La respuesta es un JSON
+ * de dos o tres campos, sin datos de nadie: la puerta de las lecturas sigue
+ * cerrada (`esNavegacion`).
+ */
+export function esAccionDeScript(request: Request): boolean {
+  if (request.method !== "POST" || request.headers.get("X-CRM") !== "1") return false;
+  const sitio = request.headers.get("Sec-Fetch-Site");
+  const modo = request.headers.get("Sec-Fetch-Mode");
+  const destino = request.headers.get("Sec-Fetch-Dest");
+  if (sitio === null && modo === null && destino === null) return true;
+  return sitio === "same-origin" && (modo === "cors" || modo === "same-origin") && (destino === null || destino === "empty");
+}
+
 const cod = new TextEncoder();
 
 export async function sha256(texto: string): Promise<string> {

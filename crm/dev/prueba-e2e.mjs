@@ -150,9 +150,9 @@ if (!WRANGLER) {
 }
 await captura("02-hoy");
 
-// 4. Hoy: los ocho nuevos sin contactar (la prueba del agente no entra).
-const sinContactar = await page.locator("#sin-contactar li").count();
-caso("Hoy muestra los 8 leads sin contactar", sinContactar === 8, sinContactar);
+// 4. Hoy: los ocho que esperan respuesta (la prueba del agente no entra).
+const sinContactar = await page.locator("#esperan li").count();
+caso("Hoy muestra los 8 leads que esperan respuesta", sinContactar === 8, sinContactar);
 caso("el nombre con <script> se ve como texto y no corre", (await texto()).includes("<script>alert(1)</script>") && dialogos.length === 0);
 const enlaces = await page.locator("a[href^='/']").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
 caso("todos los enlaces internos llevan la ruta secreta", enlaces.length > 0 && enlaces.every((h) => h.startsWith(`${RUTA}/`)), enlaces.filter((h) => !h.startsWith(`${RUTA}/`)).slice(0, 5));
@@ -175,7 +175,7 @@ caso("la ficha muestra las dos constancias de autorización", t1.includes("Consu
 const formularios = await page.locator("form[method=post]").count();
 const tokens = await page.locator("form[method=post] > input[name=_csrf]:first-child").count();
 caso("cada formulario que escribe lleva el token anti-CSRF", formularios > 5 && tokens === formularios, { formularios, tokens });
-const wa = await page.locator("a:has-text('WhatsApp')").first().getAttribute("href");
+const wa = await page.locator(".ficha-cabecera a[data-intento=whatsapp]").first().getAttribute("href");
 caso("el botón de WhatsApp abre wa.me con el número", wa === "https://wa.me/573001234567", wa);
 await captura("04-ficha");
 
@@ -216,7 +216,7 @@ await page.goto(`${CRM}/contacto/1`);
 await page.fill("#titulo-tarea-1", "Llamar a Ana para confirmar el sábado");
 await page.click(`${form("/contacto/1/tarea")} button[type=submit]`);
 await page.waitForURL(/ok=tarea/);
-await page.click("text=Detalle, próxima acción y recorrido");
+await page.click("text=Detalle, calificación, próxima acción y recorrido");
 const manana = new Date(Date.now() - 5 * 3600_000 + 86_400_000).toISOString().slice(0, 10);
 await page.fill("#recorrido-1", `${manana}T10:00`);
 await page.fill("#proxima-1", "Confirmar recorrido");
@@ -225,8 +225,8 @@ await page.waitForURL(/ok=guardado/);
 await page.goto(`${CRM}/hoy`);
 const hoyTexto = await texto();
 caso("Hoy muestra la tarea y el recorrido", hoyTexto.includes("Llamar a Ana para confirmar el sábado") && hoyTexto.includes("10:00"));
-const quedan = await page.locator("#sin-contactar li").count();
-caso("Ana (contactada) y Lucía (perdida) salen de los sin contactar", quedan === 6, quedan);
+const quedan = await page.locator("#esperan li").count();
+caso("Ana (contactada) y Lucía (perdida) salen de los que esperan respuesta", quedan === 6, quedan);
 await page.click("#tareas form button[type=submit]");
 await page.waitForURL(/ok=hecha/);
 caso("la tarea se marca como hecha", (await sql("SELECT hecha_en FROM crm_tareas WHERE id = 1"))[0].hecha_en !== null);

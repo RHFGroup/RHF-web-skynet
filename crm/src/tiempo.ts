@@ -88,3 +88,45 @@ export function fechaHoraValida(v: string): string | null {
   if (!m || !fechaValida(m[1]) || Number(m[2]) > 23 || Number(m[3]) > 59) return null;
   return `${m[1]}T${m[2]}:${m[3]}`;
 }
+
+/** «3:42 p. m.» (hora de Colombia), para un instante ISO en UTC. */
+export function horaCorta(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const l = local(d);
+  const h = l.getUTCHours();
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${dos(l.getUTCMinutes())} ${h < 12 ? "a. m." : "p. m."}`;
+}
+
+/** La fecha de Colombia (AAAA-MM-DD) de un instante ISO en UTC. */
+export function fechaDe(iso: string): string {
+  return hoy(new Date(iso));
+}
+
+/** El lunes (AAAA-MM-DD) de la semana de una fecha local. Las semanas van de lunes a domingo. */
+export function lunesDe(fecha: string): string {
+  const [a, m, d] = fecha.split("-").map(Number);
+  const dia = new Date(Date.UTC(a, m - 1, d)).getUTCDay();
+  return sumarDias(fecha, -((dia + 6) % 7));
+}
+
+/** La medianoche de Colombia de una fecha local, como instante ISO en UTC. */
+export function inicioDelDiaIso(fecha: string): string {
+  return `${fecha}T05:00:00.000Z`;
+}
+
+/** «5 al 11 oct» o «29 sep al 5 oct», para la semana que empieza ese lunes. */
+export function nombreSemana(lunes: string): string {
+  const fin = sumarDias(lunes, 6);
+  const [, m1, d1] = lunes.split("-").map(Number);
+  const [, m2, d2] = fin.split("-").map(Number);
+  return m1 === m2 ? `${d1} al ${d2} ${MESES[m2 - 1]}` : `${d1} ${MESES[m1 - 1]} al ${d2} ${MESES[m2 - 1]}`;
+}
+
+/** «6 oct», para una fecha local AAAA-MM-DD. */
+export function diaMes(fecha: string): string {
+  const [, m, d] = fecha.split("-").map(Number);
+  return `${d} ${MESES[m - 1]}`;
+}

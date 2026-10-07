@@ -23,6 +23,19 @@
  */
 import { FUENTES, fuenteDeOrigen, nombreDeInteres, type Tipo } from "./datos";
 import { separarContacto } from "./telefono";
+import { canalDe, leerAtribucion, resumenAtribucion } from "./canales";
+import { referenciaDeMensaje, sentenciaEnlazar } from "./conversaciones";
+import {
+  FORMAS_PAGO,
+  NO_SE,
+  OBJETIVOS,
+  RANGOS_PRESUPUESTO,
+  formaPagoValida,
+  nombreDe,
+  objetivoValido,
+  presupuestoValido,
+  rangoDeTexto,
+} from "@/data/calificacion";
 
 type Consulta = {
   id: number;
@@ -34,10 +47,20 @@ type Consulta = {
   version_aviso: string;
   origen: string | null;
   estado: string;
+  /** Desde la migración 0008 (7-oct-2026): las tres preguntas y el canal. */
+  presupuesto: string | null;
+  forma_pago: string | null;
+  objetivo: string | null;
+  atribucion: string | null;
+  canal: string | null;
 };
 
-/** Cuántas consultas se procesan por petición (≈5 sentencias cada una). */
-export const POR_PETICION = 5;
+/**
+ * Cuántas consultas se procesan por petición (6 sentencias cada una). El
+ * plan gratis permite 50 por petición, y la página que se abre después de la
+ * ingesta usa las suyas.
+ */
+export const POR_PETICION = 4;
 
 /** Procesa las consultas nuevas. Devuelve cuántas leyó (entren o no). */
 export async function ingerir(db: D1Database, limite = POR_PETICION): Promise<number> {
@@ -47,7 +70,8 @@ export async function ingerir(db: D1Database, limite = POR_PETICION): Promise<nu
   const desde = cursor?.ultimo_id ?? 0;
   const r = await db
     .prepare(
-      `SELECT id, creado_en, nombre, contacto, proyecto, mensaje, version_aviso, origen, estado
+      `SELECT id, creado_en, nombre, contacto, proyecto, mensaje, version_aviso, origen, estado,
+              presupuesto, forma_pago, objetivo, atribucion, canal
          FROM consultas WHERE id > ? ORDER BY id LIMIT ?`,
     )
     .bind(desde, limite)
@@ -86,6 +110,21 @@ async function ingerirUna(db: D1Database, q: Consulta): Promise<void> {
   const pagina = q.origen && q.origen.startsWith("/") ? q.origen : null;
   const ciudad = lineaDe(mensaje, "Escribe desde");
 
+  // El canal y la calificación (7-oct-2026). Las consultas de antes no traen
+  // atribución: quedan «sin dato», nunca se adivina.
+  const atribucion = leerAtribucion(q.atribucion);
+  const canal = q.canal ?? canalDe(atribucion, q.origen);
+  const utm = atribucion
+    ? JSON.stringify(
+        Object.fromEntries(Object.entries(atribucion).filter(([k]) => k.startsWith("utm_"))),
+      )
+    : null;
+  const utmGuardada = utm && utm !== "{}" ? utm : null;
+  const rango = presupuestoValido(q.presupuesto) ?? (fuente === "whatsapp" || fuente === "chat" || fuente === "agente" ? rangoDeTexto(lineaDe(mensaje, "Rango")) : null);
+  const pago = formaPagoValida(q.forma_pago);
+  const objetivo = objetivoValido(q.objetivo);
+  const proposito = objetivo && objetivo !== NO_SE ? objetivo : null;
+
   // 1. La persona.
   let contactoId: number | null = null;
   if (telefono || correo || crudo) {
@@ -108,19 +147,36 @@ async function ingerirUna(db: D1Database, q: Consulta): Promise<void> {
         `UPDATE crm_contactos
             SET actualizado_en = MAX(actualizado_en, ?), fuente_ultima = ?,
                 nombre = COALESCE(nombre, ?), telefono = COALESCE(telefono, ?),
-                correo = COALESCE(correo, ?), ciudad = COALESCE(ciudad, ?)
+                correo = COALESCE(correo, ?), ciudad = COALESCE(ciudad, ?),
+                canal = CASE WHEN canal IS NULL OR canal = 'sin_dato' THEN ? ELSE canal END, canal_ultimo = ?,
+                utm_primero = COALESCE(utm_primero, ?), utm_ultimo = COALESCE(?, utm_ultimo),
+                gclid = COALESCE(?, gclid), fbclid = COALESCE(?, fbclid)
           WHERE id = ?`,
       )
-      .bind(q.creado_en, fuente, q.nombre || null, telefono, correo, ciudad, contactoId)
+      .bind(
+        q.creado_en,
+        fuente,
+        q.nombre || null,
+        telefono,
+        correo,
+        ciudad,
+        canal,
+        canal,
+        utmGuardada,
+        utmGuardada,
+        atribucion?.gclid ?? atribucion?.gbraid ?? atribucion?.wbraid ?? null,
+        atribucion?.fbclid ?? null,
+        contactoId,
+      )
       .run();
   } else {
     const r = await db
       .prepare(
         `INSERT INTO crm_contactos
            (creado_en, actualizado_en, nombre, telefono, telefono_crudo, correo, ciudad, idioma,
-            fuente, fuente_ultima, pagina_entrada,
+            fuente, fuente_ultima, pagina_entrada, canal, canal_ultimo, utm_primero, utm_ultimo, gclid, fbclid,
             autorizacion_fecha, autorizacion_version, autorizacion_canal, autorizacion_evidencia)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         q.creado_en,
@@ -133,7 +189,13 @@ async function ingerirUna(db: D1Database, q: Consulta): Promise<void> {
         idioma,
         fuente,
         fuente,
-        pagina,
+        atribucion?.landing ?? pagina,
+        canal,
+        canal,
+        utmGuardada,
+        utmGuardada,
+        atribucion?.gclid ?? atribucion?.gbraid ?? atribucion?.wbraid ?? null,
+        atribucion?.fbclid ?? null,
         q.creado_en,
         q.version_aviso,
         fuente,
@@ -143,7 +205,8 @@ async function ingerirUna(db: D1Database, q: Consulta): Promise<void> {
     contactoId = Number(r.meta.last_row_id);
   }
 
-  // 2. Su oportunidad abierta del mismo tipo.
+  // 2. Su oportunidad abierta del mismo tipo. Una consulta nueva abre la
+  // espera de la primera respuesta (crm/src/sla.ts) y cuenta como actividad.
   const abierta = await db
     .prepare(
       `SELECT id FROM crm_oportunidades WHERE contacto_id = ? AND tipo = ? AND cerrada = 0 ORDER BY id DESC LIMIT 1`,
@@ -154,25 +217,45 @@ async function ingerirUna(db: D1Database, q: Consulta): Promise<void> {
   if (abierta) {
     oportunidadId = abierta.id;
     await db
-      .prepare(`UPDATE crm_oportunidades SET actualizado_en = MAX(actualizado_en, ?), interes = COALESCE(interes, ?) WHERE id = ?`)
-      .bind(q.creado_en, q.proyecto || null, oportunidadId)
+      .prepare(
+        `UPDATE crm_oportunidades
+            SET actualizado_en = MAX(actualizado_en, ?1), interes = COALESCE(interes, ?2),
+                rango_presupuesto = COALESCE(?3, rango_presupuesto), pago = COALESCE(?4, pago),
+                proposito = COALESCE(proposito, ?5),
+                sla_aviso_en = CASE WHEN espera_desde IS NULL THEN NULL ELSE sla_aviso_en END,
+                sla_vencido_en = CASE WHEN espera_desde IS NULL THEN NULL ELSE sla_vencido_en END,
+                espera_desde = COALESCE(espera_desde, ?1),
+                ultima_actividad_en = MAX(COALESCE(ultima_actividad_en, ''), ?1),
+                higiene_nivel = 0, higiene_en = NULL
+          WHERE id = ?6`,
+      )
+      .bind(q.creado_en, q.proyecto || null, rango, pago, proposito, oportunidadId)
       .run();
   } else {
     const r = await db
       .prepare(
-        `INSERT INTO crm_oportunidades (contacto_id, creado_en, actualizado_en, tipo, etapa, etapa_desde, interes)
-         VALUES (?, ?, ?, ?, 'nuevo', ?, ?)`,
+        `INSERT INTO crm_oportunidades
+           (contacto_id, creado_en, actualizado_en, tipo, etapa, etapa_desde, interes, canal,
+            rango_presupuesto, pago, proposito, espera_desde, ultima_actividad_en)
+         VALUES (?1, ?2, ?2, ?3, 'nuevo', ?2, ?4, ?5, ?6, ?7, ?8, ?2, ?2)`,
       )
-      .bind(contactoId, q.creado_en, q.creado_en, tipo, q.creado_en, q.proyecto || null)
+      .bind(contactoId, q.creado_en, tipo, q.proyecto || null, canal, rango, pago, proposito)
       .run();
     oportunidadId = Number(r.meta.last_row_id);
   }
 
-  // 3. La consulta en su línea de tiempo.
+  // 3. La consulta en su línea de tiempo, con lo que respondió y de dónde vino.
+  const calificacion = [
+    q.presupuesto ? `Presupuesto: ${nombreDe(RANGOS_PRESUPUESTO, q.presupuesto)}` : null,
+    q.forma_pago ? `Forma de pago: ${nombreDe(FORMAS_PAGO, q.forma_pago)}` : null,
+    q.objetivo ? `Para qué: ${nombreDe(OBJETIVOS, q.objetivo)}` : null,
+  ].filter(Boolean);
   const texto = [
     FUENTES[fuente] ?? fuente,
     pagina ? `Página: ${pagina}` : null,
     q.proyecto ? `Interés: ${nombreDeInteres(q.proyecto)}` : null,
+    ...calificacion,
+    canal !== "sin_dato" ? `Canal: ${resumenAtribucion(canal, atribucion)}` : null,
     mensaje || null,
   ]
     .filter(Boolean)
@@ -185,6 +268,10 @@ async function ingerirUna(db: D1Database, q: Consulta): Promise<void> {
     )
     .bind(contactoId, oportunidadId, q.creado_en, fuente.startsWith("agente") || fuente === "whatsapp" || fuente === "chat" ? "agente" : "formulario", texto, q.id)
     .run();
+
+  // 4. Su conversación con el agente, si la hay (crm/src/conversaciones.ts).
+  const enlazar = sentenciaEnlazar(db, contactoId, telefono, referenciaDeMensaje(mensaje));
+  if (enlazar) await enlazar.run();
 }
 
 /** La ficha a la que fue a dar una consulta del sitio, o null. */

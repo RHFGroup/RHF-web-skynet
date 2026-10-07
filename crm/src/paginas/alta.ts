@@ -6,13 +6,19 @@ import { html, type Html } from "../html";
 import type { Ctx } from "../base";
 import { CANALES_AUTORIZACION, CATALOGO, FUENTES, FUENTES_MANUALES, type Tipo } from "../datos";
 import { hoy } from "../tiempo";
+import { RANGOS_PRESUPUESTO, FORMAS_PAGO, OBJETIVOS } from "@/data/calificacion";
 import { pagina, selector, campo, areaTexto } from "./comun";
 
 export type DatosAlta = Partial<Record<string, string>>;
 
 export function paginaAlta(c: Ctx, vistaPrevia: boolean, opciones?: { error?: string; datos?: DatosAlta }): Html {
-  const d = opciones?.datos ?? {};
-  const tipo = (d.tipo ?? c.url.searchParams.get("tipo")) === "venta" ? "venta" : "compra";
+  // Desde «Chats», «Crear ficha» llega con el teléfono y la fuente.
+  const q = c.url.searchParams;
+  const d: DatosAlta = opciones?.datos ?? {
+    telefono: (q.get("telefono") ?? "").slice(0, 30),
+    fuente: FUENTES_MANUALES.includes(q.get("fuente") ?? "") ? (q.get("fuente") as string) : "",
+  };
+  const tipo = (d.tipo ?? q.get("tipo")) === "venta" ? "venta" : "compra";
   const cuerpo = html`<h1 class="titulo">Nuevo lead</h1>
 <p class="bajada">Para quien llegó por fuera del sitio: Instagram, Facebook, una feria, un referido o una llamada.</p>
 ${opciones?.error ? html`<p class="error" role="alert">${opciones.error}</p>` : ""}
@@ -32,7 +38,13 @@ ${opciones?.error ? html`<p class="error" role="alert">${opciones.error}</p>` : 
   ${selector("interes", "Proyecto o inmueble", CATALOGO.map((x) => ({ valor: x.slug, texto: x.nombre })), d.interes, { vacio: "—" })}
   ${areaTexto("texto", "Qué busca o qué conversaron (opcional)", d.texto, { max: 2000 })}
 
-  <h2><span class="paso">2</span> Su autorización de datos</h2>
+  <h2><span class="paso">2</span> Si compra: las tres preguntas</h2>
+  <p class="nota">Si ya las sabes. Si no, déjalas en blanco y pregúntalas en la primera llamada.</p>
+  ${selector("rango_presupuesto", "Presupuesto", RANGOS_PRESUPUESTO.map((x) => ({ valor: x.codigo, texto: x.es })), d.rango_presupuesto, { vacio: "—" })}
+  ${selector("pago", "Forma de pago", FORMAS_PAGO.map((x) => ({ valor: x.codigo, texto: x.es })), d.pago, { vacio: "—" })}
+  ${selector("objetivo", "Para qué compra", OBJETIVOS.map((x) => ({ valor: x.codigo, texto: x.es })), d.objetivo, { vacio: "—" })}
+
+  <h2><span class="paso">3</span> Su autorización de datos</h2>
   <p class="nota">Ley 1581: sin autorización no se guarda. Anota cómo la dio y dónde quedó la prueba.</p>
   ${selector("autorizacion_canal", "Cómo la dio", Object.entries(CANALES_AUTORIZACION).map(([valor, texto]) => ({ valor, texto })), d.autorizacion_canal, { requerido: true, vacio: "Elige una" })}
   ${campo("autorizacion_fecha", "Cuándo", d.autorizacion_fecha ?? hoy(), { tipo: "date", requerido: true })}

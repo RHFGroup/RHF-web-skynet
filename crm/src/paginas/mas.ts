@@ -27,6 +27,9 @@ const ACCIONES: Record<string, string> = {
   baja_boletin: "Dio de baja del boletín",
   reactivar_boletin: "Reactivó en el boletín",
   exportar_boletin: "Exportó los suscriptores activos",
+  intento: "Tocó WhatsApp, Llamar o Correo",
+  inversion: "Cargó la inversión en anuncios",
+  ver_conversacion: "Vio una conversación con la IA",
 };
 
 export function paginaMas(c: Ctx, vistaPrevia: boolean): Html {
@@ -36,8 +39,11 @@ export function paginaMas(c: Ctx, vistaPrevia: boolean): Html {
     url: c.url,
     vistaPrevia,
     cuerpo: html`<h1 class="titulo">Más</h1>
-<ul class="tarjetas">
+<ul class="tarjetas tarjetas--rejilla">
   <li><a class="tarjeta lead" href="/nuevo"><span class="lead-nombre">Nuevo lead</span><span class="meta">Instagram, Facebook, ferias, referidos y llamadas</span></a></li>
+  <li><a class="tarjeta lead" href="/leads"><span class="lead-nombre">Compradores en lista</span><span class="meta">Buscar y filtrar por etapa, puntaje, fuente o idioma</span></a></li>
+  <li><a class="tarjeta lead" href="/propietarios"><span class="lead-nombre">Propietarios en lista</span><span class="meta">Quienes quieren vender o consignar</span></a></li>
+  <li><a class="tarjeta lead" href="/boletin"><span class="lead-nombre">Boletín</span><span class="meta">Suscriptores, bajas y la exportación de los activos</span></a></li>
   <li><a class="tarjeta lead" href="/auditoria"><span class="lead-nombre">Auditoría</span><span class="meta">Quién vio, exportó, editó o suprimió qué, y cuándo</span></a></li>
 </ul>
 <section class="tarjeta">

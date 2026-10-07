@@ -6,7 +6,7 @@ import { html, type Html } from "../html";
 import type { Ctx } from "../base";
 import { ETAPAS, FUENTES, PUNTAJES, nombreDeInteres, type Tipo } from "../datos";
 import { hace } from "../tiempo";
-import { pagina, chipEtapa, chipPuntaje, nombreFuente, selector, vacio } from "./comun";
+import { pagina, chipEtapa, chipPuntaje, nombreFuente, selector, vacio, icono } from "./comun";
 
 type Fila = {
   op_id: number;
@@ -159,7 +159,7 @@ export async function paginaLeads(c: Ctx, tipo: Tipo, vistaPrevia: boolean): Pro
     seccion: tipo,
     url: c.url,
     vistaPrevia,
-    accion: html`<a class="boton-barra" href="/nuevo?tipo=${tipo}">+ ${tipo === "compra" ? "Lead" : "Propietario"}</a>`,
-    cuerpo: html`<h1 class="titulo">${titulo}</h1>${embudo}${filtros}${tarjetas}${paginas}`,
+    accion: html`<a class="boton-barra" href="/nuevo?tipo=${tipo}">${icono("mas_uno")}<span>${tipo === "compra" ? "Lead" : "Propietario"}</span></a>`,
+    cuerpo: html`<div class="cabeza-pagina"><div><h1 class="titulo">${titulo}</h1><p class="bajada">En lista. <a href="/embudo${tipo === "venta" ? "?tipo=venta" : ""}">Ver como embudo</a></p></div></div>${embudo}${filtros}${tarjetas}${paginas}`,
   });
 }

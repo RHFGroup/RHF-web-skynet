@@ -29,6 +29,15 @@
  * mira que el agente (chat de la web y WhatsApp) responda, y avisa por
  * Telegram si deja de hacerlo. No toca nada de lo que está acá abajo.
  *
+ * Desde el 7-oct-2026 (el tablero del CRM):
+ *  - /api/consulta recibe además las tres preguntas que califican a un
+ *    comprador (presupuesto, forma de pago y objetivo, en rangos) y de dónde
+ *    llegó la persona (UTM y clic del anuncio), y guarda el canal;
+ *  - POST /api/conversaciones-agente recibe, con el token del agente, las
+ *    conversaciones de la IA (chat de la web y WhatsApp) para el CRM;
+ *  - el cron corre cada minuto: el SLA de la primera respuesta y la higiene
+ *    del CRM cada minuto; el vigía, los reintentos y la TRM, cada 5.
+ *
  * REGLA DE ORO — cambió el 2026-09-19, y es el cambio más importante de este
  * archivo. Antes el formulario abría WhatsApp y guardar era la red debajo:
  * si el Worker fallaba, el lead llegaba igual porque la persona mandaba el
@@ -47,7 +56,26 @@
  */
 
 import { vigilar } from "./vigia";
-import { atenderCRM, mandarResumen, rutaCRM } from "../crm/src/index";
+import {
+  atenderCRM,
+  mandarResumen,
+  rutaCRM,
+  trabajoDeCadaMinuto,
+  leerLote,
+  guardarLote,
+  LIMITES_CONVERSACIONES,
+} from "../crm/src/index";
+import { canalDe, limpiarAtribucion, resumenAtribucion } from "../crm/src/canales";
+import {
+  FORMAS_PAGO,
+  OBJETIVOS,
+  RANGOS_PRESUPUESTO,
+  formaPagoValida,
+  nombreDe,
+  objetivoValido,
+  presupuestoValido,
+  rangoDeTexto,
+} from "../src/data/calificacion";
 import { RECURSOS_CRM } from "./crm-recursos";
 import { confirmarSuscripcion, guardarSuscripcion } from "./boletin";
 import {
@@ -132,6 +160,10 @@ export default {
       return guardarSolicitudAgente(request, env, ctx);
     }
 
+    if (url.pathname === "/api/conversaciones-agente") {
+      return guardarConversacionesAgente(request, env);
+    }
+
     if (url.pathname === "/api/trm") {
       return trmDelDia(request, env, ctx);
     }
@@ -144,16 +176,24 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  // Los crons de wrangler.jsonc: el resumen del CRM a las 7:30 a. m. y, cada 5
-  // minutos, el vigía (worker/vigia.ts), los avisos pendientes y la TRM.
+  // Los crons de wrangler.jsonc: el resumen del CRM a las 7:30 a. m. y otro
+  // cada minuto (desde el 7-oct-2026; antes, cada 5). Cada minuto, el SLA y la
+  // higiene del CRM; cada 5, como antes, el vigía (worker/vigia.ts), los
+  // avisos pendientes y la TRM. En esos minutos el CRM hace solo el SLA: el
+  // plan gratis permite 50 sentencias de D1 por invocación.
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    const ahora = new Date(controller.scheduledTime);
     if (controller.cron === CRON_RESUMEN_CRM) {
-      ctx.waitUntil(mandarResumen(env, (html) => enviarTelegram(env, html)));
+      ctx.waitUntil(mandarResumen(env, (html) => enviarTelegram(env, html), ahora));
       return;
     }
-    ctx.waitUntil(vigilar(env, new Date(controller.scheduledTime)));
-    ctx.waitUntil(reintentarAvisos(env));
-    ctx.waitUntil(refrescarTRMSiHaceFalta(env));
+    const conVigia = ahora.getUTCMinutes() % 5 === 0;
+    if (conVigia) {
+      ctx.waitUntil(vigilar(env, ahora));
+      ctx.waitUntil(reintentarAvisos(env));
+      ctx.waitUntil(refrescarTRMSiHaceFalta(env));
+    }
+    ctx.waitUntil(trabajoDeCadaMinuto(env, (html) => enviarTelegram(env, html), ahora, conVigia));
   },
 } satisfies ExportedHandler<Env>;
 
@@ -202,6 +242,14 @@ async function guardarConsulta(
   // cambia el título del aviso, para que Rafael sepa de un vistazo que es un
   // propietario y no un comprador. Cualquier otro valor es una consulta.
   const consignar = texto(cuerpo.tipo) === "consignar";
+  // Desde el 7-oct-2026: las tres preguntas del comprador (solo códigos de
+  // src/data/calificacion.ts; cualquier otra cosa se descarta) y de dónde
+  // llegó. Un formulario viejo, en caché, no las manda: se guarda igual.
+  const presupuesto = consignar ? null : presupuestoValido(cuerpo.presupuesto);
+  const formaPago = consignar ? null : formaPagoValida(cuerpo.forma_pago);
+  const objetivo = consignar ? null : objetivoValido(cuerpo.objetivo);
+  const atribucion = limpiarAtribucion(cuerpo.atribucion);
+  const canal = canalDe(atribucion, origen);
 
   // Sin autorización no se guarda. Es la condición de la Ley 1581 y también la
   // del CHECK de la tabla: acá se rechaza con un mensaje claro en vez de
@@ -237,26 +285,30 @@ async function guardarConsulta(
   }
 
   try {
-    const r = await db.prepare(
-      `INSERT INTO consultas
-         (creado_en, nombre, contacto, proyecto, mensaje,
-          autoriza, version_aviso, ip, user_agent, origen)
-       VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
-    )
-      .bind(
-        ahora.toISOString(),
-        nombre,
-        contacto,
-        proyecto || null,
-        mensaje || null,
-        versionAviso,
-        ip,
-        userAgent || null,
-        origen || null,
-      )
-      .run();
-
-    const id = (r.meta?.last_row_id as number | undefined) ?? null;
+    const fila = {
+      creado_en: ahora.toISOString(),
+      nombre,
+      contacto,
+      proyecto: proyecto || null,
+      mensaje: mensaje || null,
+      version_aviso: versionAviso,
+      ip,
+      user_agent: userAgent || null,
+      origen: origen || null,
+    };
+    const id = await insertarConsulta(db, fila, {
+      presupuesto,
+      forma_pago: formaPago,
+      objetivo,
+      atribucion: atribucion ? JSON.stringify(atribucion) : null,
+      canal,
+    });
+    const lineasExtra = [
+      presupuesto ? `<b>Presupuesto:</b> ${esc(nombreDe(RANGOS_PRESUPUESTO, presupuesto))}` : null,
+      formaPago ? `<b>Forma de pago:</b> ${esc(nombreDe(FORMAS_PAGO, formaPago))}` : null,
+      objetivo ? `<b>Para qué:</b> ${esc(nombreDe(OBJETIVOS, objetivo))}` : null,
+      canal !== "sin_dato" ? `<b>Canal:</b> ${esc(resumenAtribucion(canal, atribucion))}` : null,
+    ].filter((x): x is string => x !== null);
 
     // El aviso se espera, a diferencia del guardado del lado del navegador:
     // la persona ya está viendo un spinner y Telegram responde en ~300 ms.
@@ -273,6 +325,7 @@ async function guardarConsulta(
         origen,
         creado: ahora,
         vistaPrevia: esVistaPrevia(request),
+        extra: lineasExtra,
       },
       consignar ? "🏷️ <b>Quiere consignar su inmueble</b> · formulario de la web" : undefined,
     );
@@ -336,6 +389,8 @@ async function notificarTelegram(
     creado: Date;
     /** Vino de una vista previa (y quedó en su base): el aviso lo dice. */
     vistaPrevia?: boolean;
+    /** Líneas más, ya en HTML de Telegram (las arma el código, escapadas). */
+    extra?: string[];
   },
   /** Primera línea del aviso, ya en HTML de Telegram. La escribe el código,
    *  nunca sale de lo que mandó alguien. Por defecto, la de la consulta. */
@@ -373,6 +428,7 @@ async function notificarTelegram(
     `<b>Contacto:</b> ${esc(c.contacto)}`,
     c.proyecto ? `<b>Proyecto:</b> ${esc(c.proyecto)}` : null,
     c.mensaje ? `<b>Mensaje:</b> ${esc(c.mensaje)}` : null,
+    ...(c.extra ?? []),
     "",
     wa ? `<a href="${wa}">Responder por WhatsApp</a>` : null,
     // La ficha en el CRM (crm/, en su ruta secreta). Exige la clave. Las
@@ -570,25 +626,30 @@ async function guardarSolicitudAgente(
     .slice(0, LIMITES.mensaje);
 
   try {
-    const r = await db.prepare(
-      `INSERT INTO consultas
-         (creado_en, nombre, contacto, proyecto, mensaje,
-          autoriza, version_aviso, ip, user_agent, origen, estado)
-       VALUES (?, ?, ?, ?, ?, 1, ?, NULL, ?, ?, ?)`,
-    )
-      .bind(
-        ahora.toISOString(),
+    const id = await insertarConsulta(
+      db,
+      {
+        creado_en: ahora.toISOString(),
         nombre,
-        `+${telefono}`,
-        interes ? interes.slice(0, LIMITES.proyecto) : null,
+        contacto: `+${telefono}`,
+        proyecto: interes ? interes.slice(0, LIMITES.proyecto) : null,
         mensaje,
-        versionAviso,
-        `agente-atencion (${canal})`,
-        `agente:${canal}`,
-        prueba ? "prueba" : "nueva",
-      )
-      .run();
-    const id = (r.meta?.last_row_id as number | undefined) ?? null;
+        version_aviso: versionAviso,
+        ip: null,
+        user_agent: `agente-atencion (${canal})`,
+        origen: `agente:${canal}`,
+        estado: prueba ? "prueba" : "nueva",
+      },
+      {
+        // El rango que cuenta el agente, llevado a los rangos del formulario
+        // cuando se puede (src/data/calificacion.ts). Si no, queda en el texto.
+        presupuesto: tipo === "consignar" ? null : rangoDeTexto(rango),
+        forma_pago: null,
+        objetivo: null,
+        atribucion: null,
+        canal: canalDe(null, `agente:${canal}`),
+      },
+    );
 
     const titulo =
       (prueba ? "🧪 <b>[PRUEBA]</b> " : "") +
@@ -666,6 +727,107 @@ async function iguales(a: string, b: string): Promise<boolean> {
     return false;
   }
   return crypto.subtle.timingSafeEqual(x, y);
+}
+
+// ── Guardar una consulta ──────────────────────────────────────────────────
+
+type FilaConsulta = {
+  creado_en: string;
+  nombre: string;
+  contacto: string;
+  proyecto: string | null;
+  mensaje: string | null;
+  version_aviso: string;
+  ip: string | null;
+  user_agent: string | null;
+  origen: string | null;
+  estado?: string;
+};
+
+type ExtraConsulta = {
+  presupuesto: string | null;
+  forma_pago: string | null;
+  objetivo: string | null;
+  atribucion: string | null;
+  canal: string | null;
+};
+
+/**
+ * Guarda la consulta. Las columnas del 7-oct-2026 (migración 0008) van si la
+ * base las tiene; si todavía no se aplicó la migración, se guarda como antes:
+ * perder un lead por una columna nueva sería el peor error posible (la regla
+ * de oro de arriba).
+ */
+async function insertarConsulta(db: D1Database, f: FilaConsulta, extra: ExtraConsulta): Promise<number | null> {
+  const base = [f.creado_en, f.nombre, f.contacto, f.proyecto, f.mensaje, f.version_aviso, f.ip, f.user_agent, f.origen, f.estado ?? "nueva"];
+  try {
+    const r = await db
+      .prepare(
+        `INSERT INTO consultas
+           (creado_en, nombre, contacto, proyecto, mensaje, autoriza, version_aviso, ip, user_agent, origen, estado,
+            presupuesto, forma_pago, objetivo, atribucion, canal)
+         VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(...base, extra.presupuesto, extra.forma_pago, extra.objetivo, extra.atribucion, extra.canal)
+      .run();
+    return (r.meta?.last_row_id as number | undefined) ?? null;
+  } catch (e) {
+    if (!/no such column|has no column/i.test(String(e))) throw e;
+    console.error("[consulta] falta la migración 0008: se guarda sin las columnas nuevas");
+    const r = await db
+      .prepare(
+        `INSERT INTO consultas
+           (creado_en, nombre, contacto, proyecto, mensaje, autoriza, version_aviso, ip, user_agent, origen, estado)
+         VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)`,
+      )
+      .bind(...base)
+      .run();
+    return (r.meta?.last_row_id as number | undefined) ?? null;
+  }
+}
+
+// ── Las conversaciones del agente ─────────────────────────────────────────
+
+/**
+ * POST /api/conversaciones-agente — las conversaciones de la IA para el CRM
+ * (7-oct-2026, pedido de Rafael: verlas todas). Las manda el sincronizador que
+ * corre junto al agente (agente/sincronizar_conversaciones.py), de servidor a
+ * servidor, con el mismo token del agente (`AGENTE_TOKEN`). El formato y lo
+ * que se guarda están en crm/src/conversaciones.ts.
+ *
+ * Responde cuántas conversaciones y mensajes recibió; nunca devuelve datos.
+ */
+async function guardarConversacionesAgente(request: Request, env: Env): Promise<Response> {
+  if (request.method !== "POST") return json({ ok: false, error: "metodo_no_permitido" }, 405);
+  if (!env.AGENTE_TOKEN) {
+    console.error("[conversaciones] falta el secreto AGENTE_TOKEN: el endpoint está cerrado");
+    return json({ ok: false, error: "sin_configurar" }, 503);
+  }
+  const auth = request.headers.get("Authorization") ?? "";
+  const presentado = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+  if (!presentado || !(await iguales(presentado, env.AGENTE_TOKEN))) {
+    return json({ ok: false, error: "no_autorizado" }, 401);
+  }
+  let cuerpo: unknown;
+  try {
+    const crudo = await request.text();
+    if (crudo.length > LIMITES_CONVERSACIONES.cuerpo) return json({ ok: false, error: "cuerpo_demasiado_grande" }, 413);
+    cuerpo = JSON.parse(crudo);
+  } catch {
+    return json({ ok: false, error: "json_invalido" }, 400);
+  }
+  const lote = leerLote(cuerpo);
+  if (!lote.ok) return json({ ok: false, error: lote.error }, 422);
+  const db = baseDe(env, request);
+  try {
+    await guardarLote(db, lote.conversaciones);
+  } catch (e) {
+    const sinTablas = /no such table/i.test(String(e));
+    console.error("[conversaciones] no se pudo guardar:", sinTablas ? "falta la migración 0008" : e);
+    return json({ ok: false, error: sinTablas ? "falta_migracion" : "fallo_al_guardar" }, sinTablas ? 503 : 500);
+  }
+  console.log(JSON.stringify({ conversaciones: lote.conversaciones.length, mensajes: lote.mensajes }));
+  return json({ ok: true, conversaciones: lote.conversaciones.length, mensajes: lote.mensajes }, 200);
 }
 
 // ── Reintentos de avisos ──────────────────────────────────────────────────

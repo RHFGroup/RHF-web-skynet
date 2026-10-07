@@ -16,8 +16,35 @@ import {
   type Tipo,
 } from "../datos";
 import { fechaCorta, fechaLarga, fechaLocal, hace, hoy } from "../tiempo";
-import { enlaceWhatsApp } from "../telefono";
-import { pagina, chipEtapa, chipPuntaje, nombreFuente, selector, campo, areaTexto, vacio } from "./comun";
+import { leerAtribucion, nombreCanal } from "../canales";
+import { minutosHabiles, duracion } from "../horario";
+import { valorDe } from "../valor";
+import {
+  RANGOS_PRESUPUESTO,
+  FORMAS_PAGO,
+  NO_SE,
+  nombreDe,
+  respuestasDefinidas,
+} from "@/data/calificacion";
+import { burbujas } from "./conversaciones";
+import { nombreCanalAgente } from "../conversaciones";
+import {
+  pagina,
+  chipEtapa,
+  chipPuntaje,
+  chipCanal,
+  chipSla,
+  botonesContacto,
+  iniciales,
+  icono,
+  nombreFuente,
+  selector,
+  campo,
+  areaTexto,
+  vacio,
+  pesos,
+  pesosCortos,
+} from "./comun";
 
 export type Contacto = {
   id: number;
@@ -39,6 +66,12 @@ export type Contacto = {
   autorizacion_canal: string | null;
   autorizacion_evidencia: string | null;
   estado_datos: "normal" | "reclamo" | "suprimido";
+  utm_primero: string | null;
+  utm_ultimo: string | null;
+  gclid: string | null;
+  fbclid: string | null;
+  canal: string | null;
+  canal_ultimo: string | null;
 };
 
 export type Oportunidad = {
@@ -63,6 +96,22 @@ export type Oportunidad = {
   unidad: string | null;
   separacion_en: string | null;
   cerrada: number;
+  canal: string | null;
+  rango_presupuesto: string | null;
+  pago: string | null;
+  valor_estimado: number | null;
+  espera_desde: string | null;
+  sla_aviso_en: string | null;
+  sla_vencido_en: string | null;
+  primer_intento_en: string | null;
+  minutos_respuesta: number | null;
+  ultima_actividad_en: string | null;
+  higiene_nivel: number;
+  higiene_en: string | null;
+  fase_contactado_en: string | null;
+  fase_presentacion_en: string | null;
+  fase_cotizacion_en: string | null;
+  fase_cierre_en: string | null;
 };
 
 type Actividad = { id: number; creado_en: string; tipo: string; texto: string | null; autor: string; consulta_id: number | null };
@@ -72,6 +121,7 @@ type Constancia = { id: number; creado_en: string; version_aviso: string; ip: st
 const TIPOS_ACTIVIDAD: Record<string, string> = {
   formulario: "Escribió por el sitio",
   agente: "Pidió una llamada al agente",
+  intento: "Intento de contacto",
   nota: "Nota",
   llamada: "Llamada",
   whatsapp: "WhatsApp",
@@ -87,7 +137,7 @@ export async function paginaFicha(c: Ctx, id: number, vistaPrevia: boolean): Pro
   const contacto = await c.db.prepare(`SELECT * FROM crm_contactos WHERE id = ?`).bind(id).first<Contacto>();
   if (!contacto) return null;
 
-  const [ops, acts, tareas, constancias] = await Promise.all([
+  const [ops, acts, tareas, constancias, conversaciones] = await Promise.all([
     c.db
       .prepare(`SELECT * FROM crm_oportunidades WHERE contacto_id = ? ORDER BY cerrada ASC, id DESC`)
       .bind(id)
@@ -108,13 +158,34 @@ export async function paginaFicha(c: Ctx, id: number, vistaPrevia: boolean): Pro
       .all<Tarea>(),
     c.db
       .prepare(
-        `SELECT q.id, q.creado_en, q.version_aviso, q.ip, q.origen, q.user_agent FROM consultas q
+        `SELECT q.id, q.creado_en, q.version_aviso, q.ip, q.origen, q.user_agent, q.atribucion FROM consultas q
           WHERE q.id IN (SELECT consulta_id FROM crm_actividades WHERE contacto_id = ? AND consulta_id IS NOT NULL)
           ORDER BY q.id`,
       )
       .bind(id)
-      .all<Constancia>(),
+      .all<Constancia & { atribucion: string | null }>(),
+    c.db
+      .prepare(
+        `SELECT id, canal, iniciada_en, ultimo_en, mensajes FROM agente_conversaciones
+          WHERE contacto_id = ?1 OR (?2 IS NOT NULL AND telefono = ?2)
+          ORDER BY ultimo_en DESC LIMIT 5`,
+      )
+      .bind(id, contacto.telefono)
+      .all<{ id: number; canal: string; iniciada_en: string; ultimo_en: string; mensajes: number }>(),
   ]);
+
+  // La conversación más reciente con la IA, entera (hasta 60 mensajes).
+  const ultimaConversacion = conversaciones.results[0];
+  const mensajes = ultimaConversacion
+    ? await c.db
+        .prepare(
+          `SELECT id, rol, texto, en FROM (
+             SELECT id, rol, texto, en FROM agente_mensajes WHERE conversacion_id = ? ORDER BY en DESC, id DESC LIMIT 60
+           ) ORDER BY en ASC, id ASC`,
+        )
+        .bind(ultimaConversacion.id)
+        .all<{ id: number; rol: "persona" | "agente"; texto: string; en: string }>()
+    : null;
 
   let boletin: { estado: string; creado_en: string; baja_en: string | null } | null = null;
   if (contacto.correo && (await existeTabla(c.db, "suscriptores"))) {
@@ -140,24 +211,72 @@ export async function paginaFicha(c: Ctx, id: number, vistaPrevia: boolean): Pro
     });
   }
 
+  const ahora = new Date();
   const abiertas = ops.results.filter((o) => !o.cerrada);
-  const wa = enlaceWhatsApp(contacto.telefono);
+  const principal = abiertas[0] ?? ops.results[0];
   const telefonoVisible = contacto.telefono ?? contacto.telefono_crudo;
+  const esperando = abiertas.find((o) => o.espera_desde);
+  const minutosEspera = esperando?.espera_desde ? minutosHabiles(new Date(esperando.espera_desde), ahora) : null;
 
   const cabecera = html`<section class="tarjeta ficha-cabecera">
-  <h1>${titulo}</h1>
-  <p class="chips">${abiertas.map((o) => html`${chipEtapa(o.tipo, o.etapa)}${o.tipo === "compra" ? chipPuntaje(o.puntaje) : ""}`)}${
-    contacto.estado_datos === "reclamo" ? html`<span class="chip chip--alerta">Reclamo en trámite</span>` : ""
-  }</p>
+  <div class="ficha-identidad">
+    <span class="avatar avatar--grande" aria-hidden="true">${iniciales(contacto.nombre)}</span>
+    <div>
+      <h1>${titulo}</h1>
+      <p class="meta">${[telefonoVisible, contacto.correo, contacto.ciudad].filter(Boolean).join(" · ")}</p>
+    </div>
+  </div>
+  <p class="chips">${abiertas.map((o) => html`${chipEtapa(o.tipo, o.etapa)}${o.tipo === "compra" && o.puntaje !== "sin" ? chipPuntaje(o.puntaje) : ""}`)}${chipCanal(contacto.canal)}${
+    minutosEspera !== null ? chipSla(minutosEspera, esperando?.espera_desde) : ""
+  }${contacto.estado_datos === "reclamo" ? html`<span class="chip chip--alerta">Reclamo en trámite</span>` : ""}</p>
   <p class="meta">${nombreFuente(contacto.fuente)} · llegó ${hace(contacto.creado_en)}${
     contacto.ultimo_contacto_en ? ` · último contacto ${hace(contacto.ultimo_contacto_en)}` : " · sin contactar"
-  }</p>
-  <div class="botones-contacto">
-    ${wa ? html`<a class="boton" href="${wa}" target="_blank" rel="noopener noreferrer">WhatsApp</a>` : ""}
-    ${telefonoVisible ? html`<a class="boton-sec" href="tel:${contacto.telefono ?? telefonoVisible.replace(/[^\d+]/g, "")}">Llamar</a>` : ""}
-    ${contacto.correo ? html`<a class="boton-sec" href="mailto:${contacto.correo}">Correo</a>` : ""}
-  </div>
+  }${principal?.minutos_respuesta !== null && principal?.minutos_respuesta !== undefined ? ` · primera respuesta en ${duracion(principal.minutos_respuesta)} hábiles` : ""}</p>
+  <div class="botones-contacto">${botonesContacto(contacto)}</div>
 </section>`;
+
+  // ── Calificación y origen ──────────────────────────────────────────────
+  const compra = abiertas.find((o) => o.tipo === "compra") ?? ops.results.find((o) => o.tipo === "compra");
+  const dato = (etiqueta: string, valor: string | Html | null | undefined, ayuda?: string) =>
+    html`<div class="dato"><dt>${etiqueta}</dt><dd>${valor || html`<span class="falta">Sin dato</span>`}${ayuda ? html`<small>${ayuda}</small>` : ""}</dd></div>`;
+  const calificacion = compra
+    ? (() => {
+        const n = respuestasDefinidas({ presupuesto: compra.rango_presupuesto, pago: compra.pago, objetivo: compra.proposito });
+        const v = valorDe(compra);
+        return html`<section class="tarjeta" aria-labelledby="t-calificacion">
+  <h2 id="t-calificacion">Calificación <span class="chip${n === 3 ? " chip--ok" : ""}">${n} de 3 respuestas</span></h2>
+  <dl class="datos-clave">
+    ${dato("Presupuesto", compra.rango_presupuesto ? nombreDe(RANGOS_PRESUPUESTO, compra.rango_presupuesto) : compra.presupuesto, compra.rango_presupuesto && compra.presupuesto ? compra.presupuesto : undefined)}
+    ${dato("Forma de pago", compra.pago ? nombreDe(FORMAS_PAGO, compra.pago) : compra.forma_pago, compra.pago && compra.forma_pago ? compra.forma_pago : undefined)}
+    ${dato("Para qué compra", compra.proposito ? PROPOSITOS[compra.proposito] ?? compra.proposito : null)}
+    ${dato("Valor de referencia", v.valor ? pesosCortos(v.valor) : null, v.fuente === "rango" ? "punto medio del rango" : v.fuente === "cartera" ? "precio medio del proyecto" : v.fuente === "anotado" ? "anotado por ti" : undefined)}
+  </dl>
+  ${compra.rango_presupuesto === NO_SE || compra.pago === NO_SE ? html`<p class="nota">Respondió «Aún no lo sé» en alguna: pregúntalo en la primera llamada.</p>` : ""}
+</section>`;
+      })()
+    : "";
+
+  const atribucion = constancias.results.map((q) => leerAtribucion(q.atribucion)).find((x) => x) ?? null;
+  const origen = html`<section class="tarjeta" aria-labelledby="t-origen">
+  <h2 id="t-origen">De dónde llegó</h2>
+  <dl class="datos-clave">
+    ${dato("Canal", nombreCanal(contacto.canal), contacto.canal_ultimo && contacto.canal_ultimo !== contacto.canal ? `la última vez: ${nombreCanal(contacto.canal_ultimo)}` : undefined)}
+    ${dato("Campaña", atribucion?.utm_campaign ?? null, atribucion?.utm_content ? `anuncio: ${atribucion.utm_content}` : undefined)}
+    ${dato("Primera página", atribucion?.landing ?? contacto.pagina_entrada)}
+    ${dato("Clic de anuncio", contacto.gclid ? "Google Ads (con identificador)" : contacto.fbclid ? "Facebook o Instagram (con identificador)" : null)}
+  </dl>
+</section>`;
+
+  const conversacion = ultimaConversacion && mensajes
+    ? html`<section class="tarjeta" aria-labelledby="t-conversacion">
+  <h2 id="t-conversacion">${icono("ia")} Lo que conversó con la IA</h2>
+  <p class="meta">${nombreCanalAgente(ultimaConversacion.canal)} · ${ultimaConversacion.mensajes} mensajes · último ${hace(ultimaConversacion.ultimo_en)}${
+    conversaciones.results.length > 1 ? ` · ${conversaciones.results.length} conversaciones` : ""
+  }</p>
+  <div class="conversacion conversacion--ficha">${burbujas(mensajes.results)}</div>
+  <p><a class="boton-sec boton--chico" href="/conversacion/${ultimaConversacion.id}">Ver la conversación completa</a></p>
+</section>`
+    : "";
 
   const registrar = html`<section class="tarjeta" aria-labelledby="t-registrar">
   <h2 id="t-registrar">Registrar lo que hiciste</h2>
@@ -180,7 +299,7 @@ export async function paginaFicha(c: Ctx, id: number, vistaPrevia: boolean): Pro
 </section>`;
 
   const bloqueOps = ops.results.length
-    ? ops.results.map((o) => bloqueOportunidad(o))
+    ? ops.results.map((o) => bloqueOportunidad(o, ahora))
     : vacio("Todavía no tiene oportunidades.");
 
   const tiposConOp = new Set(abiertas.map((o) => o.tipo));
@@ -189,7 +308,7 @@ export async function paginaFicha(c: Ctx, id: number, vistaPrevia: boolean): Pro
     .map(
       (t) => html`<form method="post" action="/contacto/${id}/oportunidad" class="en-linea">
   <input type="hidden" name="tipo" value="${t}">
-  <button class="boton-sec" type="submit">+ Oportunidad de ${t === "compra" ? "compra" : "venta o consignación"}</button>
+  <button class="boton-sec boton--chico" type="submit">${icono("mas_uno")}<span>Oportunidad de ${t === "compra" ? "compra" : "venta o consignación"}</span></button>
 </form>`,
     );
 
@@ -201,8 +320,8 @@ export async function paginaFicha(c: Ctx, id: number, vistaPrevia: boolean): Pro
   ${pendientes.length
     ? html`<ul class="lista">${pendientes.map(
         (t) => html`<li class="fila fila--tarea"><span><strong>${t.titulo}</strong>
-  <span class="meta">${t.vence_en < hoyLocal ? html`<span class="vencida">venció ${fechaLocal(t.vence_en)}</span>` : t.vence_en === hoyLocal ? "hoy" : fechaLocal(t.vence_en)}</span></span>
-  <form method="post" action="/tarea/${t.id}/hecha"><input type="hidden" name="volver" value="/contacto/${id}"><button class="boton-sec" type="submit">Hecha</button></form></li>`,
+  <span class="meta">${t.vence_en < hoyLocal ? html`<span class="vencida">venció ${fechaLocal(t.vence_en)}</span>` : t.vence_en === hoyLocal ? "hoy" : fechaLocal(t.vence_en)}${t.origen === "sistema" ? " · regla de higiene" : ""}</span></span>
+  <form method="post" action="/tarea/${t.id}/hecha"><input type="hidden" name="volver" value="/contacto/${id}"><button class="boton-sec boton--chico" type="submit">Hecha</button></form></li>`,
       )}</ul>`
     : vacio("No tiene tareas pendientes.")}
   <form method="post" action="/contacto/${id}/tarea" class="rejilla">
@@ -221,7 +340,7 @@ export async function paginaFicha(c: Ctx, id: number, vistaPrevia: boolean): Pro
   ${acts.results.length
     ? html`<ol class="linea">${acts.results.map(
         (a) => html`<li class="linea-item linea--${a.autor === "sitio" ? "sitio" : a.tipo}">
-  <span class="meta">${TIPOS_ACTIVIDAD[a.tipo] ?? a.tipo} · ${fechaCorta(a.creado_en)}${a.autor === "sitio" ? " · llegó solo" : ""}</span>
+  <span class="meta">${TIPOS_ACTIVIDAD[a.tipo] ?? a.tipo} · ${fechaCorta(a.creado_en)}${a.autor === "sitio" ? " · llegó solo" : a.autor === "sistema" ? " · regla automática" : ""}</span>
   ${a.texto ? html`<p class="texto-libre">${a.texto}</p>` : ""}
 </li>`,
       )}</ol>`
@@ -271,7 +390,7 @@ export async function paginaFicha(c: Ctx, id: number, vistaPrevia: boolean): Pro
   </form>
   <form method="post" action="/contacto/${id}/suprimir" class="zona-peligro rejilla">
     <h3>Suprimir sus datos</h3>
-    <p>Borra el nombre, el teléfono, el correo y lo que escribió, aquí y en el buzón del sitio. Queda solo el registro de la solicitud. No se puede deshacer.</p>
+    <p>Borra el nombre, el teléfono, el correo, lo que escribió y sus conversaciones con la IA, aquí y en el buzón del sitio. Queda solo el registro de la solicitud. No se puede deshacer.</p>
     ${campo("confirmacion", `Para confirmar, escribe: ${contacto.nombre || "SUPRIMIR"}`, "", { requerido: true, max: 120, autocomplete: "off", id: `confirmar-${id}` })}
     <div class="acciones"><button class="boton-peligro" type="submit">Suprimir sus datos</button></div>
   </form>
@@ -280,23 +399,56 @@ export async function paginaFicha(c: Ctx, id: number, vistaPrevia: boolean): Pro
 
   return pagina({
     titulo,
-    seccion: abiertas[0]?.tipo ?? ops.results[0]?.tipo ?? "compra",
+    seccion: "embudo",
     url: c.url,
     vistaPrevia,
-    cuerpo: html`${cabecera}${registrar}<h2 class="subtitulo">Oportunidades</h2>${bloqueOps}${agregarOp}${bloqueTareas}${linea}${datos}${autorizacion}${proteccion}`,
+    ancho: "medio",
+    cuerpo: html`<p class="migas"><a href="/embudo${principal?.tipo === "venta" ? "?tipo=venta" : ""}">${crudoFlecha()} Embudo</a></p>
+${cabecera}
+<div class="ficha-rejilla">
+  <div class="ficha-principal">
+    ${conversacion}
+    ${registrar}
+    <h2 class="subtitulo">Oportunidades</h2>
+    ${bloqueOps}
+    ${agregarOp}
+    ${linea}
+  </div>
+  <div class="ficha-lateral">
+    ${calificacion}
+    ${origen}
+    ${bloqueTareas}
+    ${datos}
+    ${autorizacion}
+    ${proteccion}
+  </div>
+</div>`,
   });
 }
 
-function bloqueOportunidad(o: Oportunidad): Html {
+function crudoFlecha(): Html {
+  return html`<span aria-hidden="true">←</span>`;
+}
+
+function bloqueOportunidad(o: Oportunidad, ahora: Date): Html {
   const etapas = ETAPAS[o.tipo];
   const cerrada = Boolean(o.cerrada);
   const opcionesInteres = CATALOGO.map((x) => ({ valor: x.slug, texto: x.nombre }));
   const interesLibre = o.interes && !CATALOGO.some((x) => x.slug === o.interes) ? o.interes : "";
+  const dias = Math.floor((ahora.getTime() - new Date(o.etapa_desde).getTime()) / 86_400_000);
   return html`<section class="tarjeta oportunidad${cerrada ? " oportunidad--cerrada" : ""}" aria-label="Oportunidad de ${o.tipo}">
-  <h3>${o.tipo === "compra" ? "Compra" : "Venta o consignación"} ${chipEtapa(o.tipo, o.etapa)}${o.tipo === "compra" ? chipPuntaje(o.puntaje) : ""}</h3>
-  <p class="meta">En esta etapa desde ${fechaLarga(o.etapa_desde)}${o.motivo_perdida ? ` · motivo: ${o.motivo_perdida}` : ""}${
+  <h3>${o.tipo === "compra" ? "Compra" : "Venta o consignación"} ${chipEtapa(o.tipo, o.etapa)}${o.tipo === "compra" ? chipPuntaje(o.puntaje) : ""}${
+    o.higiene_nivel ? html`<span class="chip estado estado--por_vencer">${icono("reloj")}${o.higiene_nivel} días quieta</span>` : ""
+  }</h3>
+  <p class="meta">En esta etapa desde ${fechaLarga(o.etapa_desde)} (${dias === 1 ? "1 día" : `${dias} días`})${o.motivo_perdida ? ` · motivo: ${o.motivo_perdida}` : ""}${
     o.interes ? ` · interés: ${nombreDeInteres(o.interes)}` : ""
-  }</p>
+  }${o.canal ? ` · llegó por ${nombreCanal(o.canal)}` : ""}</p>
+  <ol class="fases" aria-label="Fases del embudo a las que llegó">${[
+    ["Contactado", o.fase_contactado_en],
+    [o.tipo === "compra" ? "Presentación" : "Visita", o.fase_presentacion_en],
+    [o.tipo === "compra" ? "Cotización" : "Consignación", o.fase_cotizacion_en],
+    ["Cierre", o.fase_cierre_en],
+  ].map(([nombre, en]) => html`<li class="${en ? "fase--hecha" : ""}"><span>${nombre}</span>${en ? html`<small>${fechaCorta(en)}</small>` : ""}</li>`)}</ol>
   ${o.proxima_accion || o.proxima_accion_en
     ? html`<p class="proxima"><strong>Próxima acción:</strong> ${o.proxima_accion ?? ""}${o.proxima_accion_en ? ` · ${fechaLocal(o.proxima_accion_en)}` : ""}</p>`
     : ""}
@@ -319,15 +471,18 @@ function bloqueOportunidad(o: Oportunidad): Html {
     : ""}
 
   <details>
-  <summary>Detalle, próxima acción y recorrido</summary>
+  <summary>Detalle, calificación, próxima acción y recorrido</summary>
   <form method="post" action="/oportunidad/${o.id}/detalle" class="rejilla">
     ${selector("interes", "Proyecto o inmueble", opcionesInteres, CATALOGO.some((x) => x.slug === o.interes) ? o.interes : "", { vacio: "—", id: `interes-${o.id}` })}
     ${campo("interes_otro", "Otro interés (texto)", interesLibre, { max: 160, id: `interes-otro-${o.id}` })}
     ${o.tipo === "compra"
-      ? selector("proposito", "Para qué compra", Object.entries(PROPOSITOS).map(([valor, texto]) => ({ valor, texto })), o.proposito, { vacio: "—", id: `proposito-${o.id}` })
+      ? html`${selector("rango_presupuesto", "Presupuesto (rango)", RANGOS_PRESUPUESTO.map((x) => ({ valor: x.codigo, texto: x.es })), o.rango_presupuesto, { vacio: "—", id: `rango-${o.id}` })}
+    ${selector("pago", "Forma de pago", FORMAS_PAGO.map((x) => ({ valor: x.codigo, texto: x.es })), o.pago, { vacio: "—", id: `pago-${o.id}` })}
+    ${selector("proposito", "Para qué compra", Object.entries(PROPOSITOS).map(([valor, texto]) => ({ valor, texto })), o.proposito, { vacio: "—", id: `proposito-${o.id}` })}`
       : ""}
-    ${campo("presupuesto", o.tipo === "compra" ? "Presupuesto" : "Precio esperado", o.presupuesto, { max: 80, id: `presupuesto-${o.id}` })}
-    ${o.tipo === "compra" ? campo("forma_pago", "Forma de pago", o.forma_pago, { max: 120, id: `forma-${o.id}` }) : ""}
+    ${campo("presupuesto", o.tipo === "compra" ? "Presupuesto exacto o nota" : "Precio esperado", o.presupuesto, { max: 80, id: `presupuesto-${o.id}` })}
+    ${o.tipo === "compra" ? campo("forma_pago", "Detalle de la forma de pago", o.forma_pago, { max: 120, id: `forma-${o.id}` }) : ""}
+    ${campo("valor_estimado", "Valor de referencia en pesos", o.valor_estimado ? pesos(o.valor_estimado) : "", { max: 40, id: `valor-${o.id}`, inputmode: "numeric", ayuda: `Para el pipeline del tablero. Vacío: ${valorDe({ ...o, valor_estimado: null }).valor ? `se usa ${pesosCortos(valorDe({ ...o, valor_estimado: null }).valor)}` : "no suma"}.` })}
     ${campo("plazo", o.tipo === "compra" ? "Plazo para comprar" : "Cuándo quiere vender", o.plazo, { max: 80, id: `plazo-${o.id}` })}
     ${campo("proxima_accion", "Próxima acción", o.proxima_accion, { max: 200, id: `proxima-${o.id}` })}
     ${campo("proxima_accion_en", "Fecha de la próxima acción", o.proxima_accion_en, { tipo: "date", id: `proxima-en-${o.id}` })}

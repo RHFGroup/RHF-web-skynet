@@ -18,7 +18,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import { D1Node } from "./d1-node.ts";
-import { atenderCRM, mandarResumen } from "../src/index.ts";
+import { atenderCRM, mandarResumen, trabajoDeCadaMinuto, leerLote, guardarLote } from "../src/index.ts";
 import { huellaDe } from "../src/clave.ts";
 
 /** La ruta y la clave de las pruebas. Nunca las de producción. */
@@ -33,6 +33,8 @@ const db = new DatabaseSync(process.env.DB_ARCHIVO ?? ":memory:");
 const migraciones = fs.readdirSync(path.join(raiz, "migrations")).filter((f) => f.endsWith(".sql")).sort();
 for (const m of migraciones) db.exec(fs.readFileSync(path.join(raiz, "migrations", m), "utf8"));
 if (process.env.SIN_SEMILLA !== "1") db.exec(fs.readFileSync(path.join(aqui, "semilla.sql"), "utf8"));
+// Con SEMILLA_DEMO=1, además los datos inventados del tablero y los chats.
+if (process.env.SEMILLA_DEMO === "1") db.exec(fs.readFileSync(path.join(aqui, "semilla-demo.sql"), "utf8"));
 const d1 = new D1Node(db);
 
 const publico = path.join(raiz, "crm", "public");
@@ -91,9 +93,29 @@ http
         return;
       }
       if (url.pathname === "/__dev/resumen") {
-        await mandarResumen(env as never, avisar);
+        const ahora = url.searchParams.get("ahora") ? new Date(url.searchParams.get("ahora")!) : new Date();
+        await mandarResumen(env as never, avisar, ahora);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(mensajes.at(-1) ?? null));
+        return;
+      }
+      // Lo mismo que hace POST /api/conversaciones-agente del Worker (sin el
+      // token: el arnés no tiene AGENTE_TOKEN).
+      if (url.pathname === "/__dev/conversaciones" && req.method === "POST") {
+        const lote = leerLote(JSON.parse((await leerCuerpo(req)).toString("utf8")));
+        if (lote.ok) await guardarLote(d1 as never, lote.conversaciones);
+        res.writeHead(lote.ok ? 200 : 422, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(lote.ok ? { ok: true, conversaciones: lote.conversaciones.length, mensajes: lote.mensajes } : lote));
+        return;
+      }
+      // El trabajo de cada minuto del cron (SLA e higiene), a la hora que se pida.
+      if (url.pathname === "/__dev/minuto") {
+        const ahora = url.searchParams.get("ahora") ? new Date(url.searchParams.get("ahora")!) : new Date();
+        const antes = mensajes.length;
+        d1.contador = 0;
+        await trabajoDeCadaMinuto(env as never, avisar, ahora, url.searchParams.get("vigia") === "1");
+        res.writeHead(200, { "Content-Type": "application/json", "x-d1-sentencias": String(d1.contador) });
+        res.end(JSON.stringify(mensajes.slice(antes)));
         return;
       }
       const headers = new Headers();

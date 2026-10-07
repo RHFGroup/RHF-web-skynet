@@ -4,15 +4,29 @@
  * línea en la auditoría.
  */
 import { ahoraIso, sentenciaAuditoria, type Ctx } from "./base";
-import { etapaDe, MOTIVOS_PERDIDA, PUNTAJES, PROPOSITOS, CATALOGO, FUENTES, FUENTES_MANUALES, CANALES_AUTORIZACION, type Tipo } from "./datos";
+import {
+  etapaDe,
+  columnasDeFase,
+  MOTIVOS_PERDIDA,
+  PUNTAJES,
+  PROPOSITOS,
+  CATALOGO,
+  FUENTES,
+  FUENTES_MANUALES,
+  CANALES_AUTORIZACION,
+  type Tipo,
+} from "./datos";
 import { telefonoE164, correoNormal } from "./telefono";
-import { fechaValida, fechaHoraValida, fechaLocal, hoy } from "./tiempo";
+import { fechaValida, fechaHoraValida, fechaLocal, hoy, lunesDe } from "./tiempo";
+import { sentenciasDeActividad } from "./sla";
+import { CANALES_INVERSION } from "./canales";
+import { formaPagoValida, presupuestoValido, objetivoValido, NO_SE } from "@/data/calificacion";
 import type { Oportunidad, Contacto } from "./paginas/ficha";
 import type { DatosAlta } from "./paginas/alta";
 
 /** 303: después de un POST el navegador vuelve con GET (sin reenvíos al recargar). */
 export function volverA(ruta: string, extra?: Record<string, string>): Response {
-  const q = extra ? `?${new URLSearchParams(extra)}` : "";
+  const q = extra ? `${ruta.includes("?") ? "&" : "?"}${new URLSearchParams(extra)}` : "";
   return new Response(null, { status: 303, headers: { Location: `${ruta}${q}`, "Cache-Control": "no-store" } });
 }
 
@@ -34,7 +48,20 @@ async function contactoVivo(c: Ctx, id: number): Promise<Contacto | null> {
     .first<Contacto>();
 }
 
-/** «Le escribí por WhatsApp», «Lo llamé», una nota… */
+/** Las oportunidades abiertas de una persona (para anotarles la actividad). */
+async function abiertasDe(c: Ctx, contactoId: number): Promise<Oportunidad[]> {
+  const r = await c.db
+    .prepare(`SELECT * FROM crm_oportunidades WHERE contacto_id = ? AND cerrada = 0 ORDER BY id DESC LIMIT 4`)
+    .bind(contactoId)
+    .all<Oportunidad>();
+  return r.results;
+}
+
+/**
+ * «Le escribí por WhatsApp», «Lo llamé», una nota… Todo menos la nota cuenta
+ * como intento de contacto: cierra la espera de la primera respuesta
+ * (crm/src/sla.ts). Todo reinicia la higiene.
+ */
 export async function registrarActividad(c: Ctx, contactoId: number, f: FormData): Promise<Response> {
   const contacto = await contactoVivo(c, contactoId);
   if (!contacto) return volverA("/hoy");
@@ -44,36 +71,86 @@ export async function registrarActividad(c: Ctx, contactoId: number, f: FormData
   const opId = Number.parseInt(valor(f, "oportunidad", 12), 10);
   const op = opId > 0 ? await oportunidadDe(c, opId) : null;
   const opValida = op && op.contacto_id === contactoId ? op : null;
-  const ahora = ahoraIso();
+  const ahora = new Date();
+  const iso = ahora.toISOString();
+  const intento = tipo !== "nota";
 
   const sentencias: D1PreparedStatement[] = [
     c.db
       .prepare(
         `INSERT INTO crm_actividades (contacto_id, oportunidad_id, creado_en, tipo, texto, autor) VALUES (?, ?, ?, ?, ?, ?)`,
       )
-      .bind(contactoId, opValida?.id ?? null, ahora, tipo, texto, c.usuario),
+      .bind(contactoId, opValida?.id ?? null, iso, tipo, texto, c.usuario),
   ];
-  if (tipo !== "nota") {
+  // La actividad cuenta para la oportunidad elegida o, si no se eligió, para
+  // todas las abiertas de la persona.
+  const tocadas = opValida ? (opValida.cerrada ? [] : [opValida]) : await abiertasDe(c, contactoId);
+  for (const o of tocadas) sentencias.push(...sentenciasDeActividad(c.db, o, ahora, intento));
+  if (intento) {
     sentencias.push(
-      c.db.prepare(`UPDATE crm_contactos SET ultimo_contacto_en = ?, actualizado_en = ? WHERE id = ?`).bind(ahora, ahora, contactoId),
+      c.db.prepare(`UPDATE crm_contactos SET ultimo_contacto_en = ?, actualizado_en = ? WHERE id = ?`).bind(iso, iso, contactoId),
     );
     // El primer contacto mueve a «Contactado» la oportunidad que seguía en «Nuevo».
     if (opValida && opValida.etapa === "nuevo") {
       sentencias.push(
         c.db
-          .prepare(`UPDATE crm_oportunidades SET etapa = 'contactado', etapa_desde = ?, actualizado_en = ? WHERE id = ?`)
-          .bind(ahora, ahora, opValida.id),
+          .prepare(
+            `UPDATE crm_oportunidades SET etapa = 'contactado', etapa_desde = ?, actualizado_en = ?,
+                    fase_contactado_en = COALESCE(fase_contactado_en, ?)
+              WHERE id = ?`,
+          )
+          .bind(iso, iso, iso, opValida.id),
         c.db
           .prepare(
             `INSERT INTO crm_actividades (contacto_id, oportunidad_id, creado_en, tipo, texto, autor) VALUES (?, ?, ?, 'etapa', ?, ?)`,
           )
-          .bind(contactoId, opValida.id, ahora, "Nuevo → Contactado (al registrar el primer contacto)", c.usuario),
+          .bind(contactoId, opValida.id, iso, "Nuevo → Contactado (al registrar el primer contacto)", c.usuario),
       );
     }
   }
   sentencias.push(sentenciaAuditoria(c, "nota", "contacto", contactoId, tipo));
   await c.db.batch(sentencias);
   return volverA(`/contacto/${contactoId}`, { ok: "nota" });
+}
+
+const VIAS_INTENTO: Record<string, string> = {
+  whatsapp: "Abrió WhatsApp desde el CRM",
+  llamada: "Tocó Llamar desde el CRM",
+  correo: "Abrió el correo desde el CRM",
+};
+
+/**
+ * El intento de contacto que anota crm.js en el momento en que Rafael toca
+ * WhatsApp, Llamar o Correo en una ficha, en «Hoy» o en el embudo: así el
+ * SLA se mide sin que tenga que registrar nada. Responde a fetch(), no a
+ * una navegación (ver `esAccionDeScript` en crm/src/seguridad.ts).
+ */
+export async function registrarIntento(c: Ctx, contactoId: number, f: FormData): Promise<Response> {
+  const contacto = await contactoVivo(c, contactoId);
+  const via = valor(f, "via", 20);
+  if (!contacto || !VIAS_INTENTO[via]) return volverA(`/contacto/${contactoId}`, { error: "datos" });
+  const ahora = new Date();
+  const iso = ahora.toISOString();
+  const abiertas = await abiertasDe(c, contactoId);
+  // Si ya hubo un intento en los últimos 2 minutos, no se repite la línea.
+  const reciente = await c.db
+    .prepare(`SELECT id FROM crm_actividades WHERE contacto_id = ? AND tipo = 'intento' AND creado_en > ? LIMIT 1`)
+    .bind(contactoId, new Date(ahora.getTime() - 120_000).toISOString())
+    .first();
+  const sentencias: D1PreparedStatement[] = [];
+  if (!reciente) {
+    sentencias.push(
+      c.db
+        .prepare(
+          `INSERT INTO crm_actividades (contacto_id, oportunidad_id, creado_en, tipo, texto, autor) VALUES (?, ?, ?, 'intento', ?, ?)`,
+        )
+        .bind(contactoId, abiertas[0]?.id ?? null, iso, VIAS_INTENTO[via], c.usuario),
+    );
+  }
+  for (const o of abiertas) sentencias.push(...sentenciasDeActividad(c.db, o, ahora, true));
+  sentencias.push(sentenciaAuditoria(c, "intento", "contacto", contactoId, via));
+  await c.db.batch(sentencias);
+  return volverA(`/contacto/${contactoId}`, { ok: "intento" });
 }
 
 export async function crearTarea(c: Ctx, contactoId: number, f: FormData): Promise<Response> {
@@ -95,9 +172,12 @@ export async function crearTarea(c: Ctx, contactoId: number, f: FormData): Promi
   return volverA(`/contacto/${contactoId}`, { ok: "tarea" });
 }
 
-/** Solo se vuelve a /hoy o a una ficha: nunca a una dirección que llegue en el formulario. */
-function rutaSegura(ruta: string): string {
-  return /^\/(hoy|contacto\/\d{1,9})$/.test(ruta) ? ruta : "/hoy";
+/**
+ * Solo se vuelve a «Hoy», al embudo o a una ficha: nunca a una dirección
+ * cualquiera que llegue en el formulario.
+ */
+export function rutaSegura(ruta: string, porDefecto = "/hoy"): string {
+  return /^\/(hoy|embudo(\?tipo=(compra|venta))?|contacto\/\d{1,9})$/.test(ruta) ? ruta : porDefecto;
 }
 
 export async function cerrarTarea(c: Ctx, tareaId: number, f: FormData): Promise<Response> {
@@ -125,28 +205,38 @@ export async function cambiarEtapa(c: Ctx, opId: number, f: FormData): Promise<R
   if (!destino) return volverA(`/contacto/${op.contacto_id}`, { error: "datos" });
   const motivo = valor(f, "motivo", 60);
   if (destino.pideMotivo && !MOTIVOS_PERDIDA.includes(motivo)) {
-    return volverA(`/contacto/${op.contacto_id}`, { error: "motivo" });
+    return volverA(rutaSegura(valor(f, "volver", 40), `/contacto/${op.contacto_id}`), { error: "motivo" });
   }
-  if (destino.id === op.etapa) return volverA(`/contacto/${op.contacto_id}`);
+  const volver = rutaSegura(valor(f, "volver", 40), `/contacto/${op.contacto_id}`);
+  if (destino.id === op.etapa) return volverA(volver, { ok: "etapa" });
   const origen = etapaDe(op.tipo, op.etapa)?.nombre ?? op.etapa;
-  const ahora = ahoraIso();
+  const ahora = new Date();
+  const iso = ahora.toISOString();
+  // Las fases del embudo a las que llega por primera vez (crm/src/datos.ts).
+  const fases = columnasDeFase(op.tipo, destino.id);
+  const marcarFases = fases.map((col) => `${col} = COALESCE(${col}, ?)`).join(", ");
+  // Mover la etapa cuenta como intento de contacto, salvo descartar sin
+  // haberle escrito nunca (spam o un dato equivocado): eso no mide el SLA.
+  const intento = !(destino.pideMotivo && !op.primer_intento_en);
   await c.db.batch([
     c.db
       .prepare(
         `UPDATE crm_oportunidades
-            SET etapa = ?, etapa_desde = ?, motivo_perdida = ?, cerrada = ?, actualizado_en = ?
+            SET etapa = ?, etapa_desde = ?, motivo_perdida = ?, cerrada = ?, actualizado_en = ?${marcarFases ? `, ${marcarFases}` : ""}
+                ${destino.cierra ? ", espera_desde = NULL" : ""}
           WHERE id = ?`,
       )
-      .bind(destino.id, ahora, destino.pideMotivo ? motivo : null, destino.cierra ? 1 : 0, ahora, opId),
-    c.db.prepare(`UPDATE crm_contactos SET actualizado_en = ? WHERE id = ?`).bind(ahora, op.contacto_id),
+      .bind(destino.id, iso, destino.pideMotivo ? motivo : null, destino.cierra ? 1 : 0, iso, ...fases.map(() => iso), opId),
+    ...sentenciasDeActividad(c.db, op, ahora, intento),
+    c.db.prepare(`UPDATE crm_contactos SET actualizado_en = ? WHERE id = ?`).bind(iso, op.contacto_id),
     c.db
       .prepare(
         `INSERT INTO crm_actividades (contacto_id, oportunidad_id, creado_en, tipo, texto, autor) VALUES (?, ?, ?, 'etapa', ?, ?)`,
       )
-      .bind(op.contacto_id, opId, ahora, `${origen} → ${destino.nombre}${destino.pideMotivo ? ` (motivo: ${motivo})` : ""}`, c.usuario),
+      .bind(op.contacto_id, opId, iso, `${origen} → ${destino.nombre}${destino.pideMotivo ? ` (motivo: ${motivo})` : ""}`, c.usuario),
     sentenciaAuditoria(c, "etapa", "contacto", op.contacto_id, `${op.etapa} → ${destino.id}`),
   ]);
-  return volverA(`/contacto/${op.contacto_id}`, { ok: "etapa" });
+  return volverA(volver, { ok: "etapa" });
 }
 
 export async function cambiarPuntaje(c: Ctx, opId: number, f: FormData): Promise<Response> {
@@ -162,6 +252,7 @@ export async function cambiarPuntaje(c: Ctx, opId: number, f: FormData): Promise
     c.db
       .prepare(`UPDATE crm_oportunidades SET puntaje = ?, puntaje_motivo = ?, actualizado_en = ? WHERE id = ?`)
       .bind(puntaje, motivo, ahora, opId),
+    ...sentenciasDeActividad(c.db, op, new Date(ahora), false),
     c.db
       .prepare(
         `INSERT INTO crm_actividades (contacto_id, oportunidad_id, creado_en, tipo, texto, autor) VALUES (?, ?, ?, 'puntaje', ?, ?)`,
@@ -170,6 +261,22 @@ export async function cambiarPuntaje(c: Ctx, opId: number, f: FormData): Promise
     sentenciaAuditoria(c, "puntaje", "contacto", op.contacto_id, `${op.puntaje} → ${puntaje}`),
   ]);
   return volverA(`/contacto/${op.contacto_id}`, { ok: "puntaje" });
+}
+
+/** Un monto en pesos escrito a mano («450.000.000», «450 millones», «450M»), o null. */
+export function montoPesos(texto: string): number | null {
+  const t = texto.toLowerCase().replace(/\s+/g, " ").trim();
+  if (!t) return null;
+  const m = t.match(/^\$?\s*([\d.,]+)\s*(mil millones|millones|millón|mm|m)?$/);
+  if (!m) return null;
+  const crudo = m[1];
+  // «1.250.000.000» o «1,250,000,000»: separadores de miles. «1,5» o «1.5»
+  // con unidad: decimales.
+  const conUnidad = Boolean(m[2]);
+  const n = conUnidad ? Number(crudo.replace(/\./g, "").replace(",", ".")) : Number(crudo.replace(/[.,]/g, ""));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const valorPesos = m[2] === "mil millones" ? n * 1e9 : conUnidad ? n * 1e6 : n;
+  return valorPesos >= 1_000_000 && valorPesos < 1e12 ? Math.round(valorPesos) : null;
 }
 
 export async function guardarDetalle(c: Ctx, opId: number, f: FormData): Promise<Response> {
@@ -187,15 +294,20 @@ export async function guardarDetalle(c: Ctx, opId: number, f: FormData): Promise
   if ((crudoFecha("proxima_accion_en") && !proximaEn) || (crudoFecha("separacion_en") && !separacionEn) || (recorridoTexto && !recorrido)) {
     return volverA(`/contacto/${op.contacto_id}`, { error: "fecha" });
   }
+  const valorTexto = valor(f, "valor_estimado", 40);
+  const valorEstimado = valorTexto ? montoPesos(valorTexto) : null;
+  if (valorTexto && valorEstimado === null) return volverA(`/contacto/${op.contacto_id}`, { error: "monto" });
   const interesElegido = valor(f, "interes", 80);
   const interes = valor(f, "interes_otro", 160) || (CATALOGO.some((x) => x.slug === interesElegido) ? interesElegido : "") || null;
   const proposito = valor(f, "proposito", 30);
-  const ahora = ahoraIso();
+  const ahora = new Date();
+  const iso = ahora.toISOString();
   const sentencias: D1PreparedStatement[] = [
     c.db
       .prepare(
         `UPDATE crm_oportunidades
             SET interes = ?, proposito = ?, presupuesto = ?, forma_pago = ?, plazo = ?,
+                rango_presupuesto = ?, pago = ?, valor_estimado = ?,
                 proxima_accion = ?, proxima_accion_en = ?, recorrido_en = ?, unidad = ?, separacion_en = ?,
                 actualizado_en = ?
           WHERE id = ?`,
@@ -206,14 +318,18 @@ export async function guardarDetalle(c: Ctx, opId: number, f: FormData): Promise
         valor(f, "presupuesto", 80) || null,
         valor(f, "forma_pago", 120) || null,
         valor(f, "plazo", 80) || null,
+        presupuestoValido(valor(f, "rango_presupuesto", 20)),
+        formaPagoValida(valor(f, "pago", 20)),
+        valorEstimado,
         valor(f, "proxima_accion", 200) || null,
         proximaEn,
         recorrido,
         valor(f, "unidad", 80) || null,
         separacionEn,
-        ahora,
+        iso,
         opId,
       ),
+    ...sentenciasDeActividad(c.db, op, ahora, false),
   ];
   if (recorrido && recorrido !== op.recorrido_en) {
     sentencias.push(
@@ -221,7 +337,7 @@ export async function guardarDetalle(c: Ctx, opId: number, f: FormData): Promise
         .prepare(
           `INSERT INTO crm_actividades (contacto_id, oportunidad_id, creado_en, tipo, texto, autor) VALUES (?, ?, ?, 'sistema', ?, ?)`,
         )
-        .bind(op.contacto_id, opId, ahora, `${op.tipo === "compra" ? "Recorrido" : "Visita"} agendado para ${fechaLocal(recorrido)}`, c.usuario),
+        .bind(op.contacto_id, opId, iso, `${op.tipo === "compra" ? "Recorrido" : "Visita"} agendado para ${fechaLocal(recorrido)}`, c.usuario),
     );
   }
   sentencias.push(sentenciaAuditoria(c, "detalle", "contacto", op.contacto_id));
@@ -293,12 +409,14 @@ export async function nuevaOportunidad(c: Ctx, contactoId: number, f: FormData):
     .first();
   if (abierta) return volverA(`/contacto/${contactoId}`, { error: "oportunidad" });
   const ahora = ahoraIso();
+  const canal = (contacto as Contacto & { canal_ultimo?: string | null }).canal_ultimo ?? null;
   await c.db.batch([
     c.db
       .prepare(
-        `INSERT INTO crm_oportunidades (contacto_id, creado_en, actualizado_en, tipo, etapa, etapa_desde) VALUES (?, ?, ?, ?, 'nuevo', ?)`,
+        `INSERT INTO crm_oportunidades (contacto_id, creado_en, actualizado_en, tipo, etapa, etapa_desde, canal, ultima_actividad_en)
+         VALUES (?, ?, ?, ?, 'nuevo', ?, ?, ?)`,
       )
-      .bind(contactoId, ahora, ahora, tipo, ahora),
+      .bind(contactoId, ahora, ahora, tipo, ahora, canal, ahora),
     c.db
       .prepare(`INSERT INTO crm_actividades (contacto_id, creado_en, tipo, texto, autor) VALUES (?, ?, 'sistema', ?, ?)`)
       .bind(contactoId, ahora, `Oportunidad nueva: ${tipo === "compra" ? "compra" : "venta o consignación"}`, c.usuario),
@@ -316,7 +434,7 @@ export async function altaManual(
   f: FormData,
 ): Promise<Response | { error: string; datos: DatosAlta }> {
   const datos: DatosAlta = {};
-  for (const k of ["tipo", "nombre", "telefono", "correo", "ciudad", "pais", "idioma", "fuente", "interes", "texto", "autorizacion_canal", "autorizacion_fecha", "autorizacion_evidencia"]) {
+  for (const k of ["tipo", "nombre", "telefono", "correo", "ciudad", "pais", "idioma", "fuente", "interes", "texto", "autorizacion_canal", "autorizacion_fecha", "autorizacion_evidencia", "rango_presupuesto", "pago", "objetivo"]) {
     datos[k] = valor(f, k, k === "texto" ? 2000 : k === "autorizacion_evidencia" ? 500 : 160);
   }
   const tipo: Tipo = datos.tipo === "venta" ? "venta" : "compra";
@@ -333,6 +451,12 @@ export async function altaManual(
   if (!fechaAut || fechaAut > hoy()) return { error: "La fecha de la autorización no es válida.", datos };
   if (!datos.autorizacion_evidencia) return { error: "Anota dónde quedó la prueba de la autorización.", datos };
   const interes = CATALOGO.some((x) => x.slug === datos.interes) ? datos.interes! : null;
+  // Las tres preguntas, si Rafael ya las sabe (7-oct-2026).
+  const rango = tipo === "compra" ? presupuestoValido(datos.rango_presupuesto) : null;
+  const pago = tipo === "compra" ? formaPagoValida(datos.pago) : null;
+  const objetivo = tipo === "compra" ? objetivoValido(datos.objetivo) : null;
+  const proposito = objetivo && objetivo !== NO_SE ? objetivo : null;
+  const canal = datos.fuente ?? "otro";
   const ahora = ahoraIso();
   const resumen = [
     `Alta manual · ${FUENTES[datos.fuente ?? ""] ?? datos.fuente}`,
@@ -353,10 +477,12 @@ export async function altaManual(
       sentencias.push(
         c.db
           .prepare(
-            `INSERT INTO crm_oportunidades (contacto_id, creado_en, actualizado_en, tipo, etapa, etapa_desde, interes)
-             VALUES (?, ?, ?, ?, 'nuevo', ?, ?)`,
+            `INSERT INTO crm_oportunidades
+               (contacto_id, creado_en, actualizado_en, tipo, etapa, etapa_desde, interes, canal,
+                rango_presupuesto, pago, proposito, ultima_actividad_en)
+             VALUES (?1, ?2, ?2, ?3, 'nuevo', ?2, ?4, ?5, ?6, ?7, ?8, ?2)`,
           )
-          .bind(existente, ahora, ahora, tipo, ahora, interes),
+          .bind(existente, ahora, tipo, interes, canal, rango, pago, proposito),
       );
     }
     sentencias.push(
@@ -374,8 +500,9 @@ export async function altaManual(
     .prepare(
       `INSERT INTO crm_contactos
          (creado_en, actualizado_en, nombre, telefono, telefono_crudo, correo, ciudad, pais, idioma,
-          fuente, fuente_ultima, autorizacion_fecha, autorizacion_canal, autorizacion_evidencia, autorizacion_version)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'manual')`,
+          fuente, fuente_ultima, autorizacion_fecha, autorizacion_canal, autorizacion_evidencia, autorizacion_version,
+          canal, canal_ultimo)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'manual', ?, ?)`,
     )
     .bind(
       ahora,
@@ -392,20 +519,57 @@ export async function altaManual(
       fechaAut,
       datos.autorizacion_canal,
       datos.autorizacion_evidencia,
+      canal,
+      canal,
     )
     .run();
   const id = Number(r.meta.last_row_id);
   await c.db.batch([
     c.db
       .prepare(
-        `INSERT INTO crm_oportunidades (contacto_id, creado_en, actualizado_en, tipo, etapa, etapa_desde, interes)
-         VALUES (?, ?, ?, ?, 'nuevo', ?, ?)`,
+        `INSERT INTO crm_oportunidades
+           (contacto_id, creado_en, actualizado_en, tipo, etapa, etapa_desde, interes, canal,
+            rango_presupuesto, pago, proposito, ultima_actividad_en)
+         VALUES (?1, ?2, ?2, ?3, 'nuevo', ?2, ?4, ?5, ?6, ?7, ?8, ?2)`,
       )
-      .bind(id, ahora, ahora, tipo, ahora, interes),
+      .bind(id, ahora, tipo, interes, canal, rango, pago, proposito),
     c.db
       .prepare(`INSERT INTO crm_actividades (contacto_id, creado_en, tipo, texto, autor) VALUES (?, ?, 'sistema', ?, ?)`)
       .bind(id, ahora, resumen, c.usuario),
     sentenciaAuditoria(c, "crear", "contacto", id, "alta manual"),
   ]);
   return volverA(`/contacto/${id}`, { ok: "creado" });
+}
+
+/**
+ * La inversión de la semana en anuncios (7-oct-2026): Rafael la copia cada
+ * lunes de los administradores de anuncios. Un monto vacío no cambia nada;
+ * un 0 dice «esa semana no hubo pauta».
+ */
+export async function guardarInversion(c: Ctx, f: FormData): Promise<Response> {
+  const semana = fechaValida(valor(f, "semana", 10));
+  if (!semana) return volverA("/tablero", { error: "fecha" });
+  const lunes = lunesDe(semana);
+  if (lunes > lunesDe(hoy())) return volverA("/tablero", { error: "fecha" });
+  const iso = ahoraIso();
+  const sentencias: D1PreparedStatement[] = [];
+  for (const canal of CANALES_INVERSION) {
+    const crudo = valor(f, `monto_${canal.id}`, 40);
+    if (!crudo) continue;
+    const limpio = crudo.replace(/[$.,\s]/g, "");
+    const monto = limpio === "0" ? 0 : montoPesos(crudo) ?? (/^\d{1,10}$/.test(limpio) ? Number(limpio) : null);
+    if (monto === null || monto < 0) return volverA("/tablero", { error: "monto", semana: lunes });
+    sentencias.push(
+      c.db
+        .prepare(
+          `INSERT INTO crm_inversion (semana, canal, monto, creado_en, actualizado_en, autor) VALUES (?1, ?2, ?3, ?4, ?4, ?5)
+           ON CONFLICT(semana, canal) DO UPDATE SET monto = excluded.monto, actualizado_en = excluded.actualizado_en, autor = excluded.autor`,
+        )
+        .bind(lunes, canal.id, monto, iso, c.usuario),
+    );
+  }
+  if (!sentencias.length) return volverA("/tablero", { semana: lunes });
+  sentencias.push(sentenciaAuditoria(c, "inversion", null, null, lunes));
+  await c.db.batch(sentencias);
+  return volverA("/tablero", { ok: "inversion", semana: lunes });
 }
