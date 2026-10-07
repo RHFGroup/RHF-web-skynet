@@ -16,7 +16,16 @@
  */
 import { useRef, useState } from "react";
 import Script from "next/script";
-import { AVISO_VERSION, TURNSTILE_SITE_KEY } from "@/components/ContactForm";
+import { TURNSTILE_SITE_KEY } from "@/components/ContactForm";
+import { atribucionParaEnviar } from "@/lib/atribucion";
+
+/**
+ * La versión de SU texto de autorización («enviarme esta guía…»). Hasta el
+ * 7-oct-2026 mandaba la de ContactForm («2026-09-18»), aunque el texto es
+ * otro; desde entonces tiene la suya, que suma «y para saber por qué medio
+ * llegué a esta página». ⚠️ Pendiente de la aprobación de Rafael (#47).
+ */
+const AVISO_VERSION_GUIA = "2026-10-07-guia";
 import { CORREO, RESPONSABLE, enlaceWhatsApp } from "@/data/contacto";
 import { ruta, type Idioma } from "@/i18n/idioma";
 import { proceso } from "@/i18n/modulos/proceso";
@@ -39,7 +48,7 @@ const TEXTOS = {
     telefono: "Teléfono",
     autorizo: "Autorizo a ",
     tratar:
-      " a tratar mis datos personales para enviarme esta guía y contactarme sobre ella, conforme a la",
+      " a tratar mis datos personales para enviarme esta guía y contactarme sobre ella, y para saber por qué medio llegué a esta página, conforme a la",
     politica: "política de tratamiento de datos",
     derechos: ". Puedo conocer, actualizar, rectificar o suprimir mis datos escribiendo a ",
     enviando: "Enviando…",
@@ -61,7 +70,7 @@ const TEXTOS = {
     telefono: "Phone",
     autorizo: "I authorize ",
     tratar:
-      " to process my personal data to send me this guide and contact me about it, in accordance with the",
+      " to process my personal data to send me this guide and contact me about it, and to know how I found this page, in accordance with the",
     politica: "data processing policy",
     derechos: ". I can access, update, correct or delete my data by writing to ",
     enviando: "Sending…",
@@ -119,7 +128,9 @@ export default function FormularioGuia({
           proyecto: "",
           mensaje: `Pidió la ${tituloAviso.toLowerCase()} en PDF.`,
           autoriza: true,
-          version_aviso: AVISO_VERSION,
+          version_aviso: AVISO_VERSION_GUIA,
+          // Por dónde llegó, si el navegador lo anotó (src/lib/atribucion.ts).
+          atribucion: atribucionParaEnviar(),
           origen,
           sitio,
           turnstile: token,

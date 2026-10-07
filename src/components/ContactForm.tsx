@@ -5,8 +5,11 @@ import Script from "next/script";
 import { enlaceWhatsApp, RESPONSABLE, CORREO } from "@/data/contacto";
 import { PROYECTOS } from "@/data/proyectos";
 import { INMUEBLES } from "@/data/inmuebles";
-import { ruta, type Idioma } from "@/i18n/idioma";
+import { fechaLarga, ruta, type Idioma } from "@/i18n/idioma";
 import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
+import { FORMAS_PAGO, NO_SE, OBJETIVOS, RANGOS_PRESUPUESTO, nombreDe } from "@/data/calificacion";
+import { atribucionParaEnviar } from "@/lib/atribucion";
+import { EVENTO_MONEDA, formatoDolares, monedaActual, obtenerTRM, type TRM } from "@/lib/moneda";
 
 /**
  * Formulario de contacto.
@@ -54,13 +57,26 @@ import { TURNSTILE_SITE_KEY } from "@/lib/turnstile";
  * «Consignación ·») viajan en español desde cualquier idioma, y la analítica
  * recibe los mismos eventos. El `origen` es la ruta de la página: una consulta
  * hecha en /en llega con /en/…, y Rafael sabe en qué idioma responder.
+ *
+ * Desde el 7-oct-2026 (tablero del CRM), el comprador responde tres preguntas
+ * obligatorias en rangos —presupuesto, forma de pago y para qué compra, todas
+ * con «Aún no lo sé»— que viajan como códigos (src/data/calificacion.ts). La
+ * consulta lleva además por dónde llegó la persona (src/lib/atribucion.ts),
+ * en los dos formularios. El de /vender no hace las tres preguntas.
  */
 
-/** Versión del texto de autorización de abajo. Cambiarla al cambiar el texto. */
-export const AVISO_VERSION = "2026-09-18";
+/**
+ * Versión del texto de autorización de abajo. Cambiarla al cambiar el texto.
+ *
+ * 7-oct-2026: el texto suma «y saber por qué medio llegué a esta página»,
+ * porque desde ese día la consulta viaja con su atribución
+ * (src/lib/atribucion.ts). ⚠️ Pendiente de la aprobación de Rafael junto con
+ * la política (#47): no se publica sin ella. La anterior era «2026-09-18».
+ */
+export const AVISO_VERSION = "2026-10-07";
 
-/** La del formulario de /vender, cuyo texto de autorización nombra el inmueble. */
-export const AVISO_VERSION_CONSIGNAR = "2026-09-29-consignar";
+/** La del formulario de /vender, cuyo texto de autorización nombra el inmueble. Antes, «2026-09-29-consignar». */
+export const AVISO_VERSION_CONSIGNAR = "2026-10-07-consignar";
 
 /**
  * Los tipos de inmueble que se pueden consignar, para el selector de /vender.
@@ -132,7 +148,22 @@ const TEXTOS = {
     tratar: " a tratar mis datos personales para contactarme sobre ",
     sobreConsignar: "la venta o consignación de mi inmueble",
     sobreConsulta: "esta consulta",
+    yCanal: " y para saber por qué medio llegué a esta página",
     conforme: ", conforme a la",
+    // Las tres preguntas del comprador (src/data/calificacion.ts).
+    calificacion: "Para orientarte mejor",
+    presupuesto: "Presupuesto aproximado",
+    pago: "Forma de pago",
+    objetivo: "¿Para qué es la compra?",
+    elige: "Elige una opción",
+    usdHasta: (a: string) => `≈ hasta ${a}`,
+    usdDesde: (a: string) => `≈ más de ${a}`,
+    usdRango: (a: string, b: string) => `≈ de ${a} a ${b}`,
+    usdNota: (fecha: string) => `Referencia en dólares con la TRM del ${fecha}. El valor oficial es en pesos.`,
+    waPresupuesto: (texto: string) => `Presupuesto: ${texto}.`,
+    waPago: (texto: string) => `Forma de pago: ${texto}.`,
+    // «Para vivir» → «Es para vivir.»
+    waObjetivo: (texto: string) => `Es ${texto.charAt(0).toLowerCase()}${texto.slice(1)}.`,
     politica: "política de tratamiento de datos",
     derechos: ". Puedo conocer, actualizar, rectificar o suprimir mis datos escribiendo a ",
     enviando: "Enviando…",
@@ -198,7 +229,21 @@ const TEXTOS = {
     tratar: " to process my personal data to contact me about ",
     sobreConsignar: "the sale or listing of my property",
     sobreConsulta: "this inquiry",
+    yCanal: " and to know how I found this page",
     conforme: ", in accordance with the",
+    calificacion: "To guide you better",
+    presupuesto: "Approximate budget",
+    pago: "How would you pay?",
+    objetivo: "What is the purchase for?",
+    elige: "Choose an option",
+    usdHasta: (a: string) => `≈ up to ${a} reference`,
+    usdDesde: (a: string) => `≈ over ${a} reference`,
+    usdRango: (a: string, b: string) => `≈ ${a} to ${b} reference`,
+    usdNota: (fecha: string) =>
+      `Dollar reference at the official exchange rate (TRM) for ${fecha}. The official amount is in Colombian pesos.`,
+    waPresupuesto: (texto: string) => `Budget: ${texto}.`,
+    waPago: (texto: string) => `Payment: ${texto}.`,
+    waObjetivo: (texto: string) => `Purpose: ${texto.charAt(0).toLowerCase()}${texto.slice(1)}.`,
     politica: "data processing policy",
     derechos: ". I can access, update, correct or delete my data by writing to ",
     enviando: "Sending…",
@@ -291,6 +336,11 @@ export default function ContactForm({
   const [contacto, setContacto] = useState("");
   const [proyecto, setProyecto] = useState(() => valorDe(proyectoInicial));
   const [mensaje, setMensaje] = useState("");
+  // Las tres preguntas del comprador: obligatorias y en rangos, con «Aún no
+  // lo sé» (decisión de Rafael, 7-oct-2026). Viajan como códigos.
+  const [presupuesto, setPresupuesto] = useState("");
+  const [pago, setPago] = useState("");
+  const [objetivo, setObjetivo] = useState("");
   const [autoriza, setAutoriza] = useState(false);
   const [error, setError] = useState("");
   /** idle → enviando → ok | error. Manda toda la cara del formulario. */
@@ -329,6 +379,51 @@ export default function ContactForm({
     };
   }, [cargarTurnstile]);
 
+  /**
+   * La referencia en dólares del presupuesto, solo si la persona ve los
+   * precios en dólares (el selector del encabezado; en /en arranca así). Con
+   * pesos no se pide la TRM: la mayoría de las visitas nunca la descarga.
+   */
+  const [trm, setTrm] = useState<TRM | null>(null);
+  useEffect(() => {
+    if (consignar) return;
+    let vivo = true;
+    const revisar = async () => {
+      if (monedaActual() !== "USD") {
+        setTrm(null);
+        return;
+      }
+      const v = await obtenerTRM();
+      if (vivo) setTrm(v);
+    };
+    revisar();
+    window.addEventListener(EVENTO_MONEDA, revisar);
+    return () => {
+      vivo = false;
+      window.removeEventListener(EVENTO_MONEDA, revisar);
+    };
+  }, [consignar]);
+
+  function referenciaDolares(): string {
+    const r = RANGOS_PRESUPUESTO.find((x) => x.codigo === presupuesto);
+    if (!trm || !r || r.codigo === NO_SE) return "";
+    const usd = (cop: number) => formatoDolares(cop / trm.valor, idioma);
+    if (r.desde === null && r.hasta !== null) return t.usdHasta(usd(r.hasta));
+    if (r.hasta === null && r.desde !== null) return t.usdDesde(usd(r.desde));
+    if (r.desde !== null && r.hasta !== null) return t.usdRango(usd(r.desde), usd(r.hasta));
+    return "";
+  }
+
+  /** Las respuestas que dicen algo, para el mensaje de WhatsApp («Aún no lo sé» no se escribe). */
+  function lineasCalificacion(): string[] {
+    if (consignar) return [];
+    return [
+      presupuesto && presupuesto !== NO_SE ? t.waPresupuesto(nombreDe(RANGOS_PRESUPUESTO, presupuesto, idioma)) : "",
+      pago && pago !== NO_SE ? t.waPago(nombreDe(FORMAS_PAGO, pago, idioma)) : "",
+      objetivo && objetivo !== NO_SE ? t.waObjetivo(nombreDe(OBJETIVOS, objetivo, idioma)) : "",
+    ].filter(Boolean);
+  }
+
   /** El mensaje que se le manda a WhatsApp si la persona elige ese camino. */
   function textoWhatsApp(): string {
     if (consignar) {
@@ -347,6 +442,7 @@ export default function ContactForm({
     return [
       t.waHola(nombre.trim()),
       proyecto ? t.waMeInteresa(textoDe(proyecto)) : t.waAsesoria,
+      ...lineasCalificacion(),
       mensaje.trim() ? mensaje.trim() : null,
       t.waContacto(contacto.trim()),
       "",
@@ -387,6 +483,10 @@ export default function ContactForm({
                 .join("\n")
             : mensaje.trim(),
           tipo: consignar ? "consignar" : "consulta",
+          // Solo códigos de src/data/calificacion.ts: el Worker descarta lo demás.
+          ...(consignar ? {} : { presupuesto, forma_pago: pago, objetivo }),
+          // Por dónde llegó, si el navegador lo anotó (src/lib/atribucion.ts).
+          atribucion: atribucionParaEnviar(),
           autoriza: true,
           version_aviso: consignar ? AVISO_VERSION_CONSIGNAR : AVISO_VERSION,
           origen: typeof window !== "undefined" ? window.location.pathname : "",
@@ -504,27 +604,78 @@ export default function ContactForm({
           </label>
         </>
       ) : (
-        <label>
-          {t.proyecto}
-          <select name="proyecto" value={proyecto} onChange={(e) => setProyecto(e.target.value)}>
-            <option value="">{t.proyectoPlaceholder}</option>
-            <optgroup label={t.grupoProyectos}>
-              {opcionesProyectos.map((o) => (
-                <option key={o.slug} value={o.valor}>
-                  {o.texto}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label={t.grupoInmuebles}>
-              {opcionesInmuebles.map((o) => (
-                <option key={o.slug} value={o.valor}>
-                  {o.texto}
-                </option>
-              ))}
-            </optgroup>
-            <option value={OTRO_PROYECTO}>{t.otro}</option>
-          </select>
-        </label>
+        <>
+          <label>
+            {t.proyecto}
+            <select name="proyecto" value={proyecto} onChange={(e) => setProyecto(e.target.value)}>
+              <option value="">{t.proyectoPlaceholder}</option>
+              <optgroup label={t.grupoProyectos}>
+                {opcionesProyectos.map((o) => (
+                  <option key={o.slug} value={o.valor}>
+                    {o.texto}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label={t.grupoInmuebles}>
+                {opcionesInmuebles.map((o) => (
+                  <option key={o.slug} value={o.valor}>
+                    {o.texto}
+                  </option>
+                ))}
+              </optgroup>
+              <option value={OTRO_PROYECTO}>{t.otro}</option>
+            </select>
+          </label>
+
+          {/* Las tres preguntas: obligatorias, en rangos y con «Aún no lo sé». */}
+          <fieldset className="form-calificacion">
+            <legend>{t.calificacion}</legend>
+            <label>
+              {t.presupuesto}
+              <select
+                name="presupuesto"
+                value={presupuesto}
+                onChange={(e) => setPresupuesto(e.target.value)}
+                required
+              >
+                <option value="">{t.elige}</option>
+                {RANGOS_PRESUPUESTO.map((o) => (
+                  <option key={o.codigo} value={o.codigo}>
+                    {o[idioma]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {trm && referenciaDolares() && (
+              <p className="form-ayuda" aria-live="polite">
+                {referenciaDolares()}
+                <small>{t.usdNota(fechaLarga(trm.vigente, idioma))}</small>
+              </p>
+            )}
+            <label>
+              {t.pago}
+              <select name="forma_pago" value={pago} onChange={(e) => setPago(e.target.value)} required>
+                <option value="">{t.elige}</option>
+                {FORMAS_PAGO.map((o) => (
+                  <option key={o.codigo} value={o.codigo}>
+                    {o[idioma]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              {t.objetivo}
+              <select name="objetivo" value={objetivo} onChange={(e) => setObjetivo(e.target.value)} required>
+                <option value="">{t.elige}</option>
+                {OBJETIVOS.map((o) => (
+                  <option key={o.codigo} value={o.codigo}>
+                    {o[idioma]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </fieldset>
+        </>
       )}
 
       <label>
@@ -572,6 +723,7 @@ export default function ContactForm({
           {RESPONSABLE}
           {t.tratar}
           {consignar ? t.sobreConsignar : t.sobreConsulta}
+          {t.yCanal}
           {t.conforme}{" "}
           <a href={ruta(idioma, "/privacidad")} target="_blank" rel="noopener noreferrer">
             {t.politica}

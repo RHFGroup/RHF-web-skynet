@@ -5,6 +5,7 @@ import ChatDiferido from "@/components/ChatDiferido";
 import Analitica from "@/components/Analitica";
 import ReferenciaDolares from "@/components/ReferenciaDolares";
 import IdiomaDocumento from "@/components/IdiomaDocumento";
+import CapturaAtribucion from "@/components/CapturaAtribucion";
 import { MONEDA_ANTES_DE_PINTAR } from "@/lib/moneda";
 import Script from "next/script";
 
@@ -146,6 +147,8 @@ export default function RootLayout({
       <body className="min-h-dvh font-sans antialiased">
         {children}
         <IdiomaDocumento />
+        {/* Por dónde entró, solo en esta pestaña y sin cookies (src/lib/atribucion.ts). */}
+        <CapturaAtribucion />
         <ChatDiferido />
         <ReferenciaDolares />
         <Analitica />

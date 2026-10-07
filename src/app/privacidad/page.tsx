@@ -17,7 +17,9 @@ export default function Privacidad() {
     <LegalPage
       titulo="Política de Tratamiento de Datos Personales"
       bajada="Si nos escribes por WhatsApp, por el chat de esta página, por Instagram o por Facebook, si te suscribes al boletín o si dejas tus datos en una feria, quedamos con información tuya. Aquí decimos qué hacemos con ella, por cuánto tiempo, y cómo pedir que la borremos."
-      vigencia="1 de octubre de 2026"
+      // ⚠️ La fecha del día en que se publique esta versión (#47, pendiente de
+      // la aprobación de Rafael). La anterior rigió desde el 1 de octubre de 2026.
+      vigencia="7 de octubre de 2026"
     >
       <Seccion titulo="1. Quién responde por tus datos">
         <p>
@@ -55,7 +57,9 @@ export default function Privacidad() {
           <li>
             <strong>El formulario de esta página.</strong> Guardamos lo que
             escribes —nombre, el teléfono o correo por el que quieres que te
-            contactemos, el proyecto que te interesa y tu mensaje— junto con la
+            contactemos, el proyecto que te interesa, tu presupuesto
+            aproximado, la forma de pago y para qué es la compra (en rangos, con
+            la opción «Aún no lo sé»), y tu mensaje— junto con la
             constancia de tu autorización: la fecha y hora del envío, la
             versión del texto que aceptaste, tu dirección IP y el navegador
             desde el que enviaste. Esa constancia existe por una razón: la ley
@@ -64,6 +68,15 @@ export default function Privacidad() {
             guardarlos. En la página «Quiero vender / consignar» el formulario
             pide además la ubicación y el tipo del inmueble. Después del envío,
             si prefieres, puedes seguir la conversación por WhatsApp.
+            <br />
+            La consulta lleva también <strong>por qué medio llegaste</strong>.
+            Cuando entras a esta página, tu navegador anota, solo en la pestaña
+            abierta y sin cookies, por dónde llegaste la primera vez: las
+            etiquetas de campaña del enlace (utm), el identificador del clic que
+            Google o Meta agregan a sus anuncios, la primera página que viste y
+            el dominio del sitio que te trajo. Ese dato no sale de tu navegador
+            salvo que envíes un formulario; si cierras la pestaña sin enviar
+            nada, se borra.
           </li>
           <li>
             <strong>La suscripción al boletín.</strong> Si te suscribes al
@@ -80,7 +93,11 @@ export default function Privacidad() {
           <li>
             <strong>El asistente de WhatsApp y del chat de esta página.</strong>{" "}
             Te atiende primero un asistente automatizado que responde con
-            información pública de nuestra cartera. Si pides una llamada con
+            información pública de nuestra cartera. Guardamos el texto de esas
+            conversaciones en nuestra herramienta de gestión comercial, para
+            retomar la atención donde quedó y revisar que el asistente responda
+            bien; si escribes por WhatsApp, la conversación queda asociada a tu
+            número. Si pides una llamada con
             Rafael, el asistente registra tu nombre, la ciudad desde la que
             escribes, tu número (en WhatsApp, el mismo desde el que escribes;
             en el chat, el que nos des), el día y la hora que elegiste y un
@@ -121,7 +138,9 @@ export default function Privacidad() {
           citas y el trámite de separación o compra con el constructor
           correspondiente; para enviarte información sobre proyectos,
           disponibilidad y precios cuando has aceptado recibirla; y para llevar
-          el registro interno de la gestión comercial.
+          el registro interno de la gestión comercial, que incluye por qué
+          medio nos encontraste, para saber qué canales y qué anuncios nos
+          traen consultas.
         </p>
         <p id="boletin">
           Si te suscribes al boletín, usamos tu correo solo para enviarte las
@@ -236,7 +255,8 @@ export default function Privacidad() {
         </p>
         <p>
           Dentro de los quince días hábiles siguientes eliminamos tus datos de
-          nuestras bases y de las herramientas de gestión comercial, y te
+          nuestras bases y de las herramientas de gestión comercial —incluidas
+          tus conversaciones con el asistente—, y te
           confirmamos por el mismo canal que lo hicimos. Se conserva
           únicamente lo que un deber legal o contractual nos obligue a
           conservar, y en ese caso te decimos qué queda y por qué.
@@ -287,8 +307,13 @@ export default function Privacidad() {
           el punto 7—.
         </p>
         <p>
-          Esas consultas, y los correos del boletín, se guardan en una base de
-          datos alojada en la
+          Las conversaciones con el asistente de WhatsApp y del chat se
+          conservan <strong>dos años contados desde el último mensaje</strong>,
+          y las borramos antes si nos lo pides.
+        </p>
+        <p>
+          Esas consultas, las conversaciones con el asistente y los correos del
+          boletín se guardan en una base de datos alojada en la
           infraestructura de Cloudflare, cifrada en reposo. El formulario solo
           puede escribir en ella; la lectura la hace el responsable desde sus
           propias credenciales, y no está expuesta en la página.
