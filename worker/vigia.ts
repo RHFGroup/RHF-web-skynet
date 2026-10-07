@@ -68,7 +68,7 @@ const OBJETIVOS = [
   {
     clave: "chat-web",
     nombre: "Chat de la web",
-    url: "https://atencion-hrf.syberloop.com/",
+    url: "https://atencion-hrf.rhfliving.com/",
     sondeo: "websocket",
   },
   {
@@ -471,7 +471,7 @@ const PISTAS: Record<Pista, string[]> = {
   ],
   ciego: [
     "Cloudflare no deja pasar al vigía. No significa que el agente esté caído:",
-    "probar el chat a mano y revisar las reglas de seguridad de syberloop.com.",
+    "probar el chat a mano y revisar las reglas de seguridad de la zona (rhfliving.com el chat, syberloop.com WhatsApp).",
   ],
   red: ["Error de red desde Cloudflare. Si se repite, probar el chat a mano."],
 };
