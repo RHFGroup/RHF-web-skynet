@@ -369,8 +369,8 @@ export const PROYECTOS: Proyecto[] = [
     tipologias: [
       {
         titulo: "1 alcoba",
-        detalle: "Sala-comedor, cocina, 1 habitación, 1 baño y zona de labores. Bloques 1, 2, 3 y 10 al 23 (piso 5).",
-        fuente: "Brochure oficial Acacias 2026, pág. 13",
+        detalle: "Sala-comedor, cocina, 1 habitación, 1 baño y zona de labores. Solo en el piso 5 de los bloques 1, 2 y 3.",
+        fuente: "Brochure oficial Acacias 2026, pág. 13 · presentación comercial de Invercolombia, septiembre de 2026, pág. 3",
         area: {
           etiqueta: "Apartamentos de 33m² a 35m²",
           valor: "33 – 35 m²",
@@ -401,7 +401,7 @@ export const PROYECTOS: Proyecto[] = [
           fuente: "Brochure oficial Acacias 2026, pág. 13 (cita literal)",
           certificadaComoPrivadaConstruida: false,
         },
-        precio: { desde: 229_000_000, hasta: 376_640_000, unidades: 97 },
+        precio: { desde: 295_000_000, hasta: 376_640_000, unidades: 97 },
         alcobas: "2 o 3",
         banos: "2",
         exterior: "Balcón · área externa de 4,7 m²",
@@ -479,11 +479,16 @@ export const PROYECTOS: Proyecto[] = [
     precontractual: {
       ...SIN_PRECONTRACTUAL,
       parqueadero: "Parqueaderos privados",
-      planEtapas: "Entrega por etapas, sin fechas publicadas",
+      // Presentación comercial de Invercolombia, septiembre de 2026, pág. 5. El
+      // bloque 4 (jun-2026) está vendido: la primera entrega con unidades libres
+      // es la del bloque 5. Fechas estimadas, sujetas a fuerza mayor.
+      fechaEntrega: "Estimada por bloque, entre diciembre de 2026 y junio de 2030",
+      planEtapas: "5 etapas; la lista vigente es la Etapa I-2, fase 1 (bloques 1 a 9). Zonas comunes por etapa sin detallar",
     },
     reservas: [
       "El listado registra un apartamento 503 de 35 m² a un precio muy por debajo del resto de su tipología. Es una duplicidad de numeración sin resolver: esa unidad no se cotiza hasta que el promotor la confirme.",
       "El brochure anuncia un precio de arranque inferior al mínimo disponible hoy. No se usa el brochure como fuente de precio.",
+      "El listado registra el apartamento 207 de la torre 7, de 70 m², a $229.000.000: cien millones por debajo de los demás de su torre y piso ($329.560.000). La lista de precios de septiembre de 2026 no tiene ningún 70 m² a ese precio. Esa unidad no se cotiza hasta que el promotor la confirme.",
     ],
     tipoInmueble: "apartamentos",
     // Pasa a true cuando Rafael confirme que el estudio jurídico lo revisó.
