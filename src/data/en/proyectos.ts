@@ -173,8 +173,10 @@ const TEXTOS: Diccionario = {
   "Veintidós torres y 904 apartamentos desarrollados en cinco etapas, con apartamentos de una, dos y tres alcobas. No es VIS: el promotor lo plantea como proyecto de inversión.":
     "Twenty-two towers and 904 apartments developed in five phases, with one-, two- and three-bedroom units. It is not social-interest housing (VIS): the developer presents it as an investment project.",
   "1 alcoba": "1 bedroom",
-  "Sala-comedor, cocina, 1 habitación, 1 baño y zona de labores. Bloques 1, 2, 3 y 10 al 23 (piso 5).":
-    "Living-dining room, kitchen, 1 bedroom, 1 bathroom and laundry area. Blocks 1, 2, 3 and 10 to 23 (floor 5).",
+  "Sala-comedor, cocina, 1 habitación, 1 baño y zona de labores. Solo en el piso 5 de los bloques 1, 2 y 3.":
+    "Living-dining room, kitchen, 1 bedroom, 1 bathroom and laundry area. Only on floor 5 of blocks 1, 2 and 3.",
+  "Brochure oficial Acacias 2026, pág. 13 · presentación comercial de Invercolombia, septiembre de 2026, pág. 3":
+    "Official Acacias 2026 brochure, p. 13 · Invercolombia sales presentation, September 2026, p. 3",
   "Apartamentos de 33m² a 35m²": "Apartments from 33 m² to 35 m² (Apartamentos de 33m² a 35m²)",
   "Plano del apartamento de 1 alcoba de Acacias Campestre": "Floor plan of the 1-bedroom apartment at Acacias Campestre",
   "2 y 3 alcobas": "2 and 3 bedrooms",
@@ -196,6 +198,8 @@ const TEXTOS: Diccionario = {
     "The list shows a 35 m² apartment numbered 503 at a price far below the rest of its unit type. It is an unresolved duplicate unit number: that unit will not be quoted until the developer confirms it.",
   "El brochure anuncia un precio de arranque inferior al mínimo disponible hoy. No se usa el brochure como fuente de precio.":
     "The brochure advertises a starting price lower than the lowest price available today. The brochure is not used as a price source.",
+  "El listado registra el apartamento 207 de la torre 7, de 70 m², a $229.000.000: cien millones por debajo de los demás de su torre y piso ($329.560.000). La lista de precios de septiembre de 2026 no tiene ningún 70 m² a ese precio. Esa unidad no se cotiza hasta que el promotor la confirme.":
+    "The list shows apartment 207 in tower 7, 70 m², at COP 229,000,000: one hundred million below the other units on its tower and floor (COP 329,560,000). The September 2026 price list has no 70 m² unit at that price. That unit will not be quoted until the developer confirms it.",
   "22 torres · 904 apartamentos · 5 etapas": "22 towers · 904 apartments · 5 phases",
   "Apartamentos de 1, 2 y 3 alcobas. El promotor lo plantea como proyecto de inversión.":
     "1-, 2- and 3-bedroom apartments. The developer presents it as an investment project.",
