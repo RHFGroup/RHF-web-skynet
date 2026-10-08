@@ -70,8 +70,8 @@ import { EVENTO_MONEDA, formatoDolares, monedaActual, obtenerTRM, type TRM } fro
  *
  * 7-oct-2026: el texto suma «y saber por qué medio llegué a esta página»,
  * porque desde ese día la consulta viaja con su atribución
- * (src/lib/atribucion.ts). ⚠️ Pendiente de la aprobación de Rafael junto con
- * la política (#47): no se publica sin ella. La anterior era «2026-09-18».
+ * (src/lib/atribucion.ts). Aprobado por Rafael junto con la política el
+ * 8-oct-2026 («publícalo nomás»). La anterior era «2026-09-18».
  */
 export const AVISO_VERSION = "2026-10-07";
 

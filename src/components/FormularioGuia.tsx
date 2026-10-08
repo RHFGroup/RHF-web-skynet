@@ -23,7 +23,7 @@ import { atribucionParaEnviar } from "@/lib/atribucion";
  * La versión de SU texto de autorización («enviarme esta guía…»). Hasta el
  * 7-oct-2026 mandaba la de ContactForm («2026-09-18»), aunque el texto es
  * otro; desde entonces tiene la suya, que suma «y para saber por qué medio
- * llegué a esta página». ⚠️ Pendiente de la aprobación de Rafael (#47).
+ * llegué a esta página». Aprobado por Rafael el 8-oct-2026.
  */
 const AVISO_VERSION_GUIA = "2026-10-07-guia";
 import { CORREO, RESPONSABLE, enlaceWhatsApp } from "@/data/contacto";

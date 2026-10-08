@@ -17,9 +17,10 @@ export default function Privacidad() {
     <LegalPage
       titulo="Política de Tratamiento de Datos Personales"
       bajada="Si nos escribes por WhatsApp, por el chat de esta página, por Instagram o por Facebook, si te suscribes al boletín o si dejas tus datos en una feria, quedamos con información tuya. Aquí decimos qué hacemos con ella, por cuánto tiempo, y cómo pedir que la borremos."
-      // ⚠️ La fecha del día en que se publique esta versión (#47, pendiente de
-      // la aprobación de Rafael). La anterior rigió desde el 1 de octubre de 2026.
-      vigencia="7 de octubre de 2026"
+      // El día en que se publicó esta versión, con la atribución, las tres
+      // preguntas y las conversaciones con el asistente (Rafael: «publícalo
+      // nomás», 8-oct-2026). La anterior en producción era del 29-sep-2026.
+      vigencia="8 de octubre de 2026"
     >
       <Seccion titulo="1. Quién responde por tus datos">
         <p>

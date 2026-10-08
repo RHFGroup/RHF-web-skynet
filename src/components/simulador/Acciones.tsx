@@ -45,8 +45,8 @@ import type { Cuando, EstadoSim, ItemSimulador, TipoIngreso } from "@/components
 /**
  * La misma versión del texto de autorización de ContactForm (AVISO_VERSION):
  * el texto es el mismo (src/components/simulador/textos.ts). 7-oct-2026: suma
- * «y para saber por qué medio llegué a esta página». ⚠️ Pendiente de la
- * aprobación de Rafael (#47). La anterior era «2026-09-18».
+ * «y para saber por qué medio llegué a esta página», aprobado por Rafael el
+ * 8-oct-2026. La anterior era «2026-09-18».
  */
 const AVISO_VERSION = "2026-10-07";
 /** La site key pública de Turnstile, la misma de ContactForm. */

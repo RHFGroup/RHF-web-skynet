@@ -5,10 +5,11 @@ import type { Idioma } from "@/i18n/idioma";
 
 // Widget flotante oficial (@tp3/chat-widget) → WebSocket directo al gateway
 // del perfil de atención (plugin hermes-webchat, puerto 8767), expuesto por el
-// túnel Cloudflare como wss://atencion-hrf.syberloop.com. Sin key en el
+// túnel Cloudflare como wss://atencion-hrf.rhfliving.com (desde el 7-oct-2026;
+// antes atencion-hrf.syberloop.com). Sin key en el
 // navegador ni proxy: el canal WebSocket no lleva autenticación por request.
 const WS_URL =
-  process.env.NEXT_PUBLIC_CHAT_WS_URL || "wss://atencion-hrf.syberloop.com";
+  process.env.NEXT_PUBLIC_CHAT_WS_URL || "wss://atencion-hrf.rhfliving.com";
 
 /**
  * Los textos del widget en los dos idiomas (29-sep-2026). El idioma llega de

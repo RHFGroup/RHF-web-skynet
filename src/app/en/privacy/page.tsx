@@ -51,9 +51,10 @@ export default function Privacy() {
       titulo="Personal Data Processing Policy"
       bajada="If you write to us on WhatsApp, through the chat on this website, on Instagram or on Facebook, if you subscribe to the newsletter, or if you leave your details at a trade fair, we end up holding information about you. Here we explain what we do with it, for how long, and how to ask us to delete it."
       // La fecha de la versión en español que traduce esta página.
-      // ⚠️ The date this version is published (#47, pending Rafael's approval),
-      // the same as the Spanish one. The previous one took effect on October 1, 2026.
-      vigencia="October 7, 2026"
+      // The day this version was published, the same as the Spanish one
+      // (approved by Rafael on October 8, 2026). The previous one in production
+      // took effect on September 29, 2026.
+      vigencia="October 8, 2026"
     >
       <Seccion titulo="1. Who is responsible for your data">
         <p>
