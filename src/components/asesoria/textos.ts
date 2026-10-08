@@ -21,20 +21,36 @@
  */
 import type { Idioma } from "@/i18n/idioma";
 
-export type Para = "vivir" | "invertir" | "ambas";
+/**
+ * Los códigos de «para qué» y de presupuesto son los del CRM
+ * (src/data/calificacion.ts en el PR del tablero: OBJETIVOS y
+ * RANGOS_PRESUPUESTO). Viajan al Worker como `objetivo` y `presupuesto`, y el
+ * CRM los cuenta en el embudo y en el tablero. Decisión de Rafael del
+ * 8-oct-2026: «3 toques alineados» y «Vivir, Airbnb, Arriendo, Valorizar».
+ * Si cambian allá, se cambian aquí. «Cuándo» no tiene campo en el CRM: va en
+ * el mensaje.
+ */
+export type Para = "vivir" | "renta_corta" | "renta_tradicional" | "patrimonio" | "no_se";
 export type Cuando = "ya" | "3-6" | "6-12" | "explorando";
-export type Presupuesto = "hasta-300" | "300-500" | "500-800" | "mas-800" | "no-se";
+export type Presupuesto = "hasta_250" | "250_400" | "400_600" | "600_900" | "mas_900" | "no_se";
 
 /** Los rótulos que llegan a Rafael en el aviso, siempre en español. */
 export const ROTULOS_ES = {
-  para: { vivir: "Para vivir", invertir: "Para invertir", ambas: "Para vivir e invertir" } satisfies Record<Para, string>,
+  para: {
+    vivir: "Para vivir",
+    renta_corta: "Para renta corta (tipo Airbnb)",
+    renta_tradicional: "Para renta tradicional",
+    patrimonio: "Para invertir y valorizar",
+    no_se: "Aún no sabe para qué",
+  } satisfies Record<Para, string>,
   cuando: { ya: "Lo antes posible", "3-6": "En 3 a 6 meses", "6-12": "En 6 a 12 meses", explorando: "Está explorando" } satisfies Record<Cuando, string>,
   presupuesto: {
-    "hasta-300": "Hasta $300 millones",
-    "300-500": "$300 a $500 millones",
-    "500-800": "$500 a $800 millones",
-    "mas-800": "Más de $800 millones",
-    "no-se": "Aún no lo sabe",
+    hasta_250: "Menos de 250 millones",
+    "250_400": "De 250 a 400 millones",
+    "400_600": "De 400 a 600 millones",
+    "600_900": "De 600 a 900 millones",
+    mas_900: "Más de 900 millones",
+    no_se: "Aún no lo sabe",
   } satisfies Record<Presupuesto, string>,
 };
 
@@ -113,8 +129,10 @@ export const TEXTOS: Record<Idioma, Textos> = {
         titulo: "¿Para qué buscas?",
         opciones: [
           { valor: "vivir", texto: "Para vivir" },
-          { valor: "invertir", texto: "Para invertir" },
-          { valor: "ambas", texto: "Las dos" },
+          { valor: "renta_corta", texto: "Airbnb" },
+          { valor: "renta_tradicional", texto: "Arriendo" },
+          { valor: "patrimonio", texto: "Valorizar" },
+          { valor: "no_se", texto: "Aún no lo sé" },
         ],
       },
       cuando: {
@@ -130,11 +148,12 @@ export const TEXTOS: Record<Idioma, Textos> = {
         titulo: "¿Tu presupuesto?",
         nota: "Aproximado, en pesos colombianos.",
         opciones: [
-          { valor: "hasta-300", texto: "Hasta $300 M" },
-          { valor: "300-500", texto: "$300 a $500 M" },
-          { valor: "500-800", texto: "$500 a $800 M" },
-          { valor: "mas-800", texto: "Más de $800 M" },
-          { valor: "no-se", texto: "Aún no lo sé" },
+          { valor: "hasta_250", texto: "Menos de $250 M" },
+          { valor: "250_400", texto: "$250 a $400 M" },
+          { valor: "400_600", texto: "$400 a $600 M" },
+          { valor: "600_900", texto: "$600 a $900 M" },
+          { valor: "mas_900", texto: "Más de $900 M" },
+          { valor: "no_se", texto: "Aún no lo sé" },
         ],
       },
     },
@@ -192,8 +211,10 @@ export const TEXTOS: Record<Idioma, Textos> = {
         titulo: "What is it for?",
         opciones: [
           { valor: "vivir", texto: "To live in" },
-          { valor: "invertir", texto: "To invest" },
-          { valor: "ambas", texto: "Both" },
+          { valor: "renta_corta", texto: "Airbnb" },
+          { valor: "renta_tradicional", texto: "Long-term rent" },
+          { valor: "patrimonio", texto: "Appreciation" },
+          { valor: "no_se", texto: "Not sure yet" },
         ],
       },
       cuando: {
@@ -209,11 +230,12 @@ export const TEXTOS: Record<Idioma, Textos> = {
         titulo: "Your budget?",
         nota: "Approximate, in Colombian pesos.",
         opciones: [
-          { valor: "hasta-300", texto: "Up to COP 300M" },
-          { valor: "300-500", texto: "COP 300M to 500M" },
-          { valor: "500-800", texto: "COP 500M to 800M" },
-          { valor: "mas-800", texto: "Over COP 800M" },
-          { valor: "no-se", texto: "Not sure yet" },
+          { valor: "hasta_250", texto: "Under COP 250M" },
+          { valor: "250_400", texto: "COP 250M to 400M" },
+          { valor: "400_600", texto: "COP 400M to 600M" },
+          { valor: "600_900", texto: "COP 600M to 900M" },
+          { valor: "mas_900", texto: "Over COP 900M" },
+          { valor: "no_se", texto: "Not sure yet" },
         ],
       },
     },

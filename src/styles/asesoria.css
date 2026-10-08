@@ -156,7 +156,7 @@
 .ase-nota { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--text-muted, #6a6a6a); }
 
 .ase-opciones { display: grid; gap: 10px; margin-top: 16px; }
-.ase-opciones-iconos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ase-opciones-iconos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .ase-opciones-chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .ase-opcion {
   position: relative;
@@ -176,9 +176,10 @@
   animation: ase-sube 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   animation-delay: calc(0.05s + var(--i) * 0.05s);
 }
-.ase-opciones-iconos .ase-opcion { min-height: 118px; padding: 16px 8px; }
+.ase-opciones-iconos .ase-opcion { min-height: 104px; padding: 14px 8px; }
+.ase-opciones-iconos .ase-opcion:not(:has(.ase-opcion-icono)) { min-height: 52px; }
 /* La última opción impar ocupa la fila entera («Aún no lo sé»). */
-.ase-opciones-chips .ase-opcion:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.ase-opciones .ase-opcion:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .ase-opcion:hover { border-color: #c2a578; background: #fff; box-shadow: 0 8px 24px rgb(31 42 61 / 0.08); transform: translateY(-2px); }
 .ase-opcion:active { transform: scale(0.97); }
 .ase-opcion:focus-visible { outline: 3px solid rgb(194 165 120 / 0.6); outline-offset: 2px; }

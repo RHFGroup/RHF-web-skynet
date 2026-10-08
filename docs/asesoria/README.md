@@ -52,3 +52,14 @@ Sale de `projects/inmobiliaria/copy-del-bloque-quien-te-asesora-que-podemos-afir
 - asesora proyectos de varias constructoras.
 
 No lleva años ni número de operaciones, ni superlativos.
+
+## Conexión con el CRM (8-oct-2026)
+
+Rafael eligió «3 toques alineados» con el CRM y, para el primer paso, «Vivir, Airbnb, Arriendo, Valorizar».
+
+- **Para qué** viaja como `objetivo`, con los códigos de `OBJETIVOS` del CRM: `vivir`, `renta_corta`, `renta_tradicional`, `patrimonio` y `no_se`.
+- **Presupuesto** viaja como `presupuesto`, con los códigos de `RANGOS_PRESUPUESTO`: `hasta_250`, `250_400`, `400_600`, `600_900`, `mas_900` y `no_se`.
+- **Atribución.** `atribucion` lleva las UTM, los identificadores de clic, la página de entrada y el dominio que trajo la visita. Con eso el CRM calcula el canal; por ejemplo, `utm_source=youtube` queda como `youtube`.
+- **Cuándo** no tiene campo en el CRM: queda en el `mensaje`.
+- **El Worker de hoy** ignora esos campos sin error. El del PR del tablero los guarda.
+- **Si cambian los códigos** en `src/data/calificacion.ts`, se cambian también en `textos.ts`. Cuando el tablero esté en master, conviene importar de ahí y usar `atribucionParaEnviar()` (primer toque).

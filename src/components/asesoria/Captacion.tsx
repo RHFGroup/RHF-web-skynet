@@ -72,8 +72,8 @@ function leerFuente(): { fuente: string; consulta: string } {
 
 const TOTAL = 4;
 
-/** Íconos de trazo para las tres opciones del primer paso (se leen sin texto). */
-const ICONOS: Record<string, React.ReactNode> = {
+/** Íconos de trazo del primer paso. «Aún no lo sé» va sin ícono, a lo ancho. */
+const ICONOS: Partial<Record<Para, React.ReactNode>> = {
   vivir: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M3 11.5 12 4l9 7.5" />
@@ -81,22 +81,57 @@ const ICONOS: Record<string, React.ReactNode> = {
       <path d="M10 19.5v-5h4v5" />
     </svg>
   ),
-  invertir: (
+  renta_corta: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4" y="7.5" width="16" height="12" rx="2.5" />
+      <path d="M9 7.5V5.5a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 5.5v2" />
+      <path d="M4 12.5h16" />
+    </svg>
+  ),
+  renta_tradicional: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="8" cy="12" r="3.5" />
+      <path d="M11.5 12H21" />
+      <path d="M17.5 12v3" />
+      <path d="M20.5 12v2" />
+    </svg>
+  ),
+  patrimonio: (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 19.5h16" />
       <path d="M5 15.5l4.5-4.5 3.5 3 6-6.5" />
       <path d="M14.5 7.5H19V12" />
     </svg>
   ),
-  ambas: (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M2.5 12 9 6.5l6.5 5.5" />
-      <path d="M4.5 10.5v8h9v-8" />
-      <path d="M15 19.5l3-3.5 3.5-4.5" />
-      <path d="M18.5 11.5h3v3" />
-    </svg>
-  ),
 };
+
+/**
+ * Por dónde llegó, en la forma que guarda el CRM (`atribucion` del Worker):
+ * las UTM y los identificadores de clic del enlace, la página de entrada y el
+ * dominio que la mandó. Sin datos personales. El Worker solo se queda con las
+ * claves que conoce, así que hoy no estorba y el CRM la usa al publicarse.
+ */
+function leerAtribucion(): Record<string, string> | undefined {
+  try {
+    const q = new URLSearchParams(window.location.search);
+    const a: Record<string, string> = {};
+    for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) {
+      const v = (q.get(k) ?? "").trim().slice(0, 120);
+      if (v) a[k] = v;
+    }
+    for (const k of ["gclid", "gbraid", "wbraid", "fbclid"]) {
+      const v = (q.get(k) ?? "").trim().slice(0, 300);
+      if (v && /^[A-Za-z0-9._~-]+$/.test(v)) a[k] = v;
+    }
+    a.landing = window.location.pathname;
+    const ref = document.referrer ? new URL(document.referrer).hostname : "";
+    if (ref && ref !== window.location.hostname) a.referente = ref.slice(0, 120);
+    a.t = new Date().toISOString();
+    return a;
+  } catch {
+    return undefined;
+  }
+}
 
 export default function Captacion({ idioma = "es" }: { idioma?: Idioma }) {
   const t = TEXTOS[idioma];
@@ -116,9 +151,11 @@ export default function Captacion({ idioma = "es" }: { idioma?: Idioma }) {
   const titulo = useRef<HTMLHeadingElement>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
   const fuente = useRef({ fuente: "directo", consulta: "" });
+  const atribucion = useRef<Record<string, string> | undefined>(undefined);
 
   useEffect(() => {
     fuente.current = leerFuente();
+    atribucion.current = leerAtribucion();
   }, []);
 
   // Al cambiar de paso, el foco va al título del paso nuevo (lectores de pantalla y teclado).
@@ -183,6 +220,10 @@ export default function Captacion({ idioma = "es" }: { idioma?: Idioma }) {
             .filter(Boolean)
             .join("\n"),
           tipo: "consulta",
+          // Los códigos del CRM: el embudo y el tablero los cuentan.
+          objetivo: para,
+          presupuesto,
+          atribucion: atribucion.current,
           autoriza: true,
           version_aviso: AVISO_VERSION,
           origen: `${window.location.pathname}${f.consulta}`.slice(0, 200),
@@ -193,9 +234,9 @@ export default function Captacion({ idioma = "es" }: { idioma?: Idioma }) {
       if (!r.ok) throw new Error(String(r.status));
       const guardado: LeadGuardado = {
         nombre: nombre.trim().split(/\s+/)[0].slice(0, 40),
-        para: para ?? "ambas",
+        para: para ?? "no_se",
         cuando: cuando ?? "explorando",
-        presupuesto: presupuesto ?? "no-se",
+        presupuesto: presupuesto ?? "no_se",
         fuente: f.fuente.split(" · ")[0].slice(0, 40),
       };
       try {
@@ -232,7 +273,7 @@ export default function Captacion({ idioma = "es" }: { idioma?: Idioma }) {
           style={{ ["--i" as string]: i }}
           onClick={() => elegir(o.valor, fijar, nombrePaso)}
         >
-          {forma === "iconos" && <span className="ase-opcion-icono">{ICONOS[o.valor]}</span>}
+          {forma === "iconos" && ICONOS[o.valor as Para] && <span className="ase-opcion-icono">{ICONOS[o.valor as Para]}</span>}
           <span className="ase-opcion-texto">{o.texto}</span>
         </button>
       ))}
