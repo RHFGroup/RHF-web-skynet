@@ -232,9 +232,9 @@ function registrarEvento(datos: Record<string, unknown>) {
  * rechaza el guardado. El formulario lo dice y ofrece WhatsApp, que es la
  * salida para todos los fallos: nadie se queda sin poder escribir.
  *
- * ⚠️ Al 2026-09-19 el Worker **no tiene** `TURNSTILE_SECRET`, así que esta
- * verificación está apagada y solo operan la trampa para bots, el tope por
- * IP y la validación de origen. Se activa con `wrangler secret put`.
+ * Desde el 29-sep-2026 la verificación es obligatoria: si al Worker le falta
+ * `TURNSTILE_SECRET`, responde 503 y no guarda nada. El secreto se carga en
+ * Cloudflare → Workers & Pages → rhf-web-skynet → Variables and Secrets.
  */
 export const TURNSTILE_SITE_KEY = "0x4AAAAAAE8W_1D4uDCgIB5S";
 
