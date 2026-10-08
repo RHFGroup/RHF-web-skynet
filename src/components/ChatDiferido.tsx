@@ -12,6 +12,11 @@
  * recibe props. Lee `<html lang>` al montar el widget y se lo pasa a
  * AgentChat. Cambiar de idioma es cargar otra página (SelectorIdioma.tsx), así
  * que no hace falta seguirlo después.
+ *
+ * Las páginas de una sola acción (7-oct-2026, la captación de /asesoria) se
+ * marcan con `data-sin-chat` y ahí el chat no se monta: su burbuja tapaba el
+ * botón de enviar en el teléfono, y la página ya tiene su propio camino a
+ * WhatsApp.
  */
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
@@ -28,6 +33,7 @@ export default function ChatDiferido() {
     let idle = 0;
     let espera = 0;
     const montar = () => {
+      if (document.querySelector("[data-sin-chat]")) return;
       if (!cancelado) setIdioma(document.documentElement.lang === "en" ? "en" : "es");
     };
     const programar = () => {

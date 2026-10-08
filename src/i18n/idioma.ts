@@ -23,6 +23,8 @@ const FIJAS: Record<string, string> = {
   "/": "/en",
   "/vender": "/en/sell",
   "/simulador": "/en/mortgage-calculator",
+  "/asesoria": "/en/lets-talk",
+  "/asesoria/gracias": "/en/lets-talk/thank-you",
   "/comparar": "/en/compare",
   "/asesor": "/en/advisor",
   "/inteligencia-de-mercado": "/en/market-intelligence",
