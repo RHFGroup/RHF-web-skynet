@@ -194,6 +194,9 @@ const TEXTOS: Diccionario = {
   "Área de 2 y 3 alcobas": "Area of the 2- and 3-bedroom units",
   "70 m² las dos": "70 m² for both",
   "Entrega por etapas, sin fechas publicadas": "Handover in phases; dates not yet published",
+  "Estimada por bloque, entre diciembre de 2026 y junio de 2030": "Estimated by block, between December 2026 and June 2030",
+  "5 etapas; la lista vigente es la Etapa I-2, fase 1 (bloques 1 a 9). Zonas comunes por etapa sin detallar":
+    "5 phases; the current price list is Phase I-2, stage 1 (blocks 1 to 9). Common areas per phase not yet detailed",
   "El listado registra un apartamento 503 de 35 m² a un precio muy por debajo del resto de su tipología. Es una duplicidad de numeración sin resolver: esa unidad no se cotiza hasta que el promotor la confirme.":
     "The list shows a 35 m² apartment numbered 503 at a price far below the rest of its unit type. It is an unresolved duplicate unit number: that unit will not be quoted until the developer confirms it.",
   "El brochure anuncia un precio de arranque inferior al mínimo disponible hoy. No se usa el brochure como fuente de precio.":

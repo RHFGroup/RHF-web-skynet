@@ -479,7 +479,11 @@ export const PROYECTOS: Proyecto[] = [
     precontractual: {
       ...SIN_PRECONTRACTUAL,
       parqueadero: "Parqueaderos privados",
-      planEtapas: "Entrega por etapas, sin fechas publicadas",
+      // Presentación comercial de Invercolombia, septiembre de 2026, pág. 5. El
+      // bloque 4 (jun-2026) está vendido: la primera entrega con unidades libres
+      // es la del bloque 5. Fechas estimadas, sujetas a fuerza mayor.
+      fechaEntrega: "Estimada por bloque, entre diciembre de 2026 y junio de 2030",
+      planEtapas: "5 etapas; la lista vigente es la Etapa I-2, fase 1 (bloques 1 a 9). Zonas comunes por etapa sin detallar",
     },
     reservas: [
       "El listado registra un apartamento 503 de 35 m² a un precio muy por debajo del resto de su tipología. Es una duplicidad de numeración sin resolver: esa unidad no se cotiza hasta que el promotor la confirme.",
