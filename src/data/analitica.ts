@@ -28,6 +28,8 @@
  *      lead_consignar      metodo (formulario | whatsapp), tipo_inmueble → el «Lead» de Meta
  *      generate_lead       formulario = "contacto", proyecto
  *      cambio_moneda       moneda
+ *      newsletter_signup   formulario = "boletin", idioma, page_path → «NewsletterSignup» de Meta
+ *      newsletter_confirm  formulario = "boletin", idioma (la confirmación por correo)
  *    En GTM, cada uno es un activador de «Evento personalizado». Con GA4
  *    directo, cada uno llega a GA4 como evento, con los mismos parámetros.
  */

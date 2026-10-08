@@ -17,7 +17,7 @@
  * formulario de contacto, con las mismas garantías: sin la casilla de
  * autorización no se envía nada (Ley 1581 de 2012), trampa para bots y
  * Turnstile. El texto de la autorización es el mismo del formulario de
- * contacto, por eso viaja con su versión («2026-09-18»). Si el envío falla se
+ * contacto, por eso viaja con su versión («2026-10-07»). Si el envío falla se
  * dice, y WhatsApp queda como salida. Lo que se envía a Rafael va en español
  * desde cualquier idioma, como en ContactForm.
  *
@@ -38,11 +38,17 @@ import { useSim } from "@/components/simulador/contexto";
 import { evento, idDeEvento, sinClicSalienteDeGA4 } from "@/components/simulador/analitica";
 import { enlaceDelEscenario } from "@/components/simulador/enlace";
 import { anios, meses, mesDesdeHoy, pesos, porcentaje } from "@/components/simulador/formato";
+import { atribucionParaEnviar } from "@/lib/atribucion";
 import { PARAMETROS } from "@/components/simulador/parametros";
 import type { Cuando, EstadoSim, ItemSimulador, TipoIngreso } from "@/components/simulador/tipos";
 
-/** La misma versión del texto de autorización de ContactForm (AVISO_VERSION): el texto es el mismo. */
-const AVISO_VERSION = "2026-09-18";
+/**
+ * La misma versión del texto de autorización de ContactForm (AVISO_VERSION):
+ * el texto es el mismo (src/components/simulador/textos.ts). 7-oct-2026: suma
+ * «y para saber por qué medio llegué a esta página», aprobado por Rafael el
+ * 8-oct-2026. La anterior era «2026-09-18».
+ */
+const AVISO_VERSION = "2026-10-07";
 /** La site key pública de Turnstile, la misma de ContactForm. */
 const TURNSTILE_SITE_KEY = "0x4AAAAAAE8W_1D4uDCgIB5S";
 
@@ -340,6 +346,8 @@ function Formulario({
           version_aviso: AVISO_VERSION,
           // Solo la ruta: el escenario (con el ingreso) va en el mensaje, que la persona autorizó.
           origen: window.location.pathname,
+          // Por dónde llegó, si el navegador lo anotó (src/lib/atribucion.ts).
+          atribucion: atribucionParaEnviar(),
           sitio,
           turnstile: token,
         }),

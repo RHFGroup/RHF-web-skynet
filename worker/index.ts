@@ -12,13 +12,31 @@
  * /api/solicitud-agente (desde el 29-sep-2026), por donde el agente de
  * atención (WhatsApp y chat de la web) deja la llamada que alguien pidió con
  * Rafael. Los tres caen al mismo buzón de leads y al mismo aviso de Telegram.
+ * Desde el 30-sep-2026, POST /api/suscripcion/confirmar: el enlace del correo
+ * de confirmación del boletín (worker/boletin.ts).
  * Y GET /api/trm (desde el 29-sep-2026): la tasa representativa del mercado
  * del día, para la referencia en dólares que muestra la web junto al precio
  * en pesos. El cron la mantiene al día en D1.
  *
+ * Desde el 6-oct-2026 también monta el CRM interno (crm/) en una ruta secreta
+ * de rhfliving.com, con clave: los secretos `CRM_RUTA` y `CRM_CLAVE` (ver
+ * crm/README.md). En wrangler.jsonc solo aparece el prefijo «/r/»
+ * (`run_worker_first`): la ruta secreta que sigue no está en el código, porque
+ * el repo es público. Cada aviso de lead trae el enlace a su ficha, y el cron
+ * «30 12 * * *» manda el resumen del día del CRM.
+ *
  * Y desde el 23-sep-2026, un cron: cada 5 minutos el vigía de worker/vigia.ts
  * mira que el agente (chat de la web y WhatsApp) responda, y avisa por
  * Telegram si deja de hacerlo. No toca nada de lo que está acá abajo.
+ *
+ * Desde el 7-oct-2026 (el tablero del CRM):
+ *  - /api/consulta recibe además las tres preguntas que califican a un
+ *    comprador (presupuesto, forma de pago y objetivo, en rangos) y de dónde
+ *    llegó la persona (UTM y clic del anuncio), y guarda el canal;
+ *  - POST /api/conversaciones-agente recibe, con el token del agente, las
+ *    conversaciones de la IA (chat de la web y WhatsApp) para el CRM;
+ *  - el cron corre cada minuto: el SLA de la primera respuesta y la higiene
+ *    del CRM cada minuto; el vigía, los reintentos y la TRM, cada 5.
  *
  * REGLA DE ORO — cambió el 2026-09-19, y es el cambio más importante de este
  * archivo. Antes el formulario abría WhatsApp y guardar era la red debajo:
@@ -38,9 +56,51 @@
  */
 
 import { vigilar } from "./vigia";
+import {
+  atenderCRM,
+  mandarResumen,
+  rutaCRM,
+  trabajoDeCadaMinuto,
+  leerLote,
+  guardarLote,
+  LIMITES_CONVERSACIONES,
+} from "../crm/src/index";
+import { canalDe, limpiarAtribucion, resumenAtribucion } from "../crm/src/canales";
+import {
+  FORMAS_PAGO,
+  OBJETIVOS,
+  RANGOS_PRESUPUESTO,
+  formaPagoValida,
+  nombreDe,
+  objetivoValido,
+  presupuestoValido,
+  rangoDeTexto,
+} from "../src/data/calificacion";
+import { RECURSOS_CRM } from "./crm-recursos";
+import { confirmarSuscripcion, guardarSuscripcion } from "./boletin";
+import {
+  baseDe,
+  cabecerasCors,
+  esc,
+  esVistaPrevia,
+  json,
+  LIMITES,
+  origenPermitido,
+  texto,
+  TOPE_POR_IP,
+  VENTANA_MINUTOS,
+  verificarTurnstile,
+} from "./comun";
 
 export interface Env {
   DB: D1Database;
+  /** La base de las vistas previas (30-sep-2026): `rhf-leads-preview`. Ver
+   *  `baseDe` en worker/comun.ts. Si falta, todo va a `DB`. */
+  DB_PREVIEW?: D1Database;
+  /** Cloudflare Email Service (plan pago de Workers). Con él, el boletín pide
+   *  confirmación por correo; sin él, la suscripción queda activa al
+   *  instante, como antes. Ver worker/boletin.ts. */
+  EMAIL?: SendEmail;
   ASSETS: Fetcher;
   /** Secreto de Turnstile. Mientras no exista, la verificación se salta y
    *  quedan las defensas de abajo. Se agrega con `wrangler secret put`. */
@@ -57,48 +117,32 @@ export interface Env {
    *  endpoint nunca queda abierto por omisión. Se carga con
    *  `wrangler secret put AGENTE_TOKEN`. */
   AGENTE_TOKEN?: string;
+  /** La ruta secreta del CRM, por ejemplo «/r/k3m9…» (crm/README.md). Sin ella,
+   *  el CRM no existe y toda dirección sigue siendo del sitio. */
+  CRM_RUTA?: string;
+  /** La huella de la clave del CRM (crm/src/clave.ts). La pone
+   *  crm/dev/poner-clave.mjs; la clave misma no se guarda en ninguna parte. */
+  CRM_CLAVE?: string;
 }
 
-/**
- * Orígenes que pueden postear, ADEMÁS del propio.
- *
- * La regla principal es «mismo origen que esta petición», que cubre sola
- * producción, cada preview de Cloudflare y cualquier servidor local en
- * cualquier puerto. Una lista blanca de dominios y puertos parece más estricta
- * pero envejece mal: el primer preview con un hash nuevo, o un `wrangler dev`
- * en otro puerto, quedan afuera y el formulario devuelve 403 en silencio —
- * pasó en la prueba del 18-sep con el puerto 8787.
- *
- * Esta lista queda solo para el par apex/www, que son orígenes distintos para
- * el navegador aunque sirvan la misma página.
- */
-const ORIGENES_EXTRA = new Set([
-  "https://rhfliving.com",
-  "https://www.rhfliving.com",
-]);
+/** El cron del resumen del día del CRM: 12:30 UTC, las 7:30 a. m. de Colombia. */
+const CRON_RESUMEN_CRM = "30 12 * * *";
 
 /** Versión del texto de autorización, si el cliente no manda la suya. */
 const AVISO_POR_DEFECTO = "2026-09-18";
 
-/** Topes de tamaño. Un campo más largo que esto es ruido o ataque. */
-const LIMITES = {
-  cuerpo: 16 * 1024,
-  nombre: 120,
-  contacto: 160,
-  proyecto: 80,
-  mensaje: 2000,
-  origen: 200,
-  userAgent: 400,
-  version: 32,
-} as const;
-
-/** Envíos permitidos desde una misma IP en la ventana de abajo. */
-const TOPE_POR_IP = 5;
-const VENTANA_MINUTOS = 10;
-
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    // El CRM, en su ruta secreta. Si la dirección no es la suya, responde null
+    // y todo sigue como antes.
+    const crm = await atenderCRM(request, env, {
+      avisar: (html) => enviarTelegram(env, html.slice(0, 4000)),
+      recursos: RECURSOS_CRM,
+      esperar: (p) => ctx.waitUntil(p),
+    });
+    if (crm) return crm;
 
     if (url.pathname === "/api/consulta") {
       return guardarConsulta(request, env, ctx);
@@ -108,8 +152,16 @@ export default {
       return guardarSuscripcion(request, env);
     }
 
+    if (url.pathname === "/api/suscripcion/confirmar") {
+      return confirmarSuscripcion(request, env);
+    }
+
     if (url.pathname === "/api/solicitud-agente") {
       return guardarSolicitudAgente(request, env, ctx);
+    }
+
+    if (url.pathname === "/api/conversaciones-agente") {
+      return guardarConversacionesAgente(request, env);
     }
 
     if (url.pathname === "/api/trm") {
@@ -124,11 +176,24 @@ export default {
     return env.ASSETS.fetch(request);
   },
 
-  // El cron de wrangler.jsonc. Ver worker/vigia.ts.
+  // Los crons de wrangler.jsonc: el resumen del CRM a las 7:30 a. m. y otro
+  // cada minuto (desde el 7-oct-2026; antes, cada 5). Cada minuto, el SLA y la
+  // higiene del CRM; cada 5, como antes, el vigía (worker/vigia.ts), los
+  // avisos pendientes y la TRM. En esos minutos el CRM hace solo el SLA: el
+  // plan gratis permite 50 sentencias de D1 por invocación.
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(vigilar(env, new Date(controller.scheduledTime)));
-    ctx.waitUntil(reintentarAvisos(env));
-    ctx.waitUntil(refrescarTRMSiHaceFalta(env));
+    const ahora = new Date(controller.scheduledTime);
+    if (controller.cron === CRON_RESUMEN_CRM) {
+      ctx.waitUntil(mandarResumen(env, (html) => enviarTelegram(env, html), ahora));
+      return;
+    }
+    const conVigia = ahora.getUTCMinutes() % 5 === 0;
+    if (conVigia) {
+      ctx.waitUntil(vigilar(env, ahora));
+      ctx.waitUntil(reintentarAvisos(env));
+      ctx.waitUntil(refrescarTRMSiHaceFalta(env));
+    }
+    ctx.waitUntil(trabajoDeCadaMinuto(env, (html) => enviarTelegram(env, html), ahora, conVigia));
   },
 } satisfies ExportedHandler<Env>;
 
@@ -177,6 +242,14 @@ async function guardarConsulta(
   // cambia el título del aviso, para que Rafael sepa de un vistazo que es un
   // propietario y no un comprador. Cualquier otro valor es una consulta.
   const consignar = texto(cuerpo.tipo) === "consignar";
+  // Desde el 7-oct-2026: las tres preguntas del comprador (solo códigos de
+  // src/data/calificacion.ts; cualquier otra cosa se descarta) y de dónde
+  // llegó. Un formulario viejo, en caché, no las manda: se guarda igual.
+  const presupuesto = consignar ? null : presupuestoValido(cuerpo.presupuesto);
+  const formaPago = consignar ? null : formaPagoValida(cuerpo.forma_pago);
+  const objetivo = consignar ? null : objetivoValido(cuerpo.objetivo);
+  const atribucion = limpiarAtribucion(cuerpo.atribucion);
+  const canal = canalDe(atribucion, origen);
 
   // Sin autorización no se guarda. Es la condición de la Ley 1581 y también la
   // del CHECK de la tabla: acá se rechaza con un mensaje claro en vez de
@@ -206,31 +279,36 @@ async function guardarConsulta(
   );
   const ahora = new Date();
 
-  if (ip && (await demasiadosEnvios(env.DB, ip, ahora))) {
+  const db = baseDe(env, request);
+  if (ip && (await demasiadosEnvios(db, ip, ahora))) {
     return json({ ok: false, error: "demasiados_envios" }, 429);
   }
 
   try {
-    const r = await env.DB.prepare(
-      `INSERT INTO consultas
-         (creado_en, nombre, contacto, proyecto, mensaje,
-          autoriza, version_aviso, ip, user_agent, origen)
-       VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
-    )
-      .bind(
-        ahora.toISOString(),
-        nombre,
-        contacto,
-        proyecto || null,
-        mensaje || null,
-        versionAviso,
-        ip,
-        userAgent || null,
-        origen || null,
-      )
-      .run();
-
-    const id = (r.meta?.last_row_id as number | undefined) ?? null;
+    const fila = {
+      creado_en: ahora.toISOString(),
+      nombre,
+      contacto,
+      proyecto: proyecto || null,
+      mensaje: mensaje || null,
+      version_aviso: versionAviso,
+      ip,
+      user_agent: userAgent || null,
+      origen: origen || null,
+    };
+    const id = await insertarConsulta(db, fila, {
+      presupuesto,
+      forma_pago: formaPago,
+      objetivo,
+      atribucion: atribucion ? JSON.stringify(atribucion) : null,
+      canal,
+    });
+    const lineasExtra = [
+      presupuesto ? `<b>Presupuesto:</b> ${esc(nombreDe(RANGOS_PRESUPUESTO, presupuesto))}` : null,
+      formaPago ? `<b>Forma de pago:</b> ${esc(nombreDe(FORMAS_PAGO, formaPago))}` : null,
+      objetivo ? `<b>Para qué:</b> ${esc(nombreDe(OBJETIVOS, objetivo))}` : null,
+      canal !== "sin_dato" ? `<b>Canal:</b> ${esc(resumenAtribucion(canal, atribucion))}` : null,
+    ].filter((x): x is string => x !== null);
 
     // El aviso se espera, a diferencia del guardado del lado del navegador:
     // la persona ya está viendo un spinner y Telegram responde en ~300 ms.
@@ -246,6 +324,8 @@ async function guardarConsulta(
         mensaje,
         origen,
         creado: ahora,
+        vistaPrevia: esVistaPrevia(request),
+        extra: lineasExtra,
       },
       consignar ? "🏷️ <b>Quiere consignar su inmueble</b> · formulario de la web" : undefined,
     );
@@ -254,7 +334,7 @@ async function guardarConsulta(
     // falla, el lead ya está guardado y Rafael ya recibió el mensaje.
     if (aviso.ok && id) {
       ctx.waitUntil(
-        env.DB.prepare(`UPDATE consultas SET notificado_en = ? WHERE id = ?`)
+        db.prepare(`UPDATE consultas SET notificado_en = ? WHERE id = ?`)
           .bind(new Date().toISOString(), id)
           .run()
           .then(() => undefined)
@@ -271,129 +351,6 @@ async function guardarConsulta(
     // formulario muestre el error y le ofrezca WhatsApp a la persona, en vez
     // de decirle «enviado» sobre algo que no se guardó.
     console.error("[consulta] fallo al guardar:", e);
-    return json({ ok: false, error: "fallo_al_guardar" }, 500, request);
-  }
-}
-
-// ── El boletín ────────────────────────────────────────────────────────
-
-/** Versión del texto de autorización del boletín, si el cliente no manda la suya. */
-const AVISO_BOLETIN_POR_DEFECTO = "2026-09-28-boletin";
-
-/**
- * La tabla del boletín. El Worker la crea sola en la primera suscripción
- * (igual que la del vigía), así que no hace falta correr la migración
- * 0003_suscriptores.sql para que funcione: está allá para que el esquema
- * quede escrito donde están los demás.
- *
- * Un correo, una fila: si alguien se vuelve a suscribir, se actualiza la
- * constancia (fecha, versión del texto, IP y navegador) y vuelve a quedar
- * activo. La baja se marca con `estado = 'baja'` y `baja_en`, sin borrar la
- * constancia, para poder demostrar la autorización y la baja.
- *
- * Para leer la lista:
- *   wrangler d1 execute rhf-leads --remote --command "SELECT correo, creado_en, estado FROM suscriptores"
- */
-const CREAR_SUSCRIPTORES = [
-  `CREATE TABLE IF NOT EXISTS suscriptores (
-    id             INTEGER PRIMARY KEY AUTOINCREMENT,
-    creado_en      TEXT    NOT NULL,
-    correo         TEXT    NOT NULL UNIQUE,
-    autoriza       INTEGER NOT NULL CHECK (autoriza = 1),
-    version_aviso  TEXT    NOT NULL,
-    ip             TEXT,
-    user_agent     TEXT,
-    origen         TEXT,
-    estado         TEXT    NOT NULL DEFAULT 'activa' CHECK (estado IN ('activa', 'baja')),
-    actualizado_en TEXT,
-    baja_en        TEXT
-  )`,
-  `CREATE INDEX IF NOT EXISTS idx_suscriptores_ip_creado ON suscriptores(ip, actualizado_en DESC)`,
-];
-let suscriptoresLista = false;
-
-/** Un correo con forma de correo. La verificación de verdad es que llegue. */
-const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-async function guardarSuscripcion(request: Request, env: Env): Promise<Response> {
-  if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: cabecerasCors(request) });
-  }
-  if (request.method !== "POST") {
-    return json({ ok: false, error: "metodo_no_permitido" }, 405);
-  }
-  if (!origenPermitido(request)) {
-    return json({ ok: false, error: "origen_no_permitido" }, 403);
-  }
-
-  let cuerpo: Record<string, unknown>;
-  try {
-    const crudo = await request.text();
-    if (crudo.length > LIMITES.cuerpo) {
-      return json({ ok: false, error: "cuerpo_demasiado_grande" }, 413);
-    }
-    cuerpo = JSON.parse(crudo) as Record<string, unknown>;
-  } catch {
-    return json({ ok: false, error: "json_invalido" }, 400);
-  }
-
-  // La misma trampa para bots del formulario de contacto, que responde igual
-  // que una suscripción real (29-sep, auditoría AS-8).
-  if (texto(cuerpo.sitio)) {
-    return json({ ok: true, guardado: true }, 201, request);
-  }
-
-  // Sin autorización no se guarda (Ley 1581, y el CHECK de la tabla).
-  if (cuerpo.autoriza !== true) {
-    return json({ ok: false, error: "falta_autorizacion" }, 422, request);
-  }
-  const correo = texto(cuerpo.correo).toLowerCase();
-  if (correo.length > LIMITES.contacto || !CORREO_VALIDO.test(correo)) {
-    return json({ ok: false, error: "correo_invalido" }, 422, request);
-  }
-  const versionAviso =
-    texto(cuerpo.version_aviso).slice(0, LIMITES.version) || AVISO_BOLETIN_POR_DEFECTO;
-  const origen = texto(cuerpo.origen).slice(0, LIMITES.origen);
-  const ip = request.headers.get("CF-Connecting-IP") ?? null;
-  const userAgent = (request.headers.get("User-Agent") ?? "").slice(0, LIMITES.userAgent);
-  const ahora = new Date().toISOString();
-
-  try {
-    if (!suscriptoresLista) {
-      await env.DB.batch(CREAR_SUSCRIPTORES.map((q) => env.DB.prepare(q)));
-      suscriptoresLista = true;
-    }
-
-    // El mismo freno por IP del formulario, contado sobre esta tabla.
-    if (ip) {
-      const desde = new Date(Date.now() - VENTANA_MINUTOS * 60_000).toISOString();
-      const fila = await env.DB.prepare(
-        `SELECT COUNT(*) AS n FROM suscriptores WHERE ip = ? AND actualizado_en > ?`,
-      )
-        .bind(ip, desde)
-        .first<{ n: number }>();
-      if ((fila?.n ?? 0) >= TOPE_POR_IP) {
-        return json({ ok: false, error: "demasiados_envios" }, 429, request);
-      }
-    }
-
-    await env.DB.prepare(
-      `INSERT INTO suscriptores
-         (creado_en, correo, autoriza, version_aviso, ip, user_agent, origen, estado, actualizado_en)
-       VALUES (?, ?, 1, ?, ?, ?, ?, 'activa', ?)
-       ON CONFLICT(correo) DO NOTHING`,
-    )
-      .bind(ahora, correo, versionAviso, ip, userAgent || null, origen || null, ahora)
-      .run();
-
-    // Si el correo ya estaba, no se toca (29-sep-2026, auditoría AS-4): antes,
-    // cualquiera podía reactivar una baja ajena y reemplazar la constancia de
-    // autorización con su propia IP. Una persona que se dio de baja y quiere
-    // volver lo pide por los canales de contacto. No se dice si el correo ya
-    // estaba: la respuesta es la misma para todos.
-    return json({ ok: true, guardado: true }, 201, request);
-  } catch (e) {
-    console.error("[suscripcion] fallo al guardar:", e);
     return json({ ok: false, error: "fallo_al_guardar" }, 500, request);
   }
 }
@@ -430,6 +387,10 @@ async function notificarTelegram(
     mensaje: string;
     origen: string;
     creado: Date;
+    /** Vino de una vista previa (y quedó en su base): el aviso lo dice. */
+    vistaPrevia?: boolean;
+    /** Líneas más, ya en HTML de Telegram (las arma el código, escapadas). */
+    extra?: string[];
   },
   /** Primera línea del aviso, ya en HTML de Telegram. La escribe el código,
    *  nunca sale de lo que mandó alguien. Por defecto, la de la consulta. */
@@ -461,17 +422,33 @@ async function notificarTelegram(
       : null;
 
   const lineas = [
-    titulo,
+    c.vistaPrevia ? `🧪 <b>[VISTA PREVIA]</b> ${titulo}` : titulo,
     "",
     `<b>Nombre:</b> ${esc(c.nombre)}`,
     `<b>Contacto:</b> ${esc(c.contacto)}`,
     c.proyecto ? `<b>Proyecto:</b> ${esc(c.proyecto)}` : null,
     c.mensaje ? `<b>Mensaje:</b> ${esc(c.mensaje)}` : null,
+    ...(c.extra ?? []),
     "",
     wa ? `<a href="${wa}">Responder por WhatsApp</a>` : null,
+    // La ficha en el CRM (crm/, en su ruta secreta). Exige la clave. Las
+    // vistas previas guardan en su propia base, que el CRM de producción no ve.
+    c.id && !c.vistaPrevia && rutaCRM(env) ? `<a href="https://rhfliving.com${rutaCRM(env)}/c/${c.id}">Abrir en el CRM</a>` : null,
     `<i>${esc(fecha)} · ${c.origen ? esc(c.origen) + " · " : ""}#${c.id ?? "?"}</i>`,
   ].filter(Boolean);
 
+  return enviarTelegram(env, lineas.join("\n"));
+}
+
+/**
+ * Manda un mensaje (HTML de Telegram) al chat de los avisos. Nunca lanza:
+ * devuelve el motivo si falla, y nunca incluye el token.
+ */
+async function enviarTelegram(env: Env, texto: string): Promise<{ ok: boolean; motivo?: string }> {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
+    console.error("[telegram] SIN CONFIGURAR: faltan TELEGRAM_BOT_TOKEN y/o TELEGRAM_CHAT_ID.");
+    return { ok: false, motivo: "sin_configurar" };
+  }
   try {
     const r = await fetch(
       `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,
@@ -480,7 +457,7 @@ async function notificarTelegram(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: env.TELEGRAM_CHAT_ID,
-          text: lineas.join("\n"),
+          text: texto,
           parse_mode: "HTML",
           disable_web_page_preview: true,
         }),
@@ -611,9 +588,10 @@ async function guardarSolicitudAgente(
   const prueba = cuerpo.prueba === true;
 
   const ahora = new Date();
+  const db = baseDe(env, request);
   try {
     const desde = new Date(ahora.getTime() - 60 * 60_000).toISOString();
-    const fila = await env.DB.prepare(
+    const fila = await db.prepare(
       `SELECT SUM(CASE WHEN origen = ?1 THEN 1 ELSE 0 END) AS canal,
               SUM(CASE WHEN contacto = ?2 THEN 1 ELSE 0 END) AS tel
          FROM consultas WHERE origen LIKE 'agente:%' AND creado_en > ?3`,
@@ -648,25 +626,30 @@ async function guardarSolicitudAgente(
     .slice(0, LIMITES.mensaje);
 
   try {
-    const r = await env.DB.prepare(
-      `INSERT INTO consultas
-         (creado_en, nombre, contacto, proyecto, mensaje,
-          autoriza, version_aviso, ip, user_agent, origen, estado)
-       VALUES (?, ?, ?, ?, ?, 1, ?, NULL, ?, ?, ?)`,
-    )
-      .bind(
-        ahora.toISOString(),
+    const id = await insertarConsulta(
+      db,
+      {
+        creado_en: ahora.toISOString(),
         nombre,
-        `+${telefono}`,
-        interes ? interes.slice(0, LIMITES.proyecto) : null,
+        contacto: `+${telefono}`,
+        proyecto: interes ? interes.slice(0, LIMITES.proyecto) : null,
         mensaje,
-        versionAviso,
-        `agente-atencion (${canal})`,
-        `agente:${canal}`,
-        prueba ? "prueba" : "nueva",
-      )
-      .run();
-    const id = (r.meta?.last_row_id as number | undefined) ?? null;
+        version_aviso: versionAviso,
+        ip: null,
+        user_agent: `agente-atencion (${canal})`,
+        origen: `agente:${canal}`,
+        estado: prueba ? "prueba" : "nueva",
+      },
+      {
+        // El rango que cuenta el agente, llevado a los rangos del formulario
+        // cuando se puede (src/data/calificacion.ts). Si no, queda en el texto.
+        presupuesto: tipo === "consignar" ? null : rangoDeTexto(rango),
+        forma_pago: null,
+        objetivo: null,
+        atribucion: null,
+        canal: canalDe(null, `agente:${canal}`),
+      },
+    );
 
     const titulo =
       (prueba ? "🧪 <b>[PRUEBA]</b> " : "") +
@@ -683,12 +666,13 @@ async function guardarSolicitudAgente(
         mensaje,
         origen: `agente:${canal}`,
         creado: ahora,
+        vistaPrevia: esVistaPrevia(request),
       },
       titulo,
     );
     if (aviso.ok && id) {
       ctx.waitUntil(
-        env.DB.prepare(`UPDATE consultas SET notificado_en = ? WHERE id = ?`)
+        db.prepare(`UPDATE consultas SET notificado_en = ? WHERE id = ?`)
           .bind(new Date().toISOString(), id)
           .run()
           .then(() => undefined)
@@ -743,6 +727,107 @@ async function iguales(a: string, b: string): Promise<boolean> {
     return false;
   }
   return crypto.subtle.timingSafeEqual(x, y);
+}
+
+// ── Guardar una consulta ──────────────────────────────────────────────────
+
+type FilaConsulta = {
+  creado_en: string;
+  nombre: string;
+  contacto: string;
+  proyecto: string | null;
+  mensaje: string | null;
+  version_aviso: string;
+  ip: string | null;
+  user_agent: string | null;
+  origen: string | null;
+  estado?: string;
+};
+
+type ExtraConsulta = {
+  presupuesto: string | null;
+  forma_pago: string | null;
+  objetivo: string | null;
+  atribucion: string | null;
+  canal: string | null;
+};
+
+/**
+ * Guarda la consulta. Las columnas del 7-oct-2026 (migración 0008) van si la
+ * base las tiene; si todavía no se aplicó la migración, se guarda como antes:
+ * perder un lead por una columna nueva sería el peor error posible (la regla
+ * de oro de arriba).
+ */
+async function insertarConsulta(db: D1Database, f: FilaConsulta, extra: ExtraConsulta): Promise<number | null> {
+  const base = [f.creado_en, f.nombre, f.contacto, f.proyecto, f.mensaje, f.version_aviso, f.ip, f.user_agent, f.origen, f.estado ?? "nueva"];
+  try {
+    const r = await db
+      .prepare(
+        `INSERT INTO consultas
+           (creado_en, nombre, contacto, proyecto, mensaje, autoriza, version_aviso, ip, user_agent, origen, estado,
+            presupuesto, forma_pago, objetivo, atribucion, canal)
+         VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(...base, extra.presupuesto, extra.forma_pago, extra.objetivo, extra.atribucion, extra.canal)
+      .run();
+    return (r.meta?.last_row_id as number | undefined) ?? null;
+  } catch (e) {
+    if (!/no such column|has no column/i.test(String(e))) throw e;
+    console.error("[consulta] falta la migración 0008: se guarda sin las columnas nuevas");
+    const r = await db
+      .prepare(
+        `INSERT INTO consultas
+           (creado_en, nombre, contacto, proyecto, mensaje, autoriza, version_aviso, ip, user_agent, origen, estado)
+         VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)`,
+      )
+      .bind(...base)
+      .run();
+    return (r.meta?.last_row_id as number | undefined) ?? null;
+  }
+}
+
+// ── Las conversaciones del agente ─────────────────────────────────────────
+
+/**
+ * POST /api/conversaciones-agente — las conversaciones de la IA para el CRM
+ * (7-oct-2026, pedido de Rafael: verlas todas). Las manda el sincronizador que
+ * corre junto al agente (agente/sincronizar_conversaciones.py), de servidor a
+ * servidor, con el mismo token del agente (`AGENTE_TOKEN`). El formato y lo
+ * que se guarda están en crm/src/conversaciones.ts.
+ *
+ * Responde cuántas conversaciones y mensajes recibió; nunca devuelve datos.
+ */
+async function guardarConversacionesAgente(request: Request, env: Env): Promise<Response> {
+  if (request.method !== "POST") return json({ ok: false, error: "metodo_no_permitido" }, 405);
+  if (!env.AGENTE_TOKEN) {
+    console.error("[conversaciones] falta el secreto AGENTE_TOKEN: el endpoint está cerrado");
+    return json({ ok: false, error: "sin_configurar" }, 503);
+  }
+  const auth = request.headers.get("Authorization") ?? "";
+  const presentado = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+  if (!presentado || !(await iguales(presentado, env.AGENTE_TOKEN))) {
+    return json({ ok: false, error: "no_autorizado" }, 401);
+  }
+  let cuerpo: unknown;
+  try {
+    const crudo = await request.text();
+    if (crudo.length > LIMITES_CONVERSACIONES.cuerpo) return json({ ok: false, error: "cuerpo_demasiado_grande" }, 413);
+    cuerpo = JSON.parse(crudo);
+  } catch {
+    return json({ ok: false, error: "json_invalido" }, 400);
+  }
+  const lote = leerLote(cuerpo);
+  if (!lote.ok) return json({ ok: false, error: lote.error }, 422);
+  const db = baseDe(env, request);
+  try {
+    await guardarLote(db, lote.conversaciones);
+  } catch (e) {
+    const sinTablas = /no such table/i.test(String(e));
+    console.error("[conversaciones] no se pudo guardar:", sinTablas ? "falta la migración 0008" : e);
+    return json({ ok: false, error: sinTablas ? "falta_migracion" : "fallo_al_guardar" }, sinTablas ? 503 : 500);
+  }
+  console.log(JSON.stringify({ conversaciones: lote.conversaciones.length, mensajes: lote.mensajes }));
+  return json({ ok: true, conversaciones: lote.conversaciones.length, mensajes: lote.mensajes }, 200);
 }
 
 // ── Reintentos de avisos ──────────────────────────────────────────────────
@@ -955,11 +1040,6 @@ async function trmDelDia(request: Request, env: Env, ctx: ExecutionContext): Pro
   return respuesta;
 }
 
-/** Escapa lo que Telegram interpreta como HTML. */
-function esc(v: string): string {
-  return v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
 /** ¿Cuántos envíos hizo esta IP en los últimos minutos? */
 async function demasiadosEnvios(
   db: D1Database,
@@ -980,56 +1060,6 @@ async function demasiadosEnvios(
     // falso positivo acá es perder una consulta real.
     return false;
   }
-}
-
-async function verificarTurnstile(
-  secreto: string,
-  token: string,
-  ip: string | null,
-): Promise<boolean> {
-  if (!token) return false;
-  const datos = new FormData();
-  datos.append("secret", secreto);
-  datos.append("response", token);
-  if (ip) datos.append("remoteip", ip);
-  try {
-    const r = await fetch(
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      { method: "POST", body: datos },
-    );
-    const j = (await r.json()) as { success?: boolean };
-    return j.success === true;
-  } catch {
-    return false;
-  }
-}
-
-function origenPermitido(request: Request): boolean {
-  const origen = request.headers.get("Origin");
-  // Sin cabecera Origin no es un envío del formulario desde un navegador: los
-  // navegadores la mandan siempre en un POST, también cuando es del mismo sitio.
-  if (!origen) return false;
-  try {
-    if (origen === new URL(request.url).origin) return true;
-  } catch {
-    /* url rara: cae a la lista de abajo */
-  }
-  return ORIGENES_EXTRA.has(origen);
-}
-
-function cabecerasCors(request: Request): Record<string, string> {
-  const origen = request.headers.get("Origin");
-  if (!origen || !origenPermitido(request)) return {};
-  return {
-    "Access-Control-Allow-Origin": origen,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Max-Age": "86400",
-  };
-}
-
-function texto(v: unknown): string {
-  return typeof v === "string" ? v.trim() : "";
 }
 
 /**
@@ -1053,17 +1083,3 @@ function respuestaConsulta(
   return { ok: true, guardado: id > 0, id, notificado: aviso.ok, ...(aviso.motivo ? { motivo_aviso: aviso.motivo } : {}) };
 }
 
-function json(
-  cuerpo: unknown,
-  status: number,
-  request?: Request,
-): Response {
-  return new Response(JSON.stringify(cuerpo), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-      ...(request ? cabecerasCors(request) : {}),
-    },
-  });
-}

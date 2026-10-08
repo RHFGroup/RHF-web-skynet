@@ -6,8 +6,9 @@
   "compatibility_date": "2026-09-10",
 
   // Desde el 18-sep-2026 el Worker tiene código propio, además de servir los
-  // assets. `run_worker_first` lo limita a /api/*: todo lo demás se sirve como
-  // asset igual que antes, sin pasar por el Worker.
+  // assets. `run_worker_first` lo limita a /api/* y, desde el 6-oct-2026, a
+  // /r/* (el CRM): todo lo demás se sirve como asset igual que antes, sin
+  // pasar por el Worker.
   "main": "./worker/index.ts",
 
   "assets": {
@@ -15,24 +16,67 @@
     "binding": "ASSETS",
     "not_found_handling": "404-page",
     "html_handling": "auto-trailing-slash",
-    "run_worker_first": ["/api/*"]
+    // /r/*: el CRM (crm/), en su ruta secreta /r/<secreto>. Sin esto, una
+    // dirección que no es un asset recibe la página 404 sin llegar al Worker.
+    // El secreto que sigue a /r/ no va acá (el repo es público): es CRM_RUTA.
+    "run_worker_first": ["/api/*", "/r/*"]
   },
 
-  // El vigía de los agentes (worker/vigia.ts): cada 5 minutos mira que el
-  // chat de la web y el webhook de WhatsApp respondan, y avisa por Telegram si
-  // dejan de hacerlo. Existe por la caída del 23-sep-2026. Los previews de
-  // Workers Builds no corren crons: solo corre la versión de producción.
+  // Dos crons (el plan gratis permite 5 por cuenta):
+  //  - cada minuto (desde el 7-oct-2026; antes, cada 5): las consultas nuevas
+  //    al CRM y, en horario hábil, el SLA de la primera respuesta; dos veces
+  //    por hora, la higiene (crm/src/cron.ts). Cada 5 minutos, además, el
+  //    vigía de los agentes (worker/vigia.ts, por la caída del 23-sep-2026),
+  //    los avisos pendientes y la TRM;
+  //  - a las 12:30 UTC, las 7:30 a. m. de Colombia: el resumen del día del CRM.
+  // Los previews de Workers Builds no corren crons: solo corre la versión de
+  // producción.
   "triggers": {
-    "crons": ["*/5 * * * *"]
+    "crons": ["* * * * *", "30 12 * * *"]
   },
+
+  // El CRM (crm/) vive en este mismo Worker, en una ruta secreta bajo /r/ (el
+  // secreto CRM_RUTA: no va acá porque el repo es público). Su hoja de
+  // estilos, su script y sus fuentes van embebidos como módulos
+  // (worker/crm-recursos.ts), no en out/: así no quedan públicos en una
+  // dirección conocida.
+  "rules": [
+    { "type": "Text", "globs": ["**/crm/public/crm.css", "**/crm/public/crm.js"], "fallthrough": true },
+    { "type": "Data", "globs": ["**/crm/public/fuentes/*.woff2"], "fallthrough": true }
+  ],
 
   // Las consultas del formulario. La lectura se hace con
   // `wrangler d1 execute rhf-leads --remote --command "SELECT ..."`.
+  //
+  // 30-sep-2026: `DB_PREVIEW` es la base de las vistas previas
+  // (`rhf-leads-preview`). El Worker la usa cuando la petición llega a una
+  // dirección de vista previa (`baseDe` en worker/comun.ts): así las pruebas
+  // no quedan entre los leads reales (auditoría del 29-sep, AS-11). Sus
+  // migraciones: `wrangler d1 migrations apply rhf-leads-preview --remote`.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "rhf-leads",
       "database_id": "961a8a5d-0a87-48f7-986c-5e22e5394ea3"
+    },
+    {
+      "binding": "DB_PREVIEW",
+      "database_name": "rhf-leads-preview",
+      "database_id": "b036a63d-37cf-44c3-bab0-fdb210bf25e8"
     }
-  ]
+  ],
+
+  // Los registros del Worker se guardan (30-sep-2026): cuando alguien dice
+  // «no funciona», el resultado de cada intento queda para consultarlo en el
+  // panel, sin depender de tener `wrangler tail` abierto en ese momento. Solo
+  // se guarda lo que el código escribe con console.log, que nunca lleva
+  // correos, teléfonos ni IP: los registros automáticos de cada petición (con
+  // la IP y los encabezados) quedan apagados.
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
+  }
 }

@@ -30,6 +30,7 @@ const FIJAS: Record<string, string> = {
   "/inteligencia-de-mercado": "/en/market-intelligence",
   "/privacidad": "/en/privacy",
   "/terminos": "/en/terms",
+  "/boletin/confirmar": "/en/newsletter/confirm",
 };
 
 const FIJAS_INVERSAS: Record<string, string> = Object.fromEntries(

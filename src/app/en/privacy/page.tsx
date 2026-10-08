@@ -51,7 +51,10 @@ export default function Privacy() {
       titulo="Personal Data Processing Policy"
       bajada="If you write to us on WhatsApp, through the chat on this website, on Instagram or on Facebook, if you subscribe to the newsletter, or if you leave your details at a trade fair, we end up holding information about you. Here we explain what we do with it, for how long, and how to ask us to delete it."
       // La fecha de la versión en español que traduce esta página.
-      vigencia="September 29, 2026"
+      // The day this version was published, the same as the Spanish one
+      // (approved by Rafael on October 8, 2026). The previous one in production
+      // took effect on September 29, 2026.
+      vigencia="October 8, 2026"
     >
       <Seccion titulo="1. Who is responsible for your data">
         <p>
@@ -90,8 +93,10 @@ export default function Privacy() {
           <li>
             <strong>The form on this website.</strong> We store what you
             write—your name, the phone number or email address at which you want
-            us to contact you, the project that interests you and your
-            message—together with the record of your authorization: the date
+            us to contact you, the project that interests you, your approximate
+            budget, how you would pay and what the purchase is for (in ranges,
+            with a “Not sure yet” option), and your message—together with the
+            record of your authorization: the date
             and time of submission, the version of the text you accepted, your
             IP address and the browser you submitted it from. That record exists
             for a reason: the law requires us to be able to prove that your
@@ -100,6 +105,15 @@ export default function Privacy() {
             or list your property” page, the form also asks for the location
             and type of the property. After submitting, if you prefer, you can
             continue the conversation on WhatsApp.
+            <br />
+            The inquiry also carries <strong>how you found us</strong>. When
+            you arrive on this website, your browser notes, only in the open tab
+            and without cookies, how you first arrived: the campaign tags of the
+            link (utm), the click identifier that Google or Meta add to their
+            ads, the first page you saw and the domain of the site that sent
+            you. That information does not leave your browser unless you submit
+            a form; if you close the tab without submitting anything, it is
+            deleted.
           </li>
           <li>
             <strong>Newsletter subscription.</strong> If you subscribe to the
@@ -117,7 +131,11 @@ export default function Privacy() {
           <li>
             <strong>The assistant on WhatsApp and in this website’s chat.</strong>{" "}
             An automated assistant attends to you first and answers with public
-            information about our portfolio. If you ask for a call with Rafael,
+            information about our portfolio. We store the text of those
+            conversations in our sales management tool, to pick up where the
+            conversation left off and to check that the assistant answers well;
+            if you write on WhatsApp, the conversation is linked to your number.
+            If you ask for a call with Rafael,
             the assistant records your name, the city you are writing from, your
             number (on WhatsApp, the one you are writing from; in the chat, the
             one you give us), the day and time you chose and a summary of what
@@ -158,7 +176,9 @@ export default function Privacy() {
           visits, appointments and the reservation or purchase process with the
           relevant builder; to send you information about projects, availability
           and prices when you have agreed to receive it; and to keep the
-          internal record of our sales management.
+          internal record of our sales management, which includes how you
+          found us, so we know which channels and which ads bring us
+          inquiries.
         </p>
         <p id="boletin">
           If you subscribe to the newsletter, we use your email address only to
@@ -277,7 +297,8 @@ export default function Privacy() {
         </p>
         <p>
           Within the following fifteen business days, we delete your data from
-          our databases and from our sales management tools, and we confirm to
+          our databases and from our sales management tools—including your
+          conversations with the assistant—and we confirm to
           you through the same channel that we have done so. We keep only what
           a legal or contractual duty requires us to keep, and in that case we
           tell you what remains and why.
@@ -326,15 +347,22 @@ export default function Privacy() {
           them sooner—just write to us, as explained in section 7.
         </p>
         <p>
-          Those inquiries, and the newsletter email addresses, are stored in a
-          database hosted on Cloudflare’s infrastructure, encrypted at rest.
+          Conversations with the assistant on WhatsApp and in the chat are kept
+          for <strong>two years from the last message</strong>, and we delete
+          them sooner if you ask us to.
+        </p>
+        <p>
+          Those inquiries, the conversations with the assistant and the
+          newsletter email addresses are stored in a database hosted on
+          Cloudflare’s infrastructure, encrypted at rest.
           The form can only write to it; reading is done by the data controller
           with his own credentials, and it is not exposed on the website.
         </p>
         <p>
-          The form also uses Cloudflare Turnstile, an automatic check that
-          tells a person apart from a program before the inquiry is saved. For
-          most people it is invisible: there is no image puzzle to solve.
+          The inquiry and newsletter forms also use Cloudflare Turnstile, an
+          automatic check that tells a person apart from a program before what
+          you send is saved. For most people it is invisible: there is no
+          image puzzle to solve.
           Turnstile does not install tracking cookies or use your data for
           advertising, and it runs on the same infrastructure that already hosts
           this website, so your inquiry does not go through an additional third

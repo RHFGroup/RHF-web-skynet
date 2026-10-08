@@ -621,9 +621,9 @@ const es = {
     pensionado: "Una pensión",
     exterior: "Trabajo fuera de Colombia",
   } as Record<TipoIngreso, string>,
-  // El texto de la autorización, idéntico al de ContactForm (versión 2026-09-18).
+  // El texto de la autorización, idéntico al de ContactForm (versión 2026-10-07; antes, 2026-09-18).
   autorizo: "Autorizo a ",
-  tratar: " a tratar mis datos personales para contactarme sobre esta consulta",
+  tratar: " a tratar mis datos personales para contactarme sobre esta consulta y para saber por qué medio llegué a esta página",
   conforme: ", conforme a la",
   politica: "política de tratamiento de datos",
   derechos: ". Puedo conocer, actualizar, rectificar o suprimir mis datos escribiendo a ",
@@ -1117,9 +1117,9 @@ const en: Textos = {
     pensionado: "A pension",
     exterior: "Work outside Colombia",
   },
-  // The same consent text as ContactForm (version 2026-09-18).
+  // The same consent text as ContactForm (version 2026-10-07; before, 2026-09-18).
   autorizo: "I authorize ",
-  tratar: " to process my personal data to contact me about this inquiry",
+  tratar: " to process my personal data to contact me about this inquiry and to know how I found this page",
   conforme: ", in accordance with the",
   politica: "data processing policy",
   derechos: ". I can access, update, correct or delete my data by writing to ",

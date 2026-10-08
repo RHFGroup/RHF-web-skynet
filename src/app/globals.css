@@ -315,6 +315,20 @@ h1, h2, h3, h4 {
   background-position: right 14px center;
 }
 .contacto-form .btn-primary { width: 100%; justify-content: center; margin-top: 8px; }
+/* Las tres preguntas del comprador (7-oct-2026): un grupo con su título, para
+   que se lean como una sola pregunta y no como tres trámites. */
+.form-calificacion {
+  min-width: 0; margin: 4px 0 16px; padding: 14px 14px 0;
+  border: 1px solid var(--marfil-dark); border-radius: 14px;
+}
+.form-calificacion legend {
+  padding: 0 6px; font-size: 12px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--cuero);
+}
+.form-calificacion label:last-child { margin-bottom: 14px; }
+/* La referencia en dólares del presupuesto, debajo del selector. */
+.form-ayuda { margin: -10px 0 16px; font-size: 12px; line-height: 1.5; color: var(--marino); }
+.form-ayuda small { display: block; color: var(--text-muted); font-size: 11px; }
 .form-disclaimer {
   margin-top: 14px; color: var(--text-muted); font-size: 12px;
   text-align: center; line-height: 1.5;
