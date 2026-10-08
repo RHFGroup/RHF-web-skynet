@@ -60,8 +60,7 @@ export default function Gracias({ idioma = "es" }: { idioma?: Idioma }) {
 
       {respuestas.length > 0 && (
         <div className="ase-gracias-resumen">
-          <p>{t.tuResumen}</p>
-          <ul>
+          <ul aria-label={t.tuResumen}>
             {respuestas.map((r, i) => (
               <li key={r} style={{ ["--i" as string]: i }}>
                 {r}
@@ -78,25 +77,16 @@ export default function Gracias({ idioma = "es" }: { idioma?: Idioma }) {
         {t.escribirYa}
       </a>
 
-      <div className="ase-mientras">
-        <p className="ase-mientras-titulo">{t.mientras}</p>
-        <a className="ase-mientras-tarjeta" href={ruta(idioma, "/simulador")}>
-          <strong>{t.simulador} →</strong>
-          <span>{t.simuladorTexto}</span>
-        </a>
+      <p className="ase-mientras">
+        <span>{t.mientras}:</span>
+        <a href={ruta(idioma, "/simulador")}>{t.simulador}</a>
         {REDES.map((r) => (
-          <a key={r.id} className="ase-mientras-tarjeta" href={r.url} target="_blank" rel="noopener noreferrer">
-            <strong>
-              {t.redes} · {r.nombre} →
-            </strong>
-            <span>{r.usuario}</span>
+          <a key={r.id} href={r.url} target="_blank" rel="noopener noreferrer">
+            {r.nombre}
           </a>
         ))}
-      </div>
-
-      <a className="ase-volver" href={ruta(idioma, "/")}>
-        {t.volver}
-      </a>
+        <a href={ruta(idioma, "/")}>rhfliving.com</a>
+      </p>
     </div>
   );
 }

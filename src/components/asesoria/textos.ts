@@ -76,8 +76,6 @@ type Textos = {
   faltaAutorizacion: string;
   fallo: string;
   falloWhatsapp: string;
-  comoTitulo: string;
-  como: { titulo: string; texto: string }[];
   graciasTitulo: string;
   graciasDescripcion: string;
   listo: (nombre: string) => string;
@@ -89,9 +87,6 @@ type Textos = {
   waSinResumen: string;
   mientras: string;
   simulador: string;
-  simuladorTexto: string;
-  redes: string;
-  volver: string;
   aviso: string;
   waFallo: (nombre: string, resumen: string) => string;
 };
@@ -101,12 +96,12 @@ export const TEXTOS: Record<Idioma, Textos> = {
     titulo: "Asesoría inmobiliaria en Cartagena | RHF Living",
     descripcion: "Cuéntame qué buscas en tres toques y te escribo por WhatsApp con opciones que encajan con tu presupuesto y tu momento.",
     kicker: "Asesoría inmobiliaria en Cartagena",
-    h1: "Cuéntame qué buscas y te escribo con opciones que encajan contigo.",
-    lede: "Tres toques y tu WhatsApp. Te respondo yo, con opciones de compra en Cartagena pensadas para tu presupuesto y tu momento.",
+    h1: "Cuéntame qué buscas. Te escribo con opciones.",
+    lede: "Tres toques y tu WhatsApp. Te respondo yo.",
     confianza: [
-      "Vivo y trabajo en la Zona Norte de Cartagena, y compré donde asesoro.",
-      "Asesoro proyectos de varias constructoras: los comparo frente a ti.",
-      "Cada precio que te paso lleva su fecha de corte y su fuente.",
+      "Vivo y compré en la Zona Norte",
+      "Comparo varias constructoras",
+      "Precios con fecha y fuente",
     ],
     firma: "Rafael Hernández Franco",
     firmaRol: "Asesor inmobiliario · RHF Living",
@@ -117,39 +112,39 @@ export const TEXTOS: Record<Idioma, Textos> = {
       para: {
         titulo: "¿Para qué buscas?",
         opciones: [
-          { valor: "vivir", texto: "Para vivir", nota: "Mi casa o la de mi familia" },
-          { valor: "invertir", texto: "Para invertir", nota: "Rentar o hacer crecer mi capital" },
-          { valor: "ambas", texto: "Las dos", nota: "Vivir y que también rinda" },
+          { valor: "vivir", texto: "Para vivir" },
+          { valor: "invertir", texto: "Para invertir" },
+          { valor: "ambas", texto: "Las dos" },
         ],
       },
       cuando: {
         titulo: "¿Para cuándo?",
         opciones: [
-          { valor: "ya", texto: "Lo antes posible" },
-          { valor: "3-6", texto: "En 3 a 6 meses" },
-          { valor: "6-12", texto: "En 6 a 12 meses" },
-          { valor: "explorando", texto: "Estoy explorando" },
+          { valor: "ya", texto: "Ya" },
+          { valor: "3-6", texto: "3 a 6 meses" },
+          { valor: "6-12", texto: "6 a 12 meses" },
+          { valor: "explorando", texto: "Solo explorando" },
         ],
       },
       presupuesto: {
-        titulo: "¿Con qué presupuesto aproximado?",
-        nota: "En pesos colombianos. Sirve para mandarte solo lo que encaja.",
+        titulo: "¿Tu presupuesto?",
+        nota: "Aproximado, en pesos colombianos.",
         opciones: [
-          { valor: "hasta-300", texto: "Hasta $300 millones" },
-          { valor: "300-500", texto: "$300 a $500 millones" },
-          { valor: "500-800", texto: "$500 a $800 millones" },
-          { valor: "mas-800", texto: "Más de $800 millones" },
+          { valor: "hasta-300", texto: "Hasta $300 M" },
+          { valor: "300-500", texto: "$300 a $500 M" },
+          { valor: "500-800", texto: "$500 a $800 M" },
+          { valor: "mas-800", texto: "Más de $800 M" },
           { valor: "no-se", texto: "Aún no lo sé" },
         ],
       },
     },
     datosTitulo: "¿A dónde te escribo?",
-    datosLede: "Te escribo por WhatsApp. Nada de llamadas sorpresa.",
+    datosLede: "Por WhatsApp. Sin llamadas sorpresa.",
     nombre: "Tu nombre",
     nombrePlaceholder: "Nombre y apellido",
     whatsapp: "Tu WhatsApp",
     whatsappPlaceholder: "+57 300 000 0000",
-    whatsappAyuda: "Si vives fuera de Colombia, escribe el indicativo de tu país.",
+    whatsappAyuda: "Con indicativo si estás fuera de Colombia.",
     autorizo: "Autorizo a ",
     tratar: " a tratar mis datos personales para contactarme sobre ",
     conforme: "esta consulta, conforme a la",
@@ -162,26 +157,17 @@ export const TEXTOS: Record<Idioma, Textos> = {
     faltaAutorizacion: "Para escribirte necesito tu autorización: marca la casilla.",
     fallo: "No se pudo enviar. Tus respuestas siguen aquí: vuelve a intentarlo o escríbeme directo.",
     falloWhatsapp: "Escribirme por WhatsApp",
-    comoTitulo: "Así sigue",
-    como: [
-      { titulo: "Me cuentas", texto: "Tres toques y tu WhatsApp. Unos 20 segundos." },
-      { titulo: "Te escribo", texto: "Por WhatsApp, para entender bien lo que buscas." },
-      { titulo: "Te mando opciones", texto: "Las que encajan con tu presupuesto, con precio, fecha de corte y documentos." },
-    ],
     graciasTitulo: "Gracias | RHF Living",
     graciasDescripcion: "Recibí tus datos. Te escribo por WhatsApp.",
     listo: (nombre) => `¡Listo, ${nombre}!`,
     listoSinNombre: "¡Listo!",
-    recibido: "Recibí tus respuestas. Te escribo por WhatsApp para conocer bien lo que buscas.",
+    recibido: "Te escribo por WhatsApp.",
     tuResumen: "Lo que me contaste",
     escribirYa: "Escríbeme ya por WhatsApp",
     waGracias: (resumen) => `Hola Rafael, acabo de dejar mis datos en tu página. ${resumen}`,
     waSinResumen: "Hola Rafael, acabo de dejar mis datos en tu página.",
     mientras: "Mientras tanto",
-    simulador: "Calcula cuánto necesitas",
-    simuladorTexto: "Tu cuota, el ingreso que te pide el banco y los gastos de escritura.",
-    redes: "Sígueme",
-    volver: "Ir a rhfliving.com",
+    simulador: "Simulador de crédito",
     aviso: "Rafael Hernández Franco — asesor inmobiliario independiente. Tus datos se usan solo para responder tu consulta.",
     waFallo: (nombre, resumen) => `Hola Rafael, soy ${nombre || "…"}. ${resumen}`,
   },
@@ -189,12 +175,12 @@ export const TEXTOS: Record<Idioma, Textos> = {
     titulo: "Real estate advisory in Cartagena | RHF Living",
     descripcion: "Tell me what you're looking for in three taps and I'll message you on WhatsApp with options that fit your budget and timing.",
     kicker: "Real estate advisory in Cartagena",
-    h1: "Tell me what you're looking for and I'll send you options that fit.",
-    lede: "Three taps and your WhatsApp. I reply personally, with options to buy in Cartagena that fit your budget and your timing.",
+    h1: "Tell me what you're looking for. I'll send you options.",
+    lede: "Three taps and your WhatsApp. I reply personally.",
     confianza: [
-      "I live and work in Cartagena's Zona Norte, and I bought where I advise.",
-      "I represent projects from several developers: I compare them with you.",
-      "Every price I send you comes with its cut-off date and its source.",
+      "I live and bought in the Zona Norte",
+      "I compare several developers",
+      "Prices with date and source",
     ],
     firma: "Rafael Hernández Franco",
     firmaRol: "Real estate advisor · RHF Living",
@@ -205,23 +191,23 @@ export const TEXTOS: Record<Idioma, Textos> = {
       para: {
         titulo: "What is it for?",
         opciones: [
-          { valor: "vivir", texto: "To live in", nota: "My home or my family's" },
-          { valor: "invertir", texto: "To invest", nota: "Rent it out or grow my capital" },
-          { valor: "ambas", texto: "Both", nota: "Live in it and have it pay off" },
+          { valor: "vivir", texto: "To live in" },
+          { valor: "invertir", texto: "To invest" },
+          { valor: "ambas", texto: "Both" },
         ],
       },
       cuando: {
         titulo: "When?",
         opciones: [
-          { valor: "ya", texto: "As soon as possible" },
-          { valor: "3-6", texto: "In 3 to 6 months" },
-          { valor: "6-12", texto: "In 6 to 12 months" },
+          { valor: "ya", texto: "Now" },
+          { valor: "3-6", texto: "3 to 6 months" },
+          { valor: "6-12", texto: "6 to 12 months" },
           { valor: "explorando", texto: "Just exploring" },
         ],
       },
       presupuesto: {
-        titulo: "Approximate budget?",
-        nota: "In Colombian pesos. It helps me send only what fits.",
+        titulo: "Your budget?",
+        nota: "Approximate, in Colombian pesos.",
         opciones: [
           { valor: "hasta-300", texto: "Up to COP 300M" },
           { valor: "300-500", texto: "COP 300M to 500M" },
@@ -232,7 +218,7 @@ export const TEXTOS: Record<Idioma, Textos> = {
       },
     },
     datosTitulo: "Where should I message you?",
-    datosLede: "I'll message you on WhatsApp. No surprise calls.",
+    datosLede: "On WhatsApp. No surprise calls.",
     nombre: "Your name",
     nombrePlaceholder: "First and last name",
     whatsapp: "Your WhatsApp",
@@ -250,26 +236,17 @@ export const TEXTOS: Record<Idioma, Textos> = {
     faltaAutorizacion: "I need your authorization to message you: tick the box.",
     fallo: "It didn't go through. Your answers are still here: try again or message me directly.",
     falloWhatsapp: "Message me on WhatsApp",
-    comoTitulo: "What happens next",
-    como: [
-      { titulo: "You tell me", texto: "Three taps and your WhatsApp. About 20 seconds." },
-      { titulo: "I message you", texto: "On WhatsApp, to understand what you're looking for." },
-      { titulo: "I send you options", texto: "The ones that fit your budget, with price, cut-off date and documents." },
-    ],
     graciasTitulo: "Thank you | RHF Living",
     graciasDescripcion: "I got your details. I'll message you on WhatsApp.",
     listo: (nombre) => `All set, ${nombre}!`,
     listoSinNombre: "All set!",
-    recibido: "I got your answers. I'll message you on WhatsApp to understand what you're looking for.",
+    recibido: "I'll message you on WhatsApp.",
     tuResumen: "What you told me",
     escribirYa: "Message me now on WhatsApp",
     waGracias: (resumen) => `Hi Rafael, I just left my details on your website. ${resumen}`,
     waSinResumen: "Hi Rafael, I just left my details on your website.",
     mientras: "Meanwhile",
-    simulador: "Work out what you need",
-    simuladorTexto: "Your payment, the income the bank asks for and closing costs.",
-    redes: "Follow me",
-    volver: "Go to rhfliving.com",
+    simulador: "Mortgage simulator",
     aviso: "Rafael Hernández Franco — independent real estate advisor. Your details are used only to answer your inquiry.",
     waFallo: (nombre, resumen) => `Hi Rafael, this is ${nombre || "…"}. ${resumen}`,
   },

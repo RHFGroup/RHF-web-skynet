@@ -72,6 +72,32 @@ function leerFuente(): { fuente: string; consulta: string } {
 
 const TOTAL = 4;
 
+/** Íconos de trazo para las tres opciones del primer paso (se leen sin texto). */
+const ICONOS: Record<string, React.ReactNode> = {
+  vivir: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 11.5 12 4l9 7.5" />
+      <path d="M5.5 10v9.5h13V10" />
+      <path d="M10 19.5v-5h4v5" />
+    </svg>
+  ),
+  invertir: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 19.5h16" />
+      <path d="M5 15.5l4.5-4.5 3.5 3 6-6.5" />
+      <path d="M14.5 7.5H19V12" />
+    </svg>
+  ),
+  ambas: (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M2.5 12 9 6.5l6.5 5.5" />
+      <path d="M4.5 10.5v8h9v-8" />
+      <path d="M15 19.5l3-3.5 3.5-4.5" />
+      <path d="M18.5 11.5h3v3" />
+    </svg>
+  ),
+};
+
 export default function Captacion({ idioma = "es" }: { idioma?: Idioma }) {
   const t = TEXTOS[idioma];
   const [paso, setPaso] = useState(0);
@@ -185,16 +211,18 @@ export default function Captacion({ idioma = "es" }: { idioma?: Idioma }) {
     }
   }
 
-  const progreso = ((paso + (paso === 3 ? 0.5 : 0)) / (TOTAL - 0.5)) * 100;
-
+  /**
+   * Las opciones de un paso. «iconos»: tarjetas con ícono en fila (primer
+   * paso). «chips»: botones cortos en rejilla de dos columnas (los otros).
+   */
   const opciones = <K extends string>(
-    lista: { valor: K; texto: string; nota?: string }[],
+    lista: { valor: K; texto: string }[],
     actual: K | null,
     fijar: (v: K) => void,
     nombrePaso: string,
-    columnas = false,
+    forma: "iconos" | "chips",
   ) => (
-    <div className={`ase-opciones${columnas ? " ase-opciones-col" : ""}`}>
+    <div className={`ase-opciones ase-opciones-${forma}`}>
       {lista.map((o, i) => (
         <button
           key={o.valor}
@@ -204,23 +232,20 @@ export default function Captacion({ idioma = "es" }: { idioma?: Idioma }) {
           style={{ ["--i" as string]: i }}
           onClick={() => elegir(o.valor, fijar, nombrePaso)}
         >
+          {forma === "iconos" && <span className="ase-opcion-icono">{ICONOS[o.valor]}</span>}
           <span className="ase-opcion-texto">{o.texto}</span>
-          {o.nota && <span className="ase-opcion-nota">{o.nota}</span>}
-          <span className="ase-opcion-flecha" aria-hidden="true">
-            →
-          </span>
         </button>
       ))}
     </div>
   );
 
   const pasos = [
-    { titulo: t.preguntas.para.titulo, cuerpo: opciones(t.preguntas.para.opciones, para, setPara, "para") },
-    { titulo: t.preguntas.cuando.titulo, cuerpo: opciones(t.preguntas.cuando.opciones, cuando, setCuando, "cuando", true) },
+    { titulo: t.preguntas.para.titulo, cuerpo: opciones(t.preguntas.para.opciones, para, setPara, "para", "iconos") },
+    { titulo: t.preguntas.cuando.titulo, cuerpo: opciones(t.preguntas.cuando.opciones, cuando, setCuando, "cuando", "chips") },
     {
       titulo: t.preguntas.presupuesto.titulo,
       nota: t.preguntas.presupuesto.nota,
-      cuerpo: opciones(t.preguntas.presupuesto.opciones, presupuesto, setPresupuesto, "presupuesto", true),
+      cuerpo: opciones(t.preguntas.presupuesto.opciones, presupuesto, setPresupuesto, "presupuesto", "chips"),
     },
   ];
 
@@ -229,15 +254,26 @@ export default function Captacion({ idioma = "es" }: { idioma?: Idioma }) {
       {cargarTurnstile && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />}
 
       <div className="ase-cabeza">
-        <span className="ase-contador">{t.paso(paso + 1, TOTAL)}</span>
-        {paso > 0 && (
-          <button type="button" className="ase-atras" onClick={() => ir(paso - 1)}>
-            ← {t.atras}
-          </button>
-        )}
-      </div>
-      <div className="ase-barra" aria-hidden="true">
-        <span style={{ width: `${Math.max(6, progreso)}%` }} />
+        <button
+          type="button"
+          className="ase-atras"
+          onClick={() => ir(paso - 1)}
+          aria-label={t.atras}
+          style={{ visibility: paso > 0 ? "visible" : "hidden" }}
+          tabIndex={paso > 0 ? 0 : -1}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
+        <ol className="ase-puntos" aria-label={t.paso(paso + 1, TOTAL)}>
+          {Array.from({ length: TOTAL }, (_, i) => (
+            <li key={i} data-estado={i < paso ? "hecho" : i === paso ? "actual" : "falta"} aria-current={i === paso ? "step" : undefined} />
+          ))}
+        </ol>
+        <span className="ase-contador" aria-hidden="true">
+          {paso + 1}/{TOTAL}
+        </span>
       </div>
 
       <div className={`ase-paso ase-paso-${sentido}`} key={paso}>

@@ -108,21 +108,6 @@ export default function PaginaAsesoria({ idioma = "es" }: { idioma?: Idioma }) {
         </div>
       </section>
 
-      <section className="ase-como" aria-labelledby="ase-como-titulo">
-        <h2 id="ase-como-titulo">{t.comoTitulo}</h2>
-        <ol>
-          {t.como.map((c, i) => (
-            <li key={c.titulo}>
-              <span className="ase-como-n" aria-hidden="true">
-                {i + 1}
-              </span>
-              <strong>{c.titulo}</strong>
-              <span>{c.texto}</span>
-            </li>
-          ))}
-        </ol>
-      </section>
-
       <Pie idioma={idioma} />
     </main>
   );
