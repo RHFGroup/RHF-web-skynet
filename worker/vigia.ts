@@ -74,7 +74,7 @@ const OBJETIVOS = [
   {
     clave: "whatsapp",
     nombre: "WhatsApp",
-    url: "https://wa-hrf.syberloop.com/whatsapp/webhook",
+    url: "https://wa-hrf.rhfliving.com/whatsapp/webhook",
     sondeo: "http",
   },
 ] as const;
@@ -471,7 +471,7 @@ const PISTAS: Record<Pista, string[]> = {
   ],
   ciego: [
     "Cloudflare no deja pasar al vigía. No significa que el agente esté caído:",
-    "probar el chat a mano y revisar las reglas de seguridad de la zona (rhfliving.com el chat, syberloop.com WhatsApp).",
+    "probar el chat a mano y revisar las reglas de seguridad de la zona rhfliving.com.",
   ],
   red: ["Error de red desde Cloudflare. Si se repite, probar el chat a mano."],
 };
