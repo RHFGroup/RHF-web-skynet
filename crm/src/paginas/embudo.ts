@@ -10,14 +10,35 @@
  *
  * Las columnas cerradas (Separó, Vendido, Perdido, Descartado) muestran solo
  * lo de los últimos 30 días; lo anterior queda en la lista.
+ *
+ * Desde el 9-oct-2026 (pedido de Rafael), cada tarjeta tiene:
+ *  - «Info»: los datos del lead en un diálogo, sin salir del embudo. Van
+ *    escritos en la página, en un <template> por tarjeta: las lecturas del
+ *    CRM solo se entregan a navegaciones (src/seguridad.ts), nunca a un
+ *    fetch(). Sin JavaScript, el botón abre la ficha;
+ *  - «Eliminar»: borra todo el lead (src/proteccion.ts, `eliminar`), después
+ *    de confirmar en un diálogo. Sin JavaScript, se elimina desde la ficha.
  */
 import { html, crudo, type Html } from "../html";
 import type { Ctx } from "../base";
-import { ETAPAS, MOTIVOS_PERDIDA, nombreDeInteres, type Tipo } from "../datos";
+import { ETAPAS, MOTIVOS_PERDIDA, PROPOSITOS, etapaDe, nombreDeInteres, type Tipo } from "../datos";
 import { minutosHabiles } from "../horario";
-import { hoy } from "../tiempo";
+import { fechaLarga, fechaLocal, hace, hoy } from "../tiempo";
+import { nombreCanal } from "../canales";
 import { valorDe } from "../valor";
-import { pagina, chipCanal, chipPuntaje, chipSla, botonesContacto, iniciales, pesosCortos, icono, vacio } from "./comun";
+import { FORMAS_PAGO, NO_SE, RANGOS_PRESUPUESTO, nombreDe } from "@/data/calificacion";
+import {
+  pagina,
+  chipCanal,
+  chipPuntaje,
+  chipSla,
+  botonesContacto,
+  iniciales,
+  nombreFuente,
+  pesosCortos,
+  icono,
+  vacio,
+} from "./comun";
 
 type Tarjeta = {
   id: number;
@@ -38,7 +59,48 @@ type Tarjeta = {
   telefono: string | null;
   telefono_crudo: string | null;
   correo: string | null;
+  // Para el diálogo «Info» (9-oct-2026).
+  op_creada: string;
+  proposito: string | null;
+  pago: string | null;
+  presupuesto: string | null;
+  forma_pago: string | null;
+  proxima_accion: string | null;
+  ultima_actividad_en: string | null;
+  ciudad: string | null;
+  fuente: string;
+  contacto_creado: string;
+  /** La última actividad con texto, como JSON: {"tipo", "texto", "en"}. */
+  ultima: string | null;
+  /** Cuántas conversaciones con la IA tiene en el CRM. */
+  chats: number;
 };
+
+type Ultima = { tipo: string; texto: string | null; en: string };
+
+const TIPOS_ACTIVIDAD: Record<string, string> = {
+  nota: "Nota",
+  llamada: "Llamada",
+  whatsapp: "WhatsApp",
+  correo: "Correo",
+  visita: "Visita",
+  formulario: "Formulario de la web",
+  agente: "La IA",
+  chat: "Chat",
+  etapa: "Cambio de etapa",
+  puntaje: "Puntaje",
+  sistema: "Sistema",
+};
+
+function leerUltima(json: string | null): Ultima | null {
+  if (!json) return null;
+  try {
+    const u = JSON.parse(json) as Ultima;
+    return u && typeof u.en === "string" ? u : null;
+  } catch {
+    return null;
+  }
+}
 
 const DIAS_CERRADAS = 30;
 
@@ -64,7 +126,15 @@ export async function paginaEmbudo(c: Ctx, vistaPrevia: boolean): Promise<Html> 
       .prepare(
         `SELECT o.id, o.etapa, o.etapa_desde, o.puntaje, o.interes, o.canal, o.valor_estimado, o.rango_presupuesto,
                 o.espera_desde, o.higiene_nivel, o.proxima_accion_en, o.recorrido_en, o.cerrada,
-                c.id AS contacto_id, c.nombre, c.telefono, c.telefono_crudo, c.correo
+                o.creado_en AS op_creada, o.proposito, o.pago, o.presupuesto, o.forma_pago, o.proxima_accion,
+                o.ultima_actividad_en,
+                c.id AS contacto_id, c.nombre, c.telefono, c.telefono_crudo, c.correo, c.ciudad, c.fuente,
+                c.creado_en AS contacto_creado,
+                (SELECT json_object('tipo', a.tipo, 'texto', substr(a.texto, 1, 280), 'en', a.creado_en)
+                   FROM crm_actividades a
+                  WHERE a.contacto_id = c.id AND a.texto IS NOT NULL AND a.texto != ''
+                  ORDER BY a.creado_en DESC, a.id DESC LIMIT 1) AS ultima,
+                (SELECT COUNT(*) FROM agente_conversaciones k WHERE k.contacto_id = c.id) AS chats
            FROM crm_oportunidades o JOIN crm_contactos c ON c.id = o.contacto_id
           WHERE ${condiciones.join(" AND ")}
           ORDER BY (o.espera_desde IS NULL), o.espera_desde ASC, o.etapa_desde DESC
@@ -88,16 +158,82 @@ export async function paginaEmbudo(c: Ctx, vistaPrevia: boolean): Promise<Html> 
   for (const f of filas.results) porEtapa.get(f.etapa)?.push(f);
   const volver = tipo === "venta" ? "/embudo?tipo=venta" : "/embudo";
 
+  // El diálogo «Info» de cada tarjeta: crm.js lo copia de este <template>.
+  const dato = (etiqueta: string, valor: string | Html | null | undefined, ayuda?: string) =>
+    html`<div class="dato"><dt>${etiqueta}</dt><dd>${valor || html`<span class="falta">Sin dato</span>`}${ayuda ? html`<small>${ayuda}</small>` : ""}</dd></div>`;
+  const info = (f: Tarjeta, dias: number, espera: number | null, nombre: string): Html => {
+    const e = etapaDe(tipo, f.etapa);
+    const v = valorDe(f);
+    const u = leerUltima(f.ultima);
+    const telefono = f.telefono ?? f.telefono_crudo;
+    const rango = f.rango_presupuesto ? nombreDe(RANGOS_PRESUPUESTO, f.rango_presupuesto) : f.presupuesto;
+    const pago = f.pago ? nombreDe(FORMAS_PAGO, f.pago) : f.forma_pago;
+    const proposito = f.proposito ? PROPOSITOS[f.proposito] ?? f.proposito : null;
+    const programado = [
+      f.proxima_accion || f.proxima_accion_en
+        ? html`<li><strong>Próxima acción:</strong> ${f.proxima_accion ?? "sin detalle"}${f.proxima_accion_en ? html` · ${fechaLocal(f.proxima_accion_en)}` : ""}</li>`
+        : "",
+      f.recorrido_en ? html`<li><strong>Recorrido:</strong> ${fechaLocal(f.recorrido_en)}</li>` : "",
+    ];
+    // Lo de arriba se desliza; «Abrir la ficha» y «Eliminar» quedan siempre a la vista.
+    return html`<template data-plantilla-info>
+<div class="info-desliza">
+  <header class="info-cabeza">
+    <span class="avatar" aria-hidden="true">${iniciales(f.nombre)}</span>
+    <div>
+      <h2 id="info-titulo">${nombre}</h2>
+      <p class="meta"><span class="chip etapa--${e?.tono ?? "nuevo"}">${e?.nombre ?? f.etapa}</span> ${dias === 0 ? "desde hoy" : dias === 1 ? "hace 1 día" : `hace ${dias} días`}</p>
+    </div>
+  </header>
+  <p class="chips">${chipCanal(f.canal)}${tipo === "compra" ? chipPuntaje(f.puntaje) : ""}${espera !== null ? chipSla(espera, f.espera_desde) : ""}${
+    f.higiene_nivel ? html`<span class="chip estado estado--por_vencer">${icono("reloj")}${f.higiene_nivel} días quieto</span>` : ""
+  }</p>
+  ${f.cerrada ? "" : html`<div class="info-contacto">${botonesContacto({ id: f.contacto_id, telefono: f.telefono, telefono_crudo: f.telefono_crudo, correo: f.correo })}</div>`}
+  <dl class="datos-clave">
+    ${dato("Teléfono", telefono)}
+    ${dato("Correo", f.correo)}
+    ${dato("Interés", f.interes ? nombreDeInteres(f.interes) : null)}
+    ${dato("Canal", f.canal && f.canal !== "sin_dato" ? nombreCanal(f.canal) : null, nombreFuente(f.fuente) || undefined)}
+    ${tipo === "compra"
+      ? html`${dato("Presupuesto", rango, f.rango_presupuesto === NO_SE ? "respondió «Aún no lo sé»" : undefined)}
+    ${dato("Forma de pago", pago, f.pago === NO_SE ? "respondió «Aún no lo sé»" : undefined)}
+    ${dato("Para qué compra", proposito)}`
+      : ""}
+    ${dato("Valor de referencia", v.valor ? pesosCortos(v.valor) : null, v.fuente === "rango" ? "punto medio del rango" : v.fuente === "cartera" ? "precio medio del proyecto" : v.fuente === "anotado" ? "anotado por ti" : undefined)}
+    ${dato("Ciudad", f.ciudad)}
+    ${dato("Llegó", fechaLarga(f.contacto_creado))}
+  </dl>
+  <h3 class="info-subtitulo">Seguimiento</h3>
+  <ul class="info-lista">
+    ${programado}
+    ${u
+      ? html`<li><strong>Última actividad:</strong> ${TIPOS_ACTIVIDAD[u.tipo] ?? u.tipo}, ${hace(u.en)}${u.texto ? html`<span class="info-texto">${u.texto}</span>` : ""}</li>`
+      : html`<li>Todavía no hay actividades.</li>`}
+    ${f.chats ? html`<li><strong>Chats con la IA:</strong> ${f.chats === 1 ? "1 conversación" : `${f.chats} conversaciones`}, en la ficha.</li>` : ""}
+  </ul>
+</div>
+  <div class="acciones info-acciones">
+    <a class="boton" href="/contacto/${f.contacto_id}">${icono("persona")}<span>Abrir la ficha</span></a>
+    <button class="boton-sec boton-sec--peligro" type="button" data-eliminar="${f.contacto_id}" data-nombre="${nombre}">${icono("basura")}<span>Eliminar</span></button>
+  </div>
+</template>`;
+  };
+
   const tarjeta = (f: Tarjeta, metaDias: number | undefined): Html => {
     const dias = Math.floor((ahora.getTime() - new Date(f.etapa_desde).getTime()) / 86_400_000);
     const v = valorDe(f);
     const espera = f.espera_desde ? minutosHabiles(new Date(f.espera_desde), ahora) : null;
     const programado = (f.proxima_accion_en ?? "") >= hoyLocal || (f.recorrido_en ?? "").slice(0, 10) >= hoyLocal;
     const estancada = !f.cerrada && metaDias !== undefined && dias > metaDias && !programado && espera === null;
+    const nombre = f.nombre || "Sin nombre";
     return html`<article class="tarjeta-lead" data-op="${f.id}" data-etapa="${f.etapa}" data-valor="${v.valor ?? 0}" tabindex="-1">
   <header class="tarjeta-lead-cabeza">
     <span class="avatar avatar--chico" aria-hidden="true">${iniciales(f.nombre)}</span>
-    <a class="tarjeta-lead-nombre" href="/contacto/${f.contacto_id}">${f.nombre || "Sin nombre"}</a>
+    <a class="tarjeta-lead-nombre" href="/contacto/${f.contacto_id}">${nombre}</a>
+    <span class="tarjeta-lead-botones">
+      <a class="boton-icono boton-icono--chico" href="/contacto/${f.contacto_id}" data-info title="Información" aria-label="Información de ${nombre}">${icono("info")}</a>
+      <button class="boton-icono boton-icono--chico boton-icono--peligro" type="button" data-eliminar="${f.contacto_id}" data-nombre="${nombre}" title="Eliminar" aria-label="Eliminar a ${nombre}" hidden>${icono("basura")}</button>
+    </span>
   </header>
   <p class="tarjeta-lead-meta">${f.interes ? nombreDeInteres(f.interes) : "Sin proyecto"}${v.valor ? html` · <b>${pesosCortos(v.valor)}</b>` : ""}</p>
   <p class="chips">${chipCanal(f.canal)}${tipo === "compra" && f.puntaje !== "sin" ? chipPuntaje(f.puntaje) : ""}${
@@ -122,6 +258,7 @@ export async function paginaEmbudo(c: Ctx, vistaPrevia: boolean): Promise<Html> 
       <div class="acciones"><button class="boton-sec boton--chico" type="submit">Mover</button></div>
     </form>
   </details>
+  ${info(f, dias, espera, nombre)}
 </article>`;
   };
 
@@ -173,8 +310,24 @@ export async function paginaEmbudo(c: Ctx, vistaPrevia: boolean): Promise<Html> 
   </form>
 </dialog>`;
 
+  const dialogoInfo = html`<dialog class="dialogo dialogo--info" id="dialogo-info" aria-labelledby="info-titulo">
+  <form method="dialog" class="dialogo-cerrar"><button class="boton-icono" value="cerrar" aria-label="Cerrar">${icono("cerrar")}</button></form>
+  <div class="info-marco" data-info-cuerpo></div>
+</dialog>`;
+
+  // Un solo formulario para eliminar: crm.js le pone el contacto antes de abrirlo.
+  const dialogoEliminar = html`<dialog class="dialogo" id="dialogo-eliminar" aria-labelledby="dialogo-eliminar-titulo">
+  <form method="post" action="/contacto/0/eliminar" class="rejilla rejilla--una">
+    <input type="hidden" name="volver" value="${volver}">
+    <input type="hidden" name="confirmar" value="si">
+    <h2 id="dialogo-eliminar-titulo">¿Eliminar a <span data-nombre></span>?</h2>
+    <p class="nota">Se borran su ficha, sus oportunidades, notas y tareas, la copia de sus chats con la IA y su consulta del sitio. No se puede deshacer.</p>
+    <div class="acciones"><button class="boton-peligro" type="submit">Eliminar</button><button class="boton-sec" type="submit" formmethod="dialog" formnovalidate value="cancelar">Cancelar</button></div>
+  </form>
+</dialog>`;
+
   const cuerpo = filas.results.length || q
-    ? html`${cabecera}<div class="kanban" data-tipo="${tipo}" data-volver="${volver}">${columnas}</div>${dialogo}`
+    ? html`${cabecera}<div class="kanban" data-tipo="${tipo}" data-volver="${volver}">${columnas}</div>${dialogo}${dialogoInfo}${dialogoEliminar}`
     : html`${cabecera}${vacio(tipo === "compra" ? "Cuando entren compradores, aparecen aquí, en la columna «Nuevo»." : "Cuando entren propietarios, aparecen aquí.")}`;
 
   return pagina({

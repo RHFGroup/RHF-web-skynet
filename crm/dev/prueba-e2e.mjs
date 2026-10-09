@@ -113,8 +113,18 @@ page.on("response", (r) => {
   const u = new URL(r.url());
   if (anotarRecursos && r.status() >= 400 && r.request().resourceType() !== "document") recursosConError.push(`${r.status()} ${u.pathname}`);
 });
-// caret: "initial" para que Playwright no inyecte un estilo (la CSP lo bloquea y ensucia la consola).
-const captura = async (nombre) => CAPTURAS && page.screenshot({ path: `${CAPTURAS}/${nombre}.png`, fullPage: true, caret: "initial" });
+// caret: "initial" para que Playwright no inyecte un estilo (la CSP lo bloquea y
+// ensucia la consola). Aun así, en WebKit la captura pone una hoja de estilos que
+// la CSP rechaza (probado el 9-oct-2026: sin capturas no aparece). Ese aviso es
+// de Playwright, no del CRM: se descarta solo el que sale durante la captura.
+const captura = async (nombre) => {
+  if (!CAPTURAS) return;
+  const antes = erroresConsola.length;
+  await page.screenshot({ path: `${CAPTURAS}/${nombre}.png`, fullPage: true, caret: "initial" });
+  await page.waitForTimeout(100);
+  const nuevos = erroresConsola.splice(antes);
+  erroresConsola.push(...nuevos.filter((t) => !t.includes("Refused to apply a stylesheet")));
+};
 const texto = async () => (await page.locator("main").innerText()).replace(/\s+/g, " ");
 const form = (accion) => `form[action='${RUTA}${accion}']`;
 

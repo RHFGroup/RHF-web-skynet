@@ -24,6 +24,7 @@ const ACCIONES: Record<string, string> = {
   reclamo: "Marcó reclamo en trámite",
   reclamo_cerrado: "Cerró el reclamo",
   suprimir: "Suprimió los datos de la persona",
+  eliminar: "Eliminó el lead y todos sus datos",
   baja_boletin: "Dio de baja del boletín",
   reactivar_boletin: "Reactivó en el boletín",
   exportar_boletin: "Exportó los suscriptores activos",
@@ -54,16 +55,33 @@ export function paginaMas(c: Ctx, vistaPrevia: boolean): Html {
   });
 }
 
-type Entrada = { id: number; creado_en: string; accion: string; entidad: string | null; entidad_id: number | null; detalle: string | null };
+type Entrada = {
+  id: number;
+  creado_en: string;
+  accion: string;
+  entidad: string | null;
+  entidad_id: number | null;
+  detalle: string | null;
+  /** 1 si la ficha todavía existe: las eliminadas no llevan enlace. */
+  existe: number;
+};
 
 export async function paginaAuditoria(c: Ctx, vistaPrevia: boolean): Promise<Html> {
   const r = await c.db
-    .prepare(`SELECT id, creado_en, accion, entidad, entidad_id, detalle FROM crm_auditoria ORDER BY id DESC LIMIT 200`)
+    .prepare(
+      `SELECT a.id, a.creado_en, a.accion, a.entidad, a.entidad_id, a.detalle, (c.id IS NOT NULL) AS existe
+         FROM crm_auditoria a LEFT JOIN crm_contactos c ON a.entidad = 'contacto' AND c.id = a.entidad_id
+        ORDER BY a.id DESC LIMIT 200`,
+    )
     .all<Entrada>();
   const lista = r.results.length
     ? html`<ol class="lista">${r.results.map(
         (e) => html`<li class="fila"><span><strong>${ACCIONES[e.accion] ?? e.accion}</strong>${
-          e.entidad === "contacto" && e.entidad_id ? html` · <a href="/contacto/${e.entidad_id}">ficha #${e.entidad_id}</a>` : ""
+          e.entidad === "contacto" && e.entidad_id
+            ? e.existe
+              ? html` · <a href="/contacto/${e.entidad_id}">ficha #${e.entidad_id}</a>`
+              : ` · ficha #${e.entidad_id} (eliminada)`
+            : ""
         }${e.entidad === "suscriptor" && e.entidad_id ? ` · suscriptor #${e.entidad_id}` : ""}
   <span class="meta">${fechaCorta(e.creado_en)}${e.detalle ? ` · ${e.detalle}` : ""}</span></span></li>`,
       )}</ol>`
