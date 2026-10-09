@@ -130,7 +130,10 @@ export function grupoDe(canal: string | null | undefined): Grupo {
 }
 
 const META = /^(facebook|fb|instagram|ig|meta|messenger|whatsapp_ads|audience[_-]?network)$/;
-const PAGO = /^(cpc|ppc|paid|paid[_ -]?social|paidsocial|social[_ -]?paid|ads?|cpm|cpv|cpa|display|video|pago|pagado|pauta)$/;
+// «video» no es pauta (9-oct-2026): es el medio del enlace de la descripción
+// de los videos (docs/asesoria/README.md), y GA4 también lo cuenta como
+// orgánico. Los anuncios de YouTube van con utm_medium=paid (o cpv, o cpc).
+const PAGO = /^(cpc|ppc|paid|paid[_ -]?social|paidsocial|social[_ -]?paid|ads?|cpm|cpv|cpa|display|pago|pagado|pauta)$/;
 
 /**
  * El canal de una consulta, por su `origen` (la ruta de la página, o
