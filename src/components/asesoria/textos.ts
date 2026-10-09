@@ -14,7 +14,9 @@
  *  · Sin plazo de respuesta: lo que se publica obliga (Ley 1480), y Rafael
  *    eligió el 7-oct «sin plazo + botón de WhatsApp».
  *  · La autorización es la misma del formulario de contacto (AVISO_VERSION
- *    2026-09-18), palabra por palabra.
+ *    2026-10-07), palabra por palabra. Desde el 9-oct-2026 suma «y para saber
+ *    por qué medio llegué a esta página», porque la consulta viaja con su
+ *    atribución (el canal que cuenta el CRM).
  *
  * Lo que viaja al Worker (rótulos del mensaje) va siempre en español, como
  * en ContactForm: Rafael lee los avisos en español.
@@ -166,7 +168,7 @@ export const TEXTOS: Record<Idioma, Textos> = {
     whatsappAyuda: "Con indicativo si estás fuera de Colombia.",
     autorizo: "Autorizo a ",
     tratar: " a tratar mis datos personales para contactarme sobre ",
-    conforme: "esta consulta, conforme a la",
+    conforme: "esta consulta y para saber por qué medio llegué a esta página, conforme a la",
     politica: "política de tratamiento de datos",
     derechos: ". Puedo conocer, actualizar, rectificar o suprimir mis datos escribiendo a ",
     enviar: "Quiero que me escribas",
@@ -187,7 +189,7 @@ export const TEXTOS: Record<Idioma, Textos> = {
     waSinResumen: "Hola Rafael, acabo de dejar mis datos en tu página.",
     mientras: "Mientras tanto",
     simulador: "Simulador de crédito",
-    aviso: "Rafael Hernández Franco — asesor inmobiliario independiente. Tus datos se usan solo para responder tu consulta.",
+    aviso: "Rafael Hernández Franco — asesor inmobiliario independiente. Tus datos se usan solo para responder tu consulta y saber por qué medio llegaste.",
     waFallo: (nombre, resumen) => `Hola Rafael, soy ${nombre || "…"}. ${resumen}`,
   },
   en: {
@@ -248,7 +250,7 @@ export const TEXTOS: Record<Idioma, Textos> = {
     whatsappAyuda: "Include your country code.",
     autorizo: "I authorize ",
     tratar: " to process my personal data to contact me about ",
-    conforme: "this inquiry, in accordance with the",
+    conforme: "this inquiry and to know how I found this page, in accordance with the",
     politica: "data processing policy",
     derechos: ". I can access, update, correct or delete my data by writing to ",
     enviar: "Message me",
@@ -269,7 +271,7 @@ export const TEXTOS: Record<Idioma, Textos> = {
     waSinResumen: "Hi Rafael, I just left my details on your website.",
     mientras: "Meanwhile",
     simulador: "Mortgage simulator",
-    aviso: "Rafael Hernández Franco — independent real estate advisor. Your details are used only to answer your inquiry.",
+    aviso: "Rafael Hernández Franco — independent real estate advisor. Your details are used only to answer your inquiry and to know how you found this page.",
     waFallo: (nombre, resumen) => `Hi Rafael, this is ${nombre || "…"}. ${resumen}`,
   },
 };
@@ -279,8 +281,10 @@ export const TEXTOS: Record<Idioma, Textos> = {
  * de src/components/ContactForm.tsx. Se repiten aquí para que esta página no
  * cargue en el navegador el formulario de contacto ni los datos de la cartera
  * que él importa. Si cambia el texto de la autorización, se cambian los dos.
+ * Antes, «2026-09-18»: el texto sin «y para saber por qué medio llegué a esta
+ * página».
  */
-export const AVISO_VERSION = "2026-09-18";
+export const AVISO_VERSION = "2026-10-07";
 export const TURNSTILE_SITE_KEY = "0x4AAAAAAE8W_1D4uDCgIB5S";
 
 /** La clave de sessionStorage que une el formulario con la página de gracias. */

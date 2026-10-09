@@ -10,9 +10,10 @@
  *
  * Usa el mismo buzón que el formulario de contacto: POST /api/consulta, con
  * la trampa para bots, Turnstile (invisible salvo que Cloudflare dude) y la
- * autorización de la Ley 1581 con su versión (AVISO_VERSION). No cambia el
- * Worker: las respuestas y el origen de la visita viajan en `mensaje` y en
- * `origen`, y Rafael los ve en el aviso de Telegram y en D1.
+ * autorización de la Ley 1581 con su versión (AVISO_VERSION). Las respuestas
+ * y el origen de la visita viajan en `mensaje` y en `origen`, para el aviso de
+ * Telegram, y también con los códigos del CRM (`objetivo`, `presupuesto` y
+ * `atribucion`), que el CRM cuenta en el embudo y en el tablero.
  *
  * Al guardar, pasa a la página de gracias. El teléfono nunca viaja en la
  * dirección: la página de gracias lee de sessionStorage solo el primer nombre
@@ -109,7 +110,7 @@ const ICONOS: Partial<Record<Para, React.ReactNode>> = {
  * Por dónde llegó, en la forma que guarda el CRM (`atribucion` del Worker):
  * las UTM y los identificadores de clic del enlace, la página de entrada y el
  * dominio que la mandó. Sin datos personales. El Worker solo se queda con las
- * claves que conoce, así que hoy no estorba y el CRM la usa al publicarse.
+ * claves que conoce (`limpiarAtribucion`) y de ahí saca el canal (`canalDe`).
  */
 function leerAtribucion(): Record<string, string> | undefined {
   try {

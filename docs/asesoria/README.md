@@ -17,7 +17,7 @@
   - Son páginas de campaña: `noindex`, fuera del menú y fuera del sitemap.
   - No llevan la cabecera ni el pie del sitio, ni el chat (`data-sin-chat`): una sola acción.
 - **Sin proyectos ni precios.** Por eso no son piezas publicitarias de un proyecto en el sentido de la Circular 004.
-- **El envío** va al mismo buzón: `POST /api/consulta`, con trampa, Turnstile y la autorización de la Ley 1581 (`AVISO_VERSION` 2026-09-18, el mismo texto del formulario de contacto). El Worker no cambió.
+- **El envío** va al mismo buzón: `POST /api/consulta`, con trampa, Turnstile y la autorización de la Ley 1581 (`AVISO_VERSION` 2026-10-07, el mismo texto del formulario de contacto). Desde el 9-oct-2026 la casilla suma «y para saber por qué medio llegué a esta página», porque la consulta viaja con su atribución; antes era la 2026-09-18.
   - `proyecto`: «Asesoría · página de captación».
   - `mensaje`: de dónde llegó (UTM o referer) y las tres respuestas, en español.
   - `origen`: la ruta con sus UTM. Llega en el aviso de Telegram.
@@ -29,7 +29,14 @@
 https://rhfliving.com/asesoria?utm_source=youtube&utm_medium=video&utm_campaign=<nombre-del-video>
 ```
 
-Con `utm_campaign` distinto por video, cada lead dice qué video lo trajo («Llegó por: youtube · video · campaña doral-recorrido»).
+Con `utm_campaign` distinto por video, cada lead dice qué video lo trajo («Llegó por: youtube · video · campaña doral-recorrido»). El CRM lo cuenta como YouTube orgánico.
+
+**En los anuncios**, el mismo enlace con `utm_medium=paid`, para que el tablero los cuente como pauta:
+
+- en Meta: `utm_source=facebook` o `utm_source=instagram`;
+- en YouTube Ads: `utm_source=youtube`.
+
+Por ejemplo: `https://rhfliving.com/asesoria?utm_source=instagram&utm_medium=paid&utm_campaign=<nombre-del-anuncio>`.
 
 ## Analítica
 
@@ -59,7 +66,8 @@ Rafael eligió «3 toques alineados» con el CRM y, para el primer paso, «Vivir
 
 - **Para qué** viaja como `objetivo`, con los códigos de `OBJETIVOS` del CRM: `vivir`, `renta_corta`, `renta_tradicional`, `patrimonio` y `no_se`.
 - **Presupuesto** viaja como `presupuesto`, con los códigos de `RANGOS_PRESUPUESTO`: `hasta_250`, `250_400`, `400_600`, `600_900`, `mas_900` y `no_se`.
-- **Atribución.** `atribucion` lleva las UTM, los identificadores de clic, la página de entrada y el dominio que trajo la visita. Con eso el CRM calcula el canal; por ejemplo, `utm_source=youtube` queda como `youtube`.
+- **Atribución.** `atribucion` lleva las UTM, los identificadores de clic, la página de entrada y el dominio que trajo la visita. Con eso el CRM calcula el canal (`crm/src/canales.ts`): `utm_source=youtube&utm_medium=video` queda como YouTube orgánico, y con `utm_medium=paid`, como YouTube Ads.
 - **Cuándo** no tiene campo en el CRM: queda en el `mensaje`.
-- **El Worker de hoy** ignora esos campos sin error. El del PR del tablero los guarda.
-- **Si cambian los códigos** en `src/data/calificacion.ts`, se cambian también en `textos.ts`. Cuando el tablero esté en master, conviene importar de ahí y usar `atribucionParaEnviar()` (primer toque).
+- **El Worker** guarda esos campos desde el tablero del CRM (#60, 8-oct-2026), y el CRM los cuenta en el embudo y en las 5 métricas del lunes.
+- **Calificado.** El tablero cuenta un lead como calificado si tiene presupuesto y forma de pago, puntaje A o B, o si ya llegó a la presentación. Esta página no pregunta la forma de pago: sus leads se califican con el puntaje en la ficha.
+- **Si cambian los códigos** en `src/data/calificacion.ts`, se cambian también en `textos.ts`. Si se vuelve a tocar esta página, conviene importarlos de ahí y usar `atribucionParaEnviar()` (primer toque).

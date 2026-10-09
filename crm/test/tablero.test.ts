@@ -31,7 +31,9 @@ test("el canal: anuncios de Meta, Google y YouTube, y lo orgánico", () => {
   assert.equal(canalDe(a({ utm_source: "facebook", utm_medium: "cpc", utm_campaign: "doral" })), "meta_ads");
   assert.equal(canalDe(a({ gclid: "abc123" })), "google_ads", "el clic de Google Ads basta");
   assert.equal(canalDe(a({ gclid: "abc123", utm_source: "youtube" })), "youtube_ads");
-  assert.equal(canalDe(a({ utm_source: "youtube", utm_medium: "video" })), "youtube_ads");
+  assert.equal(canalDe(a({ utm_source: "youtube", utm_medium: "video" })), "youtube", "el enlace de la descripción del video es orgánico, como en GA4");
+  assert.equal(canalDe(a({ utm_source: "youtube", utm_medium: "paid" })), "youtube_ads");
+  assert.equal(canalDe(a({ utm_source: "youtube", utm_medium: "cpv" })), "youtube_ads");
   assert.equal(canalDe(a({ utm_source: "instagram", utm_medium: "bio" })), "redes", "Instagram sin pauta");
   assert.equal(canalDe(a({ fbclid: "IwAR0x" })), "redes", "fbclid sin UTM no prueba que sea anuncio");
   assert.equal(canalDe(a({ referente: "www.google.com" })), "buscadores");
