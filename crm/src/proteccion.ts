@@ -1,7 +1,8 @@
 /**
  * Ley 1581 dentro del CRM (Prompt 3, §2.7): exportar los datos de una persona,
  * marcar un reclamo en trámite y suprimir sus datos. También la baja y la
- * reactivación en el boletín y su exportación.
+ * reactivación en el boletín y su exportación, y eliminar un lead del todo
+ * (9-oct-2026).
  */
 import { ahoraIso, auditar, existeTabla, sentenciaAuditoria, type Ctx } from "./base";
 import { volverA } from "./acciones";
@@ -171,6 +172,61 @@ export async function suprimir(c: Ctx, id: number, f: FormData): Promise<Respons
   }
   await c.db.batch(sentencias);
   return volverA(`/contacto/${id}`, { ok: "suprimido" });
+}
+
+/** Adónde vuelve el CRM después de eliminar: solo direcciones propias y conocidas. */
+const VUELTAS_ELIMINAR = new Set(["/embudo", "/embudo?tipo=venta", "/leads", "/propietarios", "/hoy"]);
+
+/**
+ * Eliminar un lead (9-oct-2026, pedido de Rafael: un botón en el embudo para
+ * borrarlo, y que borre «todo el lead»). A diferencia de «Suprimir», que deja
+ * la constancia de una solicitud del titular, aquí no queda nada de la
+ * persona:
+ *  - su ficha, sus oportunidades, sus actividades y sus tareas;
+ *  - la copia de sus conversaciones con la IA (las originales siguen en el
+ *    servidor del agente);
+ *  - sus consultas en el buzón del sitio.
+ * El boletín es otra autorización, con su propia doble confirmación: no se
+ * toca. En la auditoría queda solo que se eliminó la ficha #id, sin datos.
+ * Pide confirmar (`confirmar=si`) y no se puede deshacer.
+ */
+export async function eliminar(c: Ctx, id: number, f: FormData): Promise<Response> {
+  const pedida = String(f.get("volver") ?? "");
+  const vuelta = VUELTAS_ELIMINAR.has(pedida) ? pedida : "/embudo";
+  if (String(f.get("confirmar") ?? "") !== "si") return volverA(`/contacto/${id}`, { error: "eliminar" });
+
+  const contacto = await c.db
+    .prepare(`SELECT id, telefono FROM crm_contactos WHERE id = ?`)
+    .bind(id)
+    .first<{ id: number; telefono: string | null }>();
+  // Ya no existe (un doble envío, por ejemplo): no hay nada más que hacer.
+  if (!contacto) return volverA(vuelta, { ok: "eliminado" });
+
+  // En orden: las consultas se buscan por las actividades, que se borran después.
+  const sentencias: D1PreparedStatement[] = [
+    c.db
+      .prepare(
+        `DELETE FROM consultas
+          WHERE id IN (SELECT consulta_id FROM crm_actividades WHERE contacto_id = ? AND consulta_id IS NOT NULL)`,
+      )
+      .bind(id),
+  ];
+  if (await existeTabla(c.db, "agente_conversaciones")) {
+    const suyas = `SELECT id FROM agente_conversaciones WHERE contacto_id = ?1 OR (?2 IS NOT NULL AND telefono = ?2)`;
+    sentencias.push(
+      c.db.prepare(`DELETE FROM agente_mensajes WHERE conversacion_id IN (${suyas})`).bind(id, contacto.telefono),
+      c.db.prepare(`DELETE FROM agente_conversaciones WHERE id IN (${suyas})`).bind(id, contacto.telefono),
+    );
+  }
+  sentencias.push(
+    c.db.prepare(`DELETE FROM crm_tareas WHERE contacto_id = ?`).bind(id),
+    c.db.prepare(`DELETE FROM crm_actividades WHERE contacto_id = ?`).bind(id),
+    c.db.prepare(`DELETE FROM crm_oportunidades WHERE contacto_id = ?`).bind(id),
+    c.db.prepare(`DELETE FROM crm_contactos WHERE id = ?`).bind(id),
+    sentenciaAuditoria(c, "eliminar", "contacto", id),
+  );
+  await c.db.batch(sentencias);
+  return volverA(vuelta, { ok: "eliminado" });
 }
 
 /** La baja de quien respondió BAJA a un boletín. */

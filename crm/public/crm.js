@@ -5,6 +5,8 @@
 //  - Anota el intento de contacto al tocar WhatsApp, Llamar o Correo (SLA).
 //  - El embudo: arrastrar y soltar tarjetas entre etapas (mouse, o el dedo
 //    dejándolo apretado), sin recargar la página.
+//  - El embudo: «Info» abre los datos del lead en un diálogo, y «Eliminar»
+//    pide confirmar antes de borrarlo (9-oct-2026).
 //  - El detalle de las gráficas al pasar el mouse, tocar o enfocar.
 //
 // Lo que manda con fetch() lleva el token anti-CSRF de la página y la
@@ -68,6 +70,8 @@
     function (e) {
       var form = e.target;
       if (!(form instanceof HTMLFormElement) || form.method === "dialog") return;
+      // «Cancelar» en un diálogo (formmethod="dialog") solo lo cierra: no es un envío.
+      if (e.submitter && e.submitter.getAttribute("formmethod") === "dialog") return;
       var boton = e.submitter || form.querySelector("button[type=submit]");
       var pregunta = boton && boton.getAttribute("data-confirmar");
       if (pregunta && !window.confirm(pregunta)) {
@@ -134,6 +138,61 @@
   var kanban = document.querySelector(".kanban");
   if (kanban && csrf) iniciarKanban(kanban);
 
+  // ── El embudo: Info y Eliminar ───────────────────────────────────────
+  var dialogoInfo = document.getElementById("dialogo-info");
+  var dialogoEliminar = document.getElementById("dialogo-eliminar");
+  if (dialogoEliminar && dialogoEliminar.showModal && csrf) {
+    // Sin este script no hay cómo confirmar: el botón solo aparece con él.
+    document.querySelectorAll("button[data-eliminar][hidden]").forEach(function (b) {
+      b.hidden = false;
+    });
+  }
+
+  function abrirInfo(tarjeta) {
+    var plantilla = tarjeta && tarjeta.querySelector("template[data-plantilla-info]");
+    var cuerpo = dialogoInfo && dialogoInfo.querySelector("[data-info-cuerpo]");
+    if (!plantilla || !cuerpo || !dialogoInfo.showModal) return false;
+    cuerpo.replaceChildren(plantilla.content.cloneNode(true));
+    // Los botones de eliminar que vienen en la copia también necesitan este script.
+    cuerpo.querySelectorAll("button[data-eliminar]").forEach(function (b) {
+      b.hidden = !(dialogoEliminar && dialogoEliminar.showModal && csrf);
+    });
+    dialogoInfo.showModal();
+    return true;
+  }
+
+  function abrirEliminar(id, nombre) {
+    if (!dialogoEliminar || !dialogoEliminar.showModal || !/^\d+$/.test(id || "")) return;
+    var form = dialogoEliminar.querySelector("form");
+    var accion = form.getAttribute("action") || "";
+    form.setAttribute("action", accion.replace(/\/contacto\/\d+\/eliminar$/, "/contacto/" + id + "/eliminar"));
+    form.dataset.enviando = "";
+    var etiqueta = dialogoEliminar.querySelector("[data-nombre]");
+    if (etiqueta) etiqueta.textContent = nombre || "este lead";
+    if (dialogoInfo && dialogoInfo.open) dialogoInfo.close();
+    dialogoEliminar.showModal();
+  }
+
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest) return;
+    var info = e.target.closest("a[data-info]");
+    if (info) {
+      if (abrirInfo(info.closest(".tarjeta-lead"))) e.preventDefault();
+      return;
+    }
+    var borrar = e.target.closest("button[data-eliminar]");
+    if (borrar) {
+      e.preventDefault();
+      abrirEliminar(borrar.getAttribute("data-eliminar"), borrar.getAttribute("data-nombre"));
+      return;
+    }
+    // Un clic en el fondo oscuro (fuera del recuadro) cierra el diálogo de Info.
+    if (dialogoInfo && dialogoInfo.open && e.target === dialogoInfo) {
+      var r = dialogoInfo.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialogoInfo.close();
+    }
+  });
+
   function iniciarKanban(k) {
     var estado = null;
     var dialogo = document.getElementById("dialogo-motivo");
@@ -143,7 +202,7 @@
       return el && el.closest ? el.closest(".tarjeta-lead") : null;
     }
     function esControl(el) {
-      return !!(el.closest && el.closest("button, select, input, textarea, summary, details, label, .acciones-rapidas"));
+      return !!(el.closest && el.closest("button, select, input, textarea, summary, details, label, .acciones-rapidas, .tarjeta-lead-botones"));
     }
     function nombreEtapa(columna) {
       var h = columna.querySelector(".columna-cabeza h2");

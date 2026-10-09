@@ -48,7 +48,7 @@ La ruta y la clave **no van en el código**, porque el repo es público. Son dos
   - exportar los datos de una persona;
   - marcar un reclamo en trámite;
   - suprimir: borra los datos en el CRM, en `consultas` y en el boletín, y pide escribir el nombre para confirmar.
-- **Auditoría:** quién entró, vio, exportó, editó o suprimió qué, y cuándo.
+- **Auditoría:** quién entró, vio, exportó, editó, suprimió o eliminó qué, y cuándo.
 
 **Desde el 7-oct-2026 (el tablero):**
 
@@ -63,6 +63,14 @@ La ruta y la clave **no van en el código**, porque el repo es público. Son dos
   - cada aviso de lead del sitio trae el enlace a su ficha (`<ruta>/c/<id de la consulta>`);
   - todos los días a las 7:30 a. m. llega un resumen (el cron `30 12 * * *` del sitio);
   - avisa cuando se abre una sesión nueva y cuando la entrada se cierra por claves equivocadas.
+
+**Desde el 9-oct-2026 (pedido de Rafael):**
+
+- **Info en cada tarjeta del embudo:** los datos del lead en un diálogo, sin salir del embudo: etapa, canal, puntaje, SLA, teléfono, correo, interés, presupuesto, forma de pago, para qué compra, valor de referencia, ciudad, cuándo llegó, la próxima acción, el recorrido, la última actividad y los chats. WhatsApp y Llamar anotan el intento. Los datos van en un `<template>` por tarjeta, porque las lecturas del CRM solo se entregan a navegaciones (`src/seguridad.ts`). Sin JavaScript, el botón abre la ficha.
+- **Eliminar un lead**, desde su tarjeta, desde Info o desde la ficha («Eliminar este lead», con casilla). Borra todo: la ficha, sus oportunidades, actividades y tareas, la copia de sus chats con la IA y su consulta en `consultas`. Pide confirmar y el servidor no borra sin `confirmar=si` (`src/proteccion.ts`, `eliminar`). No se puede deshacer.
+  - En la Auditoría queda solo «Eliminó el lead y todos sus datos · ficha #N (eliminada)», sin nombre y sin enlace.
+  - El boletín no se toca: es otra autorización, con su propia confirmación.
+  - Es distinto de «Suprimir» (Ley 1581), que responde a una solicitud de la persona: deja las filas sin nada que la identifique, con la constancia de la solicitud, y también la da de baja del boletín.
 
 Quedan para la versión siguiente:
 
@@ -137,13 +145,13 @@ Quedan para la versión siguiente:
 ```sh
 npx tsx --tsconfig crm/tsconfig.json crm/dev/servidor.ts      # http://127.0.0.1:8790/r/prueba-crm-0123456789abcdef
 PW=<ruta de playwright> node crm/dev/prueba-e2e.mjs <carpeta de capturas>
-PW=<ruta de playwright> node crm/dev/prueba-tablero.mjs <carpeta de capturas>   # embudo, SLA, higiene, chats y tablero
-node --test "crm/test/*.test.ts"                              # Node 23.6+ (en Node 22: --experimental-strip-types)
+PW=<ruta de playwright> node crm/dev/prueba-tablero.mjs <carpeta de capturas>   # embudo, Info y Eliminar, SLA, higiene, chats y tablero
+npx tsx --tsconfig crm/tsconfig.json --test crm/test/*.test.ts   # con tsx: node --test solo no resuelve las importaciones sin extensión ni el alias @/
 ```
 
 Con `SEMILLA_DEMO=1`, el arnés carga además `crm/dev/semilla-demo.sql`: leads de mentira en todas las etapas, para ver el embudo y el tablero con datos. Las dos pruebas de punta a punta se corren cada una con el arnés recién arrancado.
 
-En WebKit, las capturas de Playwright (`caret`, `animations`) inyectan un `<style>` que la CSP del CRM bloquea: la revisión de la consola se corre sin capturas.
+En WebKit, las capturas de Playwright inyectan un `<style>` que la CSP del CRM bloquea. Las dos pruebas descartan solo el aviso que sale durante la captura, así que la revisión de la consola vale también con capturas.
 
 **De verdad, con wrangler** (el Worker del sitio con el CRM adentro). En `.dev.vars` de la raíz van `CRM_RUTA` y `CRM_CLAVE` de prueba:
 

@@ -397,6 +397,20 @@ export async function paginaFicha(c: Ctx, id: number, vistaPrevia: boolean): Pro
   </details>
 </section>`;
 
+  // Eliminar el lead (9-oct-2026): lo mismo que el botón del embudo, para
+  // hacerlo desde aquí o sin JavaScript.
+  const eliminarLead = html`<section class="tarjeta" aria-labelledby="t-eliminar" id="eliminar">
+  <details>
+  <summary id="t-eliminar">Eliminar este lead</summary>
+  <form method="post" action="/contacto/${id}/eliminar" class="zona-peligro rejilla">
+    <input type="hidden" name="volver" value="/embudo${principal?.tipo === "venta" ? "?tipo=venta" : ""}">
+    <p>Borra su ficha, sus oportunidades, notas y tareas, la copia de sus chats con la IA y su consulta del sitio. No queda nada de la persona en el CRM. No se puede deshacer.</p>
+    <label class="casilla" for="confirmar-eliminar-${id}"><input id="confirmar-eliminar-${id}" name="confirmar" type="checkbox" value="si" required><span>Entiendo que no se puede deshacer</span></label>
+    <div class="acciones"><button class="boton-peligro" type="submit">Eliminar el lead</button></div>
+  </form>
+  </details>
+</section>`;
+
   return pagina({
     titulo,
     seccion: "embudo",
@@ -421,6 +435,7 @@ ${cabecera}
     ${datos}
     ${autorizacion}
     ${proteccion}
+    ${eliminarLead}
   </div>
 </div>`,
   });

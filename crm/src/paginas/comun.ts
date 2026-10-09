@@ -13,7 +13,7 @@ import { enlaceWhatsApp } from "../telefono";
 import { hace } from "../tiempo";
 
 /** Sube cuando cambian crm.css o crm.js, para que el teléfono no use la copia vieja. */
-export const VERSION_ESTATICOS = "3";
+export const VERSION_ESTATICOS = "4";
 
 /** Los avisos que vienen en la dirección (`?ok=…`). Solo códigos: nunca texto libre. */
 const AVISOS: Record<string, string> = {
@@ -33,6 +33,7 @@ const AVISOS: Record<string, string> = {
   intento: "Quedó anotado el intento de contacto.",
   inversion: "Listo, la inversión de la semana quedó guardada.",
   enlazada: "La conversación quedó en la ficha.",
+  eliminado: "Listo, el lead quedó eliminado.",
 };
 
 /** Los errores que vienen en la dirección (`?error=…`). También solo códigos. */
@@ -46,6 +47,7 @@ const ERRORES: Record<string, string> = {
   texto: "Escribe el título de la tarea.",
   oportunidad: "Ya tiene una oportunidad abierta de ese tipo.",
   monto: "Uno de los montos no se entiende. Escríbelo en pesos, por ejemplo 1.500.000.",
+  eliminar: "Para eliminar el lead, marca que entiendes que no se puede deshacer.",
 };
 
 const trazo = (d: string) =>
@@ -70,6 +72,9 @@ export const ICONOS: Record<string, string> = {
   buscar: trazo('<circle cx="11" cy="11" r="6"/><path d="m15.5 15.5 4 4"/>'),
   ia: trazo('<rect x="5" y="7" width="14" height="11" rx="3"/><path d="M12 4v3M9 12h.01M15 12h.01M9.5 15h5"/>'),
   persona: trazo('<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>'),
+  info: trazo('<circle cx="12" cy="12" r="8"/><path d="M12 11v5.5"/><path d="M12 7.6v.2"/>'),
+  basura: trazo('<path d="M4.5 7h15"/><path d="M9.5 7V5.2h5V7"/><path d="m6.5 7 .8 11.6a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4L17.5 7"/><path d="M10 11v5M14 11v5"/>'),
+  cerrar: trazo('<path d="m6.5 6.5 11 11M17.5 6.5l-11 11"/>'),
 };
 
 export function icono(nombre: string): Html {

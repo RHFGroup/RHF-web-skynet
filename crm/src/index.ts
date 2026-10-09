@@ -58,7 +58,7 @@ import {
   registrarIntento,
   guardarInversion,
 } from "./acciones";
-import { exportarContacto, marcarReclamo, suprimir, bajaBoletin, reactivarBoletin, csvBoletin } from "./proteccion";
+import { exportarContacto, marcarReclamo, suprimir, eliminar, bajaBoletin, reactivarBoletin, csvBoletin } from "./proteccion";
 
 export { mandarResumen } from "./resumen";
 export { rutaCRM } from "./base";
@@ -346,7 +346,7 @@ async function post(c: Ctx, f: FormData, vistaPrevia: boolean): Promise<Response
 
   if (ruta === "/inversion") return guardarInversion(c, f);
 
-  let m = ruta.match(/^\/contacto\/(\d+)\/(nota|tarea|datos|oportunidad|reclamo|suprimir|intento)$/);
+  let m = ruta.match(/^\/contacto\/(\d+)\/(nota|tarea|datos|oportunidad|reclamo|suprimir|eliminar|intento)$/);
   if (m) {
     const contacto = id(m[1]);
     if (!contacto) return volverA("/hoy");
@@ -363,6 +363,8 @@ async function post(c: Ctx, f: FormData, vistaPrevia: boolean): Promise<Response
         return marcarReclamo(c, contacto, f);
       case "suprimir":
         return suprimir(c, contacto, f);
+      case "eliminar":
+        return eliminar(c, contacto, f);
       case "intento":
         return registrarIntento(c, contacto, f);
     }

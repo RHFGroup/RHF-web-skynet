@@ -1,6 +1,7 @@
 // Prueba de punta a punta de lo que agregó el tablero (7-oct-2026): el embudo
 // que se arrastra, el intento de contacto, el SLA, la higiene, los chats de la
-// IA, el tablero y la inversión. Contra el arnés de Node (crm/dev/servidor.ts),
+// IA, el tablero y la inversión. Desde el 9-oct-2026, también «Info» y
+// «Eliminar» en cada tarjeta del embudo. Contra el arnés de Node (crm/dev/servidor.ts),
 // con los datos de crm/dev/semilla.sql:
 //   PW=/ruta/a/playwright BASE=http://127.0.0.1:8790 node crm/dev/prueba-tablero.mjs [capturas/]
 // MOTOR=webkit para correrla en el motor del iPhone.
@@ -51,7 +52,17 @@ await ctx.route(/wa\.me|whatsapp\.com/, (r) => r.abort());
 const erroresConsola = [];
 page.on("console", (m) => m.type() === "error" && !m.text().startsWith("Failed to load resource") && erroresConsola.push(m.text().slice(0, 160)));
 page.on("pageerror", (e) => erroresConsola.push(String(e)));
-const captura = async (nombre, p = page) => CAPTURAS && p.screenshot({ path: `${CAPTURAS}/${nombre}.png`, fullPage: true, caret: "initial" });
+// En WebKit, la captura misma le pone a la página una hoja de estilos que la CSP
+// del CRM rechaza (probado el 9-oct-2026: sin capturas no aparece). Ese aviso
+// es de Playwright, no del CRM: se descarta solo el que sale durante la captura.
+const captura = async (nombre, p = page, completa = true) => {
+  if (!CAPTURAS) return;
+  const antes = erroresConsola.length;
+  await p.screenshot({ path: `${CAPTURAS}/${nombre}.png`, fullPage: completa, caret: "initial" });
+  await p.waitForTimeout(100);
+  const nuevos = erroresConsola.splice(antes);
+  erroresConsola.push(...nuevos.filter((t) => !t.startsWith("Refused to apply a stylesheet")));
+};
 const texto = async (p = page) => (await p.locator("main").innerText()).replace(/\s+/g, " ");
 
 // ── Entrar ──────────────────────────────────────────────────────────────
@@ -297,6 +308,113 @@ await page.fill(`#confirmar-${ana.contacto_id}`, "Ana Prueba");
 await Promise.all([page.waitForURL(/ok=suprimido/), page.click("button:has-text('Suprimir sus datos')")]);
 caso("suprimir borra sus conversaciones con la IA", (await sql("SELECT COUNT(*) AS n FROM agente_conversaciones WHERE telefono = '+573001234567'"))[0].n === 0);
 
+// ── El embudo: Info y Eliminar (9-oct-2026) ─────────────────────────────
+const contactoDe = async (nombre) => (await sql(`SELECT id FROM crm_contactos WHERE nombre = '${nombre}'`))[0]?.id;
+const quedan = async (cid) =>
+  (
+    await sql(`SELECT (SELECT COUNT(*) FROM crm_contactos WHERE id = ${cid}) + (SELECT COUNT(*) FROM crm_oportunidades WHERE contacto_id = ${cid})
+                    + (SELECT COUNT(*) FROM crm_actividades WHERE contacto_id = ${cid}) + (SELECT COUNT(*) FROM crm_tareas WHERE contacto_id = ${cid}) AS n`)
+  )[0].n;
+await page.goto(`${CRM}/embudo`);
+const tarjetaRita = page.locator(".tarjeta-lead", { hasText: "Rita Reloj" });
+await tarjetaRita.locator("a[data-info]").click();
+await page.waitForSelector("#dialogo-info[open]");
+const tInfo = (await page.locator("#dialogo-info").innerText()).replace(/\s+/g, " ");
+caso(
+  "«Info» abre los datos del lead sin salir del embudo",
+  page.url().endsWith("/embudo") && tInfo.includes("Rita Reloj") && tInfo.includes("De 400 a 600 millones") && tInfo.includes("Meta Ads") && tInfo.includes("Crédito"),
+  tInfo.slice(0, 300),
+);
+caso("y trae WhatsApp y Llamar, que anotan el intento", (await page.locator("#dialogo-info a[data-intento=whatsapp]").count()) === 1 && (await page.locator("#dialogo-info a[data-intento=llamada]").count()) === 1);
+const enlaceFicha = await page.locator("#dialogo-info a.boton").getAttribute("href");
+caso("«Abrir la ficha» va a la ficha, dentro de la ruta secreta", enlaceFicha === `${RUTA}/contacto/${rita.contacto_id}`, enlaceFicha);
+const accionesInfo = await page.evaluate(() => {
+  const d = document.getElementById("dialogo-info").getBoundingClientRect();
+  const a = document.querySelector("#dialogo-info .info-acciones").getBoundingClientRect();
+  return { ancho: Math.round(d.width), accionesAdentro: a.top >= d.top && a.bottom <= d.bottom + 1 };
+});
+caso("Info mide 560 px y «Abrir la ficha» y «Eliminar» se ven sin deslizar", accionesInfo.ancho === 560 && accionesInfo.accionesAdentro, accionesInfo);
+await captura("t07-info", page, false);
+await page.click("#dialogo-info .dialogo-cerrar button");
+caso("la X cierra el diálogo", !(await page.locator("#dialogo-info").evaluate((d) => d.open)));
+await tarjetaRita.locator("a[data-info]").click();
+await page.keyboard.press("Escape");
+caso("Escape también lo cierra", !(await page.locator("#dialogo-info").evaluate((d) => d.open)));
+
+// Eliminar desde la tarjeta: «Cancelar» no borra nada.
+const viejoId = await contactoDe("Viejo Lead");
+const consultaViejo = (await sql(`SELECT consulta_id FROM crm_actividades WHERE contacto_id = ${viejoId} AND consulta_id IS NOT NULL`))[0].consulta_id;
+const enNuevoAntes = Number(await page.locator('.columna[data-etapa="nuevo"] [data-cuenta]').innerText());
+const tarjetaViejo = page.locator(".tarjeta-lead", { hasText: "Viejo Lead" });
+await tarjetaViejo.locator("button[data-eliminar]").click();
+await page.waitForSelector("#dialogo-eliminar[open]");
+caso("«Eliminar» pide confirmar, con el nombre", (await page.locator("#dialogo-eliminar [data-nombre]").innerText()) === "Viejo Lead");
+await captura("t09-eliminar", page, false);
+await page.click("#dialogo-eliminar button[value=cancelar]");
+await page.waitForTimeout(200);
+caso("«Cancelar» cierra sin borrar nada", !(await page.locator("#dialogo-eliminar").evaluate((d) => d.open)) && (await quedan(viejoId)) > 0);
+await tarjetaViejo.locator("button[data-eliminar]").click();
+await page.waitForSelector("#dialogo-eliminar[open]");
+await Promise.all([page.waitForURL(/embudo\?ok=eliminado/), page.click("#dialogo-eliminar button.boton-peligro")]);
+caso("al confirmar se borra todo el lead: ficha, oportunidad, actividades y tareas", (await quedan(viejoId)) === 0);
+caso("y su consulta del sitio", (await sql(`SELECT COUNT(*) AS n FROM consultas WHERE id = ${consultaViejo}`))[0].n === 0);
+caso("vuelve al embudo con el aviso, y la tarjeta ya no está", (await texto()).includes("el lead quedó eliminado") && (await page.locator(".tarjeta-lead", { hasText: "Viejo Lead" }).count()) === 0);
+caso("la columna cuenta uno menos", Number(await page.locator('.columna[data-etapa="nuevo"] [data-cuenta]').innerText()) === enNuevoAntes - 1);
+
+// Eliminar desde el diálogo de Info.
+const nocheId = await contactoDe("Noche Lead");
+await page.locator(".tarjeta-lead", { hasText: "Noche Lead" }).locator("a[data-info]").click();
+await page.waitForSelector("#dialogo-info[open]");
+await page.click("#dialogo-info button[data-eliminar]");
+await page.waitForSelector("#dialogo-eliminar[open]");
+caso("«Eliminar» en Info cierra Info y pide confirmar", !(await page.locator("#dialogo-info").evaluate((d) => d.open)) && (await page.locator("#dialogo-eliminar [data-nombre]").innerText()) === "Noche Lead");
+await Promise.all([page.waitForURL(/ok=eliminado/), page.click("#dialogo-eliminar button.boton-peligro")]);
+caso("y elimina ese lead, no otro", (await quedan(nocheId)) === 0 && (await contactoDe("Rita Reloj")) === rita.contacto_id);
+
+// Sin la confirmación, el servidor no borra (un envío armado a mano).
+const antiguoId = await contactoDe("Antiguo Lead");
+await page.goto(`${CRM}/contacto/${antiguoId}`);
+await Promise.all([
+  page.waitForURL(/error=eliminar/),
+  page.evaluate(([accion, token]) => {
+    const f = document.createElement("form");
+    f.method = "post";
+    f.action = accion;
+    const i = document.createElement("input");
+    i.type = "hidden";
+    i.name = "_csrf";
+    i.value = token;
+    f.appendChild(i);
+    document.body.appendChild(f);
+    f.submit();
+  }, [`${CRM}/contacto/${antiguoId}/eliminar`, csrf]),
+]);
+caso("sin «confirmar» el servidor no borra nada", (await quedan(antiguoId)) > 0 && (await texto()).includes("no se puede deshacer"));
+
+// Desde la ficha, con la casilla.
+await page.click("text=Eliminar este lead");
+await page.locator("#eliminar").scrollIntoViewIfNeeded();
+await captura("t10-ficha-eliminar", page, false);
+await page.click("button:has-text('Eliminar el lead')");
+await page.waitForTimeout(300);
+caso("la casilla es obligatoria: sin marcarla no se envía", page.url().includes(`/contacto/${antiguoId}`) && (await quedan(antiguoId)) > 0);
+await page.check(`#confirmar-eliminar-${antiguoId}`);
+await Promise.all([page.waitForURL(/embudo\?ok=eliminado/), page.click("button:has-text('Eliminar el lead')")]);
+caso("desde la ficha también se elimina, y vuelve al embudo", (await quedan(antiguoId)) === 0);
+
+// La auditoría: queda que se eliminó, sin datos ni enlace.
+await page.goto(`${CRM}/auditoria`);
+const tAud = await texto();
+const filasEliminar = (await sql("SELECT entidad_id, detalle FROM crm_auditoria WHERE accion = 'eliminar' ORDER BY id")).map((f) => f.entidad_id);
+caso(
+  "la auditoría anota las tres eliminaciones, sin enlace a la ficha",
+  filasEliminar.length === 3 && tAud.includes("Eliminó el lead y todos sus datos") && tAud.includes(`ficha #${viejoId} (eliminada)`) && (await page.locator(`a[href$="/contacto/${viejoId}"]`).count()) === 0,
+  filasEliminar,
+);
+caso("y no guarda el nombre de nadie", !tAud.includes("Viejo Lead") && !tAud.includes("Noche Lead") && !tAud.includes("Antiguo Lead"));
+await page.goto(`${CRM}/contacto/${viejoId}`);
+caso("la ficha eliminada ya no existe", (await page.locator("h1").innerText()).includes("No encontré esa página"));
+
 // ── En el teléfono ──────────────────────────────────────────────────────
 const iphone = { ...pw.devices["iPhone 13"] };
 delete iphone.defaultBrowserType;
@@ -311,6 +429,28 @@ const anchoPagina = await pm.evaluate(() => document.documentElement.scrollWidth
 caso("en el teléfono la página no se desborda a lo ancho (el embudo se desliza adentro)", anchoPagina <= 390, anchoPagina);
 caso("en el teléfono se ven las pestañas de abajo y no la barra lateral", (await pm.locator(".pestanas").isVisible()) && !(await pm.locator(".lateral").isVisible()));
 await captura("t05-embudo-telefono", pm);
+await pm.locator(".tarjeta-lead", { hasText: "Rita Reloj" }).locator("a[data-info]").click();
+await pm.waitForSelector("#dialogo-info[open]");
+const infoMovil = await pm.evaluate(() => {
+  const d = document.getElementById("dialogo-info").getBoundingClientRect();
+  const a = document.querySelector("#dialogo-info .info-acciones").getBoundingClientRect();
+  return {
+    izquierda: Math.round(d.left),
+    derecha: Math.round(d.right),
+    arriba: Math.round(d.top),
+    abajo: Math.round(d.bottom),
+    alto: window.innerHeight,
+    ancho: document.documentElement.scrollWidth,
+    acciones: Math.round(a.bottom),
+  };
+});
+caso(
+  "en el teléfono, Info cabe en la pantalla, con las acciones a la vista",
+  infoMovil.izquierda >= 0 && infoMovil.derecha <= 390 && infoMovil.ancho <= 390 && infoMovil.arriba >= 0 && infoMovil.abajo <= infoMovil.alto && infoMovil.acciones <= infoMovil.abajo + 1,
+  infoMovil,
+);
+await captura("t08-info-telefono", pm, false);
+await pm.keyboard.press("Escape");
 await pm.goto(`${CRM}/tablero`);
 const anchoTablero = await pm.evaluate(() => ({
   ancho: document.documentElement.scrollWidth,

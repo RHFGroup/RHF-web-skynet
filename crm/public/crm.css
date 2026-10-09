@@ -1329,6 +1329,171 @@ details[open] > summary {
   margin: 8px 0 0;
 }
 
+/* Info y Eliminar en cada tarjeta del embudo (9-oct-2026). */
+.tarjeta-lead-botones {
+  display: inline-flex;
+  flex: none;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.boton-icono {
+  cursor: pointer;
+}
+
+.boton-icono:hover,
+.boton-icono:focus-visible {
+  border-color: var(--acento);
+  color: var(--texto);
+}
+
+.boton-icono--chico {
+  width: 34px;
+  height: 34px;
+}
+
+.boton-icono--chico svg {
+  width: 16px;
+  height: 16px;
+}
+
+.boton-icono--peligro {
+  border-color: rgba(208, 59, 59, 0.45);
+  color: var(--critico-texto);
+}
+
+.boton-icono--peligro:hover,
+.boton-icono--peligro:focus-visible {
+  border-color: var(--critico);
+  background: rgba(208, 59, 59, 0.22);
+  color: #fff;
+}
+
+.boton-sec--peligro {
+  border-color: rgba(208, 59, 59, 0.55);
+  color: var(--critico-texto);
+}
+
+/* Dos clases: .dialogo, más abajo, también fija el ancho y el relleno. */
+.dialogo.dialogo--info {
+  width: min(94vw, 560px);
+  max-height: min(88vh, 860px);
+  max-height: min(88dvh, 860px);
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Lo de arriba se desliza; las acciones quedan siempre a la vista. */
+.dialogo--info[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-marco {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.info-desliza {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.dialogo-cerrar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  margin: 0;
+}
+
+.info-cabeza {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 44px;
+}
+
+.info-cabeza h2 {
+  margin: 0;
+  font-size: 19px;
+  overflow-wrap: anywhere;
+}
+
+.info-cabeza .meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+}
+
+.dialogo--info .chips {
+  margin: 12px 0 0;
+}
+
+.info-contacto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 0;
+}
+
+.dialogo--info .datos-clave {
+  margin-top: 14px;
+}
+
+.info-subtitulo {
+  margin: 18px 0 8px;
+  color: var(--texto-2);
+  font-size: 14px;
+}
+
+.info-lista {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.info-lista strong {
+  color: var(--texto);
+}
+
+/* La última actividad, en 4 líneas como mucho: lo completo está en la ficha. */
+.info-texto {
+  display: -webkit-box;
+  margin-top: 4px;
+  /* Arriba y abajo, borde y no relleno: el recorte de la quinta línea no se asoma. */
+  padding: 0 10px;
+  border-block: 8px solid var(--superficie-2);
+  border-radius: var(--radio);
+  background: var(--superficie-2);
+  color: var(--texto-2);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+}
+
+.info-acciones {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 14px 20px;
+  border-top: 1px solid var(--borde);
+}
+
 .tarjeta-lead-pie {
   display: flex;
   align-items: center;
