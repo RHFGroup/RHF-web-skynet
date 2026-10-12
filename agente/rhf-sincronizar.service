@@ -1,6 +1,7 @@
-# El sincronizador de conversaciones del agente con el CRM (7-oct-2026).
-# Unidad de usuario de systemd: va en ~/.config/systemd/user/ del usuario que
-# es dueño de ~/.hermes (ver agente/LEEME.md). La activa rhf-sincronizar.timer.
+# El sincronizador de conversaciones del agente con el CRM (instalado el 9-oct-2026).
+# Unidad del sistema, en /etc/systemd/system/, con User= el dueño de la carpeta
+# de Hermes: ese usuario no tiene linger, así que una unidad de usuario no
+# correría sin una sesión abierta. La activa rhf-sincronizar.timer. Ver LEEME.md.
 [Unit]
 Description=RHF: manda al CRM las conversaciones nuevas del agente de atención
 After=network-online.target
@@ -8,15 +9,17 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-# Solo el token (una línea RHF_CONVERSACIONES_TOKEN=…), en un archivo propio
-# con permisos 600: el servicio no carga el .env del agente con sus otras claves.
-EnvironmentFile=%h/.config/rhf-sincronizar/token.env
-Environment=RHF_HERMES_DB=%h/.hermes/profiles/atencion/state.db
-Environment=RHF_SINCRONIZAR_ESTADO=%h/.local/state/rhf-sincronizar/estado.json
-# Para probar contra la vista previa antes de publicar, cambiar por la URL de
-# la vista previa (escribe en rhf-leads-preview, no en producción).
+User=jota
+Group=jota
+# Solo el token (una línea), en un archivo propio con permisos 600: el servicio
+# no carga el .env del agente con sus otras claves.
+EnvironmentFile=/home/jota/.config/rhf-sincronizar/token.env
+Environment=RHF_HERMES_DB=/home/jota/hermes-containers/skynet/profiles/atencion/state.db
+Environment=RHF_SINCRONIZAR_ESTADO=/home/jota/.local/state/rhf-sincronizar/estado.json
+# Para probar contra la vista previa, cambiar por la URL de la vista previa
+# (escribe en rhf-leads-preview, no en producción).
 Environment=RHF_CONVERSACIONES_URL=https://rhfliving.com/api/conversaciones-agente
-ExecStart=/usr/bin/env python3 %h/.local/share/rhf-sincronizar/sincronizar_conversaciones.py
+ExecStart=/usr/bin/python3 /home/jota/.local/share/rhf-sincronizar/sincronizar_conversaciones.py
 TimeoutStartSec=150
 Nice=10
 NoNewPrivileges=yes
