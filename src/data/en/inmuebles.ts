@@ -189,6 +189,8 @@ const TEXTOS: Diccionario = {
   "Piso, área, dependencias y condominio: presentación de venta del apartamento (octubre de 2023).":
     "Floor, area, rooms and community: sales presentation of the apartment (October 2023).",
   "Fotos: presentación de venta de 2023.": "Photos: 2023 sales presentation.",
+  "OpenStreetMap, relación 9592774 («Agua Marina Delfines», del conjunto Agua Marina); consultada el 14-oct-2026":
+    "OpenStreetMap, relation 9592774 (“Agua Marina Delfines”, part of the Agua Marina community); accessed October 14, 2026",
 };
 
 /** Las áreas, con el decimal en punto: «35,26 m²» → «35.26 m²». La cifra no se reescribe. */
@@ -221,6 +223,7 @@ function traducir(i: Inmueble): Inmueble {
     precio: i.precio === null ? null : { ...i.precio, corte: fechaEn(i.precio.corte), fuente: t(i.precio.fuente) },
     fotos: i.fotos.map((f) => ({ ...f, alt: t(f.alt), credito: t(f.credito) })),
     ...(i.rentaCorta ? { rentaCorta: { fuente: t(i.rentaCorta.fuente) } } : {}),
+    ...(i.coordenada ? { coordenada: { ...i.coordenada, fuente: t(i.coordenada.fuente) } } : {}),
     plano:
       i.plano === null
         ? null

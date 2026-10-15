@@ -110,8 +110,8 @@ export default function ZonaNorte({ proyectos, pines }: { proyectos: Ficha[]; pi
           </p>
           <h2 style={{ "--i": 1 } as React.CSSProperties}>La Zona Norte es donde Cartagena está creciendo</h2>
           <p className="section-lede" style={{ "--i": 2 } as React.CSSProperties}>
-            Siete de cada diez viviendas nuevas de Bolívar están aquí. Te contamos qué está hecho y qué está en
-            estudio.
+            Aquí se concentra cerca del 70 % de las ventas de vivienda nueva No VIS. Te contamos qué está hecho y
+            qué está en estudio.
           </p>
         </RevealGrupo>
 
@@ -244,7 +244,7 @@ function Anillo({ valor }: { valor: number }) {
         <CountUp
           to={valor}
           suffix=" %"
-          srText={`Cerca del ${valor} por ciento de la vivienda nueva que se comercializa en Bolívar está en la Zona Norte`}
+          srText={`Cerca del ${valor} por ciento de las ventas de vivienda nueva No VIS de 2025 se concentró en la Zona Norte`}
         />
       </strong>
     </div>

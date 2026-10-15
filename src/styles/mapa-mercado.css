@@ -1,0 +1,602 @@
+/* ─────────────────────────────────────────────────────────────
+   El mapa de obras y entorno (MapaMercado.tsx) y los precios de la
+   vivienda nueva (PreciosVivienda.tsx), en Inteligencia de mercado.
+
+   Va sobre una sección oscura (.tono-oscuro .tono-azul-2). Los colores de
+   las zonas son del método del skill de visualización, validados para
+   daltonismo sobre el fondo del mapa (todos los pares, como en un mapa):
+     Zona Norte #c98500 · la ciudad #199e70 · el corredor #9085e9
+   La costa del Atlántico (#3987e5) va en su recuadro aparte, siempre
+   rotulada. Nuestras opciones van en marfil y camel; las obras, con una
+   forma por estado y su texto (nunca solo color).
+   ───────────────────────────────────────────────────────────── */
+
+.mm-seccion { padding: 88px 0 96px; scroll-margin-top: var(--nav-h); }
+/* El título como el de las demás secciones (.section h2, globals.css). */
+.mm-seccion h2 { max-width: 720px; margin-top: 16px; color: var(--marfil); font-size: clamp(32px, 4vw, 48px); line-height: 1.08; }
+.mm-seccion .section-lede { color: rgb(243 239 230 / 0.72); max-width: 640px; }
+
+/* El atajo de la portada (sección clara) hasta el mapa. */
+.mm-ir { margin: 22px 0 0; }
+.mm-ir a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1px solid rgb(194 165 120 / 0.55);
+  border-radius: 999px;
+  color: var(--marino);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.mm-ir a:hover { border-color: var(--camel); background: rgb(194 165 120 / 0.14); }
+.mm-ir a:focus-visible { outline: 2px solid var(--camel); outline-offset: 3px; }
+
+.mm {
+  --mm-zona-norte: #c98500;
+  --mm-ciudad: #199e70;
+  --mm-corredor-turbaco: #9085e9;
+  --mm-costa-atlantico: #3987e5;
+  --mm-texto: var(--marfil);
+  --mm-texto-2: rgb(243 239 230 / 0.66);
+  --mm-borde: rgb(243 239 230 / 0.14);
+  --mm-fondo-panel: rgb(10 18 30 / 0.55);
+  margin-top: 36px;
+  color: var(--mm-texto);
+}
+
+.mm-cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: stretch;
+}
+
+/* ── El lienzo ─────────────────────────────────────────────── */
+.mm-lienzo {
+  position: relative;
+  min-height: 0;
+  aspect-ratio: 4 / 5;
+  max-height: 760px;
+  border: 1px solid var(--mm-borde);
+  border-radius: 24px;
+  overflow: hidden;
+  background: #0e1a2b;
+  box-shadow: 0 30px 80px -40px rgb(0 0 0 / 0.65);
+}
+.mm-svg { display: block; width: 100%; height: 100%; touch-action: manipulation; }
+
+.mm-agua { fill: #10213a; }
+.mm-cienaga { fill: #13283f; }
+.mm-isla { opacity: 0.85; }
+.mm-costa { fill: none; stroke: rgb(212 188 150 / 0.55); stroke-linejoin: round; }
+.mm-via { fill: none; stroke: rgb(243 239 230 / 0.42); stroke-linecap: round; stroke-linejoin: round; }
+.mm-viaducto { stroke: rgb(243 239 230 / 0.6); }
+
+/* Las zonas: manchas que no se tocan, con un relleno tenue y un brillo de su
+   color en el borde, difuminado hacia adentro: son una agrupación nuestra, no
+   límites. El color lo lleva el brillo; el relleno, apenas un tinte. Al
+   acercar una, las otras casi desaparecen. El color de cada zona sale de su
+   clase .mm-zona-color-* (currentColor). */
+.mm-zona-relleno { fill: currentColor; opacity: 0.12; transition: opacity 0.55s ease; }
+.mm-zona-borde { fill: none; stroke: currentColor; opacity: 0.6; transition: opacity 0.55s ease; }
+.mm-zona.sobre .mm-zona-relleno { opacity: 0.22; }
+.mm-zona.sobre .mm-zona-borde { opacity: 0.95; }
+.mm-zona.activa .mm-zona-relleno { opacity: 0.09; }
+.mm-zona.activa .mm-zona-borde { opacity: 0.55; }
+.mm-zona.apagada .mm-zona-relleno { opacity: 0.03; }
+.mm-zona.apagada .mm-zona-borde { opacity: 0.12; }
+
+.mm-toque-zona { fill: transparent; cursor: pointer; outline: none; }
+.mm-toque-zona.activa { cursor: default; pointer-events: none; }
+.mm-toque-zona:focus-visible { stroke: var(--camel-light); stroke-width: 6; vector-effect: non-scaling-stroke; }
+
+.mm-oculto { opacity: 0; pointer-events: none; }
+.mm-rotulos, .mm-rotulos-zona, .mm-lugares, .mm-obras, .mm-malecon { transition: opacity 0.45s ease; }
+.mm-rotulos-zona.mm-oculto, .mm-malecon.mm-oculto { opacity: 0; }
+.mm-rotulos > *, .mm-lugar, .mm-obra, .mm-rotulo-lugar { transition: opacity 0.45s ease; }
+
+.mm-rotulo-mar,
+.mm-rotulo-agua {
+  fill: rgb(150 180 215 / 0.55);
+  font-family: var(--font-serif), "Cormorant Garamond", serif;
+  font-style: italic;
+  letter-spacing: 0.08em;
+}
+.mm-rotulo-via {
+  fill: rgb(243 239 230 / 0.55);
+  font-family: var(--font-sans), "Montserrat", sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+/* Barrios y pueblos: nombre de lugar, en cursiva y sin punto. */
+.mm-rotulo-lugar text {
+  fill: rgb(214 226 243 / 0.72);
+  font: italic 500 10.5px/1 var(--font-sans), "Montserrat", sans-serif;
+  letter-spacing: 0.04em;
+  paint-order: stroke;
+  stroke: #16243a;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.mm-rotulo-zona text { text-anchor: middle; paint-order: stroke; stroke: #16243a; stroke-width: 4px; stroke-linejoin: round; }
+.mm-rotulo-zona-nombre {
+  fill: var(--marfil);
+  font: 600 17px/1 var(--font-serif), "Cormorant Garamond", serif;
+  letter-spacing: 0.01em;
+}
+.mm-rotulo-zona-cuenta { fill: rgb(243 239 230 / 0.72); font: 600 10.5px/1 var(--font-sans), "Montserrat", sans-serif; }
+
+/* El Gran Malecón: trazado ilustrativo. */
+.mm-malecon-linea { fill: none; stroke: var(--camel); stroke-linecap: round; opacity: 0.9; }
+.mm-toque { fill: none; stroke: transparent; cursor: pointer; pointer-events: stroke; outline: none; }
+.mm-toque:focus-visible { stroke: rgb(212 188 150 / 0.35); }
+
+/* Lugares que ya funcionan. */
+.mm-blanco { fill: transparent; }
+.mm-lugar { cursor: pointer; outline: none; }
+.mm-lugar-punto { fill: rgb(243 239 230 / 0.82); stroke: #1c2a40; stroke-width: 1.4; }
+.mm-lugar:hover .mm-lugar-punto, .mm-lugar.elegido .mm-lugar-punto, .mm-lugar:focus-visible .mm-lugar-punto { fill: var(--camel-light); }
+
+/* Obras: la forma dice el estado. */
+.mm-obra { cursor: pointer; outline: none; }
+.mm-marca-fondo { stroke-width: 1.8; }
+.mm-obra-entregado .mm-marca-fondo { fill: var(--marfil); stroke: #1c2a40; }
+.mm-obra-entregado .mm-marca-trazo { fill: none; stroke: #1c2a40; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.mm-obra-obra .mm-marca-fondo { fill: #1c2a40; stroke: var(--camel-light); stroke-dasharray: 3 2.2; }
+.mm-obra-obra .mm-marca-centro { fill: var(--camel-light); }
+.mm-obra-anunciado .mm-marca-fondo,
+.mm-obra-estudio .mm-marca-fondo { fill: #1c2a40; stroke: rgb(170 195 230 / 0.9); stroke-dasharray: 2.5 2; }
+.mm-obra.elegido .mm-marca, .mm-obra:focus-visible .mm-marca, .mm-obra:hover .mm-marca { transform: scale(1.25); }
+.mm-marca { transition: transform 0.25s ease; transform-box: fill-box; transform-origin: center; }
+
+.mm-etiqueta {
+  fill: var(--marfil);
+  font: 600 10.5px/1 var(--font-sans), "Montserrat", sans-serif;
+  paint-order: stroke;
+  stroke: #16243a;
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+  pointer-events: none;
+  animation: mm-aparece 0.35s ease;
+}
+/* Lo que ya funciona se nombra más bajo que las obras. */
+.mm-etiqueta-lugar { fill: rgb(243 239 230 / 0.78); font-weight: 500; }
+@keyframes mm-aparece { from { opacity: 0; } to { opacity: 1; } }
+.mm-aparece { animation: mm-aparece 0.35s ease; }
+
+/* Nuestras opciones. */
+.mm-pin { cursor: pointer; outline: none; transition: opacity 0.45s ease; }
+.mm-pin.apagado { opacity: 0.4; }
+.mm-pin-gota { fill: var(--marfil); stroke: var(--camel); stroke-width: 2; transition: fill 0.3s ease; }
+.mm-pin-ojo { fill: var(--marino); }
+.mm-pin:hover .mm-pin-gota, .mm-pin:focus-visible .mm-pin-gota, .mm-pin.elegido .mm-pin-gota { fill: var(--camel-light); }
+.mm-pin.elegido { animation: mm-latido 1.6s ease-in-out infinite; }
+.mm-pin-nombre {
+  fill: var(--marfil);
+  font: 700 11.5px/1 var(--font-sans), "Montserrat", sans-serif;
+  paint-order: stroke;
+  stroke: #16243a;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  transition: opacity 0.35s ease;
+}
+.mm-pin-nombre-2 { fill: var(--camel-light); font-weight: 600; }
+@keyframes mm-latido { 0%, 100% { opacity: 1; } 50% { opacity: 0.72; } }
+
+/* La rosa, la leyenda y el globo. */
+.mm-mapa { position: relative; min-width: 0; align-self: start; }
+.mm-norte {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: rgb(243 239 230 / 0.75);
+  font: 700 11px/1 var(--font-sans), "Montserrat", sans-serif;
+  pointer-events: none;
+}
+.mm-leyenda {
+  position: absolute;
+  z-index: 2;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  max-width: calc(100% - 24px);
+  margin: 0;
+  padding: 8px 12px;
+  list-style: none;
+  border: 1px solid var(--mm-borde);
+  border-radius: 12px;
+  background: rgb(14 26 43 / 0.82);
+  color: var(--mm-texto-2);
+  font: 600 10.5px/1.2 var(--font-sans), "Montserrat", sans-serif;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+}
+.mm-leyenda li { display: inline-flex; align-items: center; gap: 6px; }
+.mm-globo {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 240px;
+  padding: 8px 11px;
+  transform: translate(12px, -110%);
+  border: 1px solid rgb(212 188 150 / 0.35);
+  border-radius: 10px;
+  background: rgb(14 26 43 / 0.95);
+  color: var(--marfil);
+  font: 500 11.5px/1.35 var(--font-sans), "Montserrat", sans-serif;
+  pointer-events: none;
+  box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.6);
+}
+.mm-globo strong { font-weight: 700; }
+.mm-globo span { color: var(--mm-texto-2); }
+
+/* El recuadro de la costa del Atlántico: arriba a la izquierda, sobre el mar.
+   El dibujo va en píxeles (el recuadro se mide): las letras no cambian de
+   tamaño entre el recuadro chico y el abierto. */
+.mm-recuadro {
+  position: absolute;
+  z-index: 3;
+  top: 12px;
+  left: 12px;
+  width: min(44%, 236px);
+  aspect-ratio: 3 / 2;
+  border: 1px solid rgb(57 135 229 / 0.55);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0e1a2b;
+  box-shadow: 0 16px 40px -20px rgb(0 0 0 / 0.7);
+}
+.mm-recuadro.abierto {
+  inset: 0;
+  width: auto;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  animation: mm-aparece 0.35s ease;
+}
+.mm-recuadro-boton {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.mm-recuadro-boton:hover .mm-recuadro-titulo { background: #3987e5; }
+.mm-recuadro-boton:focus-visible { outline: 2px solid var(--camel-light); outline-offset: -3px; }
+.mm-recuadro svg { display: block; width: 100%; height: 100%; }
+.mm-recuadro-tierra { fill: #26364f; }
+.mm-recuadro-lugar {
+  fill: rgb(243 239 230 / 0.82);
+  font: italic 600 13px/1 var(--font-serif), "Cormorant Garamond", serif;
+  letter-spacing: 0.04em;
+}
+.mm-recuadro.abierto .mm-recuadro-lugar { font-size: 17px; }
+.mm-recuadro .mm-recuadro-mar { font-size: 15px; }
+.mm-recuadro-titulo {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgb(57 135 229 / 0.85);
+  color: #fff;
+  font: 700 10px/1.2 var(--font-sans), "Montserrat", sans-serif;
+  letter-spacing: 0.02em;
+  transition: background-color 0.25s ease;
+}
+.mm-recuadro-esquina,
+.mm-recuadro-esquema {
+  position: absolute;
+  color: rgb(243 239 230 / 0.62);
+  font: 600 9.5px/1 var(--font-sans), "Montserrat", sans-serif;
+  pointer-events: none;
+}
+.mm-recuadro-esquema { right: 10px; bottom: 8px; font-style: italic; font-weight: 500; }
+.mm-recuadro-barranquilla { right: 10px; top: 42%; }
+.mm-recuadro-cartagena { left: 10px; bottom: 8px; }
+.mm-recuadro.abierto .mm-recuadro-titulo { left: 18px; top: 16px; font-size: 12px; }
+.mm-recuadro.abierto .mm-recuadro-esquina,
+.mm-recuadro.abierto .mm-recuadro-esquema { font-size: 12px; }
+.mm-recuadro.abierto .mm-recuadro-esquema { right: 18px; bottom: 16px; }
+.mm-recuadro.abierto .mm-recuadro-barranquilla { right: 18px; top: 30%; }
+.mm-recuadro.abierto .mm-recuadro-cartagena { left: 18px; bottom: 16px; }
+
+/* Con otra zona acercada, del recuadro queda solo su acceso. */
+.mm-recuadro-acceso {
+  position: absolute;
+  z-index: 3;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid rgb(57 135 229 / 0.55);
+  border-radius: 999px;
+  background: rgb(14 26 43 / 0.88);
+  color: var(--marfil);
+  font: 700 11px/1.2 var(--font-sans), "Montserrat", sans-serif;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+.mm-recuadro-acceso:hover { border-color: #3987e5; background: rgb(14 26 43 / 0.96); }
+.mm-recuadro-acceso:focus-visible { outline: 2px solid var(--camel-light); outline-offset: 2px; }
+.mm-recuadro-acceso .mm-muestra { width: 10px; height: 10px; border-radius: 3px; }
+
+
+/* ── El panel ──────────────────────────────────────────────── */
+.mm-panel {
+  max-height: 760px;
+  overflow-y: auto;
+  padding: 22px 20px 24px;
+  border: 1px solid var(--mm-borde);
+  border-radius: 24px;
+  background: var(--mm-fondo-panel);
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.mm-panel-titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--marfil);
+  font: 600 26px/1.15 var(--font-serif), "Cormorant Garamond", serif;
+}
+.mm-panel-ayuda { margin: 8px 0 0; color: var(--mm-texto-2); font-size: 14px; line-height: 1.55; }
+.mm-panel-subtitulo {
+  margin: 26px 0 10px;
+  color: var(--camel-light);
+  font: 700 11.5px/1.2 var(--font-sans), "Montserrat", sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.mm-nota { margin: 10px 0 0; color: var(--mm-texto-2); font-size: 12.5px; line-height: 1.5; }
+
+.mm-muestra { flex-shrink: 0; width: 12px; height: 12px; border-radius: 4px; background: currentColor; }
+.mm-zona-color-zona-norte { color: var(--mm-zona-norte); }
+.mm-zona-color-ciudad { color: var(--mm-ciudad); }
+.mm-zona-color-corredor-turbaco { color: var(--mm-corredor-turbaco); }
+.mm-zona-color-costa-atlantico { color: var(--mm-costa-atlantico); }
+.mm-panel-titulo.mm-con-muestra .mm-muestra { width: 14px; height: 14px; }
+
+.mm-lista-zonas, .mm-lista-opciones, .mm-lista-obras { display: grid; gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.mm-boton-zona {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--mm-borde);
+  border-radius: 14px;
+  background: rgb(243 239 230 / 0.03);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background 0.3s ease, transform 0.3s ease;
+}
+.mm-boton-zona:hover, .mm-boton-zona:focus-visible { border-color: currentColor; background: rgb(243 239 230 / 0.06); transform: translateX(2px); }
+.mm-boton-zona:focus-visible { outline: 2px solid var(--camel-light); outline-offset: 2px; }
+.mm-boton-zona-texto { display: flex; flex: 1; flex-direction: column; gap: 3px; }
+.mm-boton-zona-texto strong { color: var(--marfil); font: 600 15px/1.25 var(--font-sans), "Montserrat", sans-serif; }
+.mm-boton-zona-texto small { color: var(--mm-texto-2); font-size: 12px; }
+.mm-flecha { color: var(--mm-texto-2); }
+
+.mm-volver {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--camel-light);
+  font: 600 13px/1.3 var(--font-sans), "Montserrat", sans-serif;
+  cursor: pointer;
+  margin-bottom: 14px;
+}
+.mm-volver:hover { text-decoration: underline; }
+.mm-volver:focus-visible { outline: 2px solid var(--camel-light); outline-offset: 2px; }
+
+.mm-fila-opcion,
+.mm-tarjeta-cabeza {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--mm-borde);
+  border-radius: 14px;
+  background: rgb(243 239 230 / 0.03);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+.mm-fila-opcion:hover, .mm-tarjeta-cabeza:hover { border-color: rgb(212 188 150 / 0.55); background: rgb(243 239 230 / 0.06); }
+.mm-fila-opcion:focus-visible, .mm-tarjeta-cabeza:focus-visible { outline: 2px solid var(--camel-light); outline-offset: 2px; }
+.mm-tarjeta.abierta .mm-tarjeta-cabeza { border-color: rgb(212 188 150 / 0.7); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.mm-fila-texto { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; }
+.mm-fila-texto strong { color: var(--marfil); font: 600 14.5px/1.3 var(--font-sans), "Montserrat", sans-serif; }
+.mm-fila-precio { color: var(--camel-light); font: 700 13px/1.35 var(--font-sans), "Montserrat", sans-serif; }
+.mm-fila-precio small { color: var(--mm-texto-2); font-weight: 500; }
+.mm-fila-datos { color: var(--mm-texto-2); font-size: 11.5px; line-height: 1.45; }
+/* La lista corta de la vista general: nombre y zona; el precio, en su zona. */
+.mm-lista-corta { gap: 6px; }
+.mm-lista-corta .mm-fila-opcion { padding: 9px 12px; }
+.mm-lista-corta .mm-fila-texto strong { font-size: 14px; }
+.mm-fila-opcion:hover .mm-flecha { color: var(--camel-light); }
+.mm-tarjeta-cabeza img, .mm-sin-foto { flex-shrink: 0; width: 52px; height: 52px; border-radius: 10px; object-fit: cover; }
+.mm-sin-foto { background: linear-gradient(135deg, #2a3a55, #1c2a40); }
+.mm-marca-mapa {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border: 1px solid rgb(212 188 150 / 0.5);
+  border-radius: 999px;
+  color: var(--camel-light);
+  font: 700 9.5px/1.2 var(--font-sans), "Montserrat", sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.mm-tarjeta-cuerpo {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px 14px;
+  border: 1px solid rgb(212 188 150 / 0.7);
+  border-top: 0;
+  border-radius: 0 0 14px 14px;
+  background: rgb(243 239 230 / 0.04);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.mm-tarjeta-cuerpo p { margin: 0; color: rgb(243 239 230 / 0.86); }
+.mm-estado-opcion { color: var(--camel-light) !important; font-weight: 600; }
+.mm-fuente { color: var(--mm-texto-2) !important; font-size: 11.5px; }
+.mm-ver { color: var(--camel-light); font-weight: 700; text-decoration: none; }
+.mm-ver:hover { text-decoration: underline; }
+
+.mm-tarjeta-item .mm-tarjeta-cabeza { flex-wrap: wrap; gap: 6px 10px; }
+.mm-tarjeta-item .mm-tarjeta-cabeza strong { flex: 1; min-width: 60%; color: var(--marfil); font: 600 13.5px/1.35 var(--font-sans), "Montserrat", sans-serif; }
+.mm-chip {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font: 700 9.5px/1.2 var(--font-sans), "Montserrat", sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.mm-chip-entregado { background: var(--marfil); color: var(--marino); }
+.mm-chip-obra { border: 1px dashed var(--camel-light); color: var(--camel-light); }
+.mm-chip-anunciado, .mm-chip-estudio { border: 1px dashed rgb(170 195 230 / 0.8); color: rgb(190 210 238); }
+.mm-lista-lugares .mm-tarjeta-cabeza { padding: 8px 12px; }
+
+.mm-letra-chica { display: grid; gap: 6px; margin-top: 18px; color: rgb(243 239 230 / 0.55); font-size: 11.5px; line-height: 1.55; max-width: 980px; }
+.mm-letra-chica p { margin: 0; }
+
+/* ── Los precios (PreciosVivienda) ─────────────────────────── */
+.pv { margin-top: 72px; padding-top: 56px; border-top: 1px solid var(--mm-borde, rgb(243 239 230 / 0.14)); }
+.pv-titulo { margin: 10px 0 0; color: var(--marfil); font: 600 34px/1.15 var(--font-serif), "Cormorant Garamond", serif; }
+.pv-cifras { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 28px; }
+.pv-cifra {
+  padding: 22px 22px 20px;
+  border: 1px solid rgb(243 239 230 / 0.14);
+  border-radius: 20px;
+  background: rgb(10 18 30 / 0.45);
+}
+.pv-cifra p { margin: 0; }
+.pv-cifra-rotulo { color: var(--camel-light); font: 700 11px/1.3 var(--font-sans), "Montserrat", sans-serif; letter-spacing: 0.1em; text-transform: uppercase; }
+.pv-cifra-valor { margin-top: 10px !important; color: var(--marfil); font: 600 52px/1 var(--font-serif), "Cormorant Garamond", serif; }
+.pv-cifra-valor small { font-size: 22px; font-weight: 600; margin-right: 6px; }
+.pv-cifra-texto { margin-top: 8px !important; color: rgb(243 239 230 / 0.82); font-size: 14px; line-height: 1.5; }
+.pv-cifra-comparacion { margin-top: 10px !important; color: rgb(243 239 230 / 0.82); font-size: 13.5px; font-weight: 600; }
+.pv-fuente { margin-top: 12px !important; color: rgb(243 239 230 / 0.55); font-size: 11.5px; line-height: 1.45; }
+
+.pv-grafica { margin: 26px 0 0; padding: 22px 20px 16px; border: 1px solid rgb(243 239 230 / 0.14); border-radius: 20px; background: rgb(10 18 30 / 0.45); }
+.pv-grafica figcaption { display: grid; gap: 4px; }
+.pv-grafica figcaption strong { color: var(--marfil); font: 600 16px/1.3 var(--font-sans), "Montserrat", sans-serif; }
+.pv-grafica figcaption span { color: rgb(243 239 230 / 0.66); font-size: 13px; line-height: 1.5; }
+.pv-leyenda { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 14px 0 0; padding: 0; list-style: none; color: rgb(243 239 230 / 0.82); font-size: 12.5px; font-weight: 600; }
+.pv-leyenda li { display: inline-flex; align-items: center; gap: 8px; }
+.pv-muestra { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; }
+.pv-muestra-area { background: #c98500; }
+.pv-muestra-nacional { background: #3987e5; }
+.pv-lienzo { position: relative; margin-top: 10px; }
+.pv-lienzo svg { display: block; width: 100%; height: auto; overflow: visible; }
+.pv-rejilla { stroke: rgb(243 239 230 / 0.08); stroke-width: 1; }
+.pv-base { stroke: rgb(243 239 230 / 0.3); stroke-width: 1; }
+.pv-marca text { fill: rgb(243 239 230 / 0.5); font: 500 11px/1 var(--font-sans), "Montserrat", sans-serif; }
+.pv-anio { fill: rgb(243 239 230 / 0.7); font: 600 12px/1 var(--font-sans), "Montserrat", sans-serif; }
+.pv-barra-area { fill: #c98500; }
+.pv-barra-nacional { fill: #3987e5; }
+.pv-grupo { transition: opacity 0.25s ease; }
+.pv-grupo.pv-tenue { opacity: 0.4; }
+.pv-toque { fill: transparent; }
+.pv-valor { font: 700 11.5px/1 var(--font-sans), "Montserrat", sans-serif; fill: var(--marfil); paint-order: stroke; stroke: #121b29; stroke-width: 3px; }
+.pv-globo {
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  gap: 3px;
+  min-width: 190px;
+  padding: 9px 12px;
+  transform: translate(-50%, -6px);
+  border: 1px solid rgb(212 188 150 / 0.35);
+  border-radius: 10px;
+  background: rgb(14 26 43 / 0.96);
+  color: rgb(243 239 230 / 0.86);
+  font: 500 12px/1.4 var(--font-sans), "Montserrat", sans-serif;
+  pointer-events: none;
+  box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.6);
+}
+.pv-globo strong { color: var(--marfil); }
+.pv-globo i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; }
+.pv-tabla { margin-top: 10px; color: rgb(243 239 230 / 0.82); font-size: 13px; }
+.pv-tabla summary { cursor: pointer; color: var(--camel-light); font-weight: 600; }
+.pv-tabla summary:focus-visible { outline: 2px solid var(--camel-light); outline-offset: 2px; }
+.pv-tabla table { width: 100%; max-width: 520px; margin-top: 10px; border-collapse: collapse; }
+.pv-tabla th, .pv-tabla td { padding: 6px 8px; border-bottom: 1px solid rgb(243 239 230 / 0.1); text-align: right; }
+.pv-tabla th:first-child { text-align: left; }
+.pv-letra-chica { margin: 16px 0 0; color: rgb(243 239 230 / 0.55); font-size: 11.5px; line-height: 1.55; max-width: 980px; }
+.pv-cierre { margin: 26px 0 0; color: var(--marfil); font-size: 16px; line-height: 1.55; }
+.pv-cierre a { color: var(--camel-light); font-weight: 700; text-decoration: none; }
+.pv-cierre a:hover { text-decoration: underline; }
+
+/* ── Teléfono y tableta ────────────────────────────────────── */
+@media (max-width: 960px) {
+  .mm-cuerpo { grid-template-columns: minmax(0, 1fr); }
+  .mm-lienzo { aspect-ratio: 5 / 6; max-height: none; }
+  .mm-panel { max-height: none; overflow: visible; }
+}
+@media (max-width: 640px) {
+  .mm-seccion { padding: 64px 0 72px; }
+  .mm-lienzo { aspect-ratio: 4 / 5; border-radius: 18px; }
+  .mm-recuadro { width: min(50%, 180px); top: 10px; left: 10px; }
+  /* En el recuadro chico del teléfono no caben las esquinas: el título basta. */
+  .mm-recuadro:not(.abierto) .mm-recuadro-esquina,
+  .mm-recuadro:not(.abierto) .mm-recuadro-esquema { display: none; }
+  .mm-recuadro-acceso { top: 10px; left: 10px; padding: 6px 10px; font-size: 10.5px; }
+  .mm-norte { top: 10px; right: 10px; }
+  /* La leyenda, debajo del mapa: encima taparía la mitad de abajo. */
+  .mm-leyenda {
+    position: static;
+    max-width: none;
+    margin-top: 10px;
+    padding: 0 4px;
+    gap: 6px 14px;
+    border: 0;
+    background: none;
+    font-size: 10.5px;
+    backdrop-filter: none;
+  }
+  .mm-panel { padding: 18px 14px 20px; border-radius: 18px; }
+  .mm-panel-titulo { font-size: 23px; }
+  .pv-cifras { grid-template-columns: minmax(0, 1fr); }
+  .pv-cifra-valor { font-size: 44px; }
+  .pv-titulo { font-size: 28px; }
+  .pv-grafica { padding: 18px 12px 12px; }
+}
+
+/* Con menos movimiento, nada se anima. */
+@media (prefers-reduced-motion: reduce) {
+  .mm-zona-relleno, .mm-zona-borde, .mm-rotulos, .mm-rotulos-zona, .mm-lugares, .mm-obras, .mm-malecon, .mm-pin, .mm-pin-nombre, .mm-recuadro, .mm-marca, .mm-boton-zona, .mm-recuadro-acceso, .pv-grupo { transition: none; }
+  .mm-pin.elegido, .mm-etiqueta, .mm-aparece, .mm-recuadro.abierto { animation: none; }
+}
+html[data-movimiento="reducido"] .mm-pin.elegido,
+html[data-movimiento="reducido"] .mm-etiqueta,
+html[data-movimiento="reducido"] .mm-aparece,
+html[data-movimiento="reducido"] .mm-recuadro.abierto { animation: none; }
