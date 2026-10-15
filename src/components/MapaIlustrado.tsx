@@ -31,6 +31,18 @@ import type { Icono, Lugar } from "@/data/zona";
 import { ruta, type Idioma } from "@/i18n/idioma";
 import { etiquetaEstadoObra } from "@/i18n/etiquetas";
 import { zona } from "@/i18n/modulos/zona";
+import {
+  BORDE,
+  COSTA,
+  PUNTOS_BAHIA,
+  PUNTOS_CIENAGA,
+  PUNTOS_MALECON,
+  PUNTOS_MANGA,
+  PUNTOS_TIERRA_BOMBA,
+  PUNTOS_VIA_AL_MAR,
+  PUNTOS_VIADUCTO,
+  type LL,
+} from "@/lib/geografia";
 import { GLIFOS } from "@/lib/glifos";
 import { useReveal } from "@/lib/motion";
 import "@/styles/mapa-ilustrado.css";
@@ -85,7 +97,6 @@ const KY = 11100;
 const x = (lon: number) => Math.round((lon - LON0) * KX * 10) / 10;
 const y = (lat: number) => Math.round((LAT0 - lat) * KY * 10) / 10;
 
-type LL = [number, number]; // [lat, lon]
 /** Curva suave (Catmull-Rom → Bézier) por los puntos: se lee como dibujo. */
 function curva(pts: LL[], cerrada = false): string {
   const p = pts.map(([lat, lon]) => [x(lon), y(lat)]);
@@ -104,64 +115,21 @@ function curva(pts: LL[], cerrada = false): string {
 }
 
 // ── La ilustración (guiada por OSM; no es cartografía) ─────────────────────
-// El dibujo se extiende bastante más allá de los encuadres: el lienzo cambia
-// de proporción con la pantalla y nunca debe asomar un borde vacío.
-const BORDE = { oeste: -75.8, este: -75.2, sur: 10.25, norte: 10.75 };
-
-const COSTA: LL[] = [
-  [10.383, -75.552], [10.389, -75.566], [10.398, -75.563], [10.41, -75.559], [10.42, -75.555],
-  [10.428, -75.55], [10.432, -75.542], [10.436, -75.535], [10.441, -75.527], [10.447, -75.519],
-  [10.453, -75.512], [10.46, -75.5072], [10.468, -75.502], [10.476, -75.4968], [10.4865, -75.4925],
-  [10.496, -75.4955], [10.506, -75.4985], [10.515, -75.4995], [10.52, -75.4975], [10.5245, -75.4948],
-  [10.532, -75.4968], [10.543, -75.4995], [10.551, -75.5018], [10.5568, -75.5035], [10.562, -75.501],
-  [10.572, -75.495], [10.585, -75.488], [10.6, -75.48], [10.615, -75.472], [10.63, -75.465],
-  [10.66, -75.448], [10.7, -75.425], [10.75, -75.395],
-];
+// Los trazos viven en src/lib/geografia.ts, compartidos con el mapa de obras y
+// entorno. El dibujo se extiende bastante más allá de los encuadres: el lienzo
+// cambia de proporción con la pantalla y nunca debe asomar un borde vacío.
 const TIERRA =
   curva(COSTA) +
   ` L${x(BORDE.este)},${y(BORDE.norte)} L${x(BORDE.este)},${y(BORDE.sur)} L${x(-75.548)},${y(BORDE.sur)} L${x(-75.548)},${y(10.36)} Z`;
-const BAHIA = curva(
-  [
-    [10.3, -75.575], [10.34, -75.566], [10.372, -75.556], [10.384, -75.549], [10.394, -75.548],
-    [10.404, -75.549], [10.413, -75.545], [10.419, -75.539], [10.417, -75.53], [10.409, -75.526],
-    [10.397, -75.528], [10.384, -75.527], [10.37, -75.522], [10.34, -75.53], [10.3, -75.535],
-  ],
-  true,
-);
-const MANGA = curva(
-  [[10.418, -75.538], [10.416, -75.53], [10.409, -75.5295], [10.404, -75.533], [10.407, -75.539], [10.413, -75.5415]],
-  true,
-);
+const BAHIA = curva(PUNTOS_BAHIA, true);
+const MANGA = curva(PUNTOS_MANGA, true);
 /** Tierra Bomba, al suroeste de Bocagrande: solo silueta, sin rótulo. */
-const TIERRA_BOMBA = curva(
-  [
-    [10.397, -75.566], [10.392, -75.579], [10.38, -75.588], [10.365, -75.59], [10.352, -75.585],
-    [10.35, -75.572], [10.36, -75.563], [10.375, -75.56], [10.388, -75.559],
-  ],
-  true,
-);
-const CIENAGA = curva(
-  [
-    [10.4871, -75.4905], [10.483, -75.4855], [10.478, -75.476], [10.472, -75.466], [10.462, -75.459],
-    [10.448, -75.457], [10.433, -75.462], [10.421, -75.47], [10.415, -75.48], [10.418, -75.49],
-    [10.428, -75.497], [10.44, -75.502], [10.452, -75.501], [10.464, -75.4985], [10.474, -75.4935],
-    [10.481, -75.4915],
-  ],
-  true,
-);
-const VIA_AL_MAR = curva([
-  [10.425, -75.54], [10.436, -75.532], [10.442, -75.524], [10.449, -75.515], [10.456, -75.508],
-  [10.463, -75.5025], [10.471, -75.4975], [10.478, -75.4925], [10.4855, -75.4885], [10.494, -75.4845],
-  [10.503, -75.4775], [10.512, -75.4735], [10.5165, -75.4712], [10.526, -75.4675], [10.537, -75.463],
-  [10.55, -75.459], [10.565, -75.4545], [10.585, -75.4485], [10.605, -75.442], [10.63, -75.435],
-  [10.68, -75.415],
-]);
-const VIADUCTO = curva([[10.447, -75.508], [10.458, -75.5015], [10.468, -75.496], [10.477, -75.4905]]);
+const TIERRA_BOMBA = curva(PUNTOS_TIERRA_BOMBA, true);
+const CIENAGA = curva(PUNTOS_CIENAGA, true);
+const VIA_AL_MAR = curva(PUNTOS_VIA_AL_MAR);
+const VIADUCTO = curva(PUNTOS_VIADUCTO);
 /** Trazado ilustrativo del Gran Malecón del Mar: La Tenaza → Playa Azul (~5,1 km). */
-const MALECON = curva([
-  [10.4302, -75.5462], [10.4345, -75.5385], [10.4385, -75.5315], [10.443, -75.5245], [10.4485, -75.5175],
-  [10.457, -75.5088],
-]);
+const MALECON = curva(PUNTOS_MALECON);
 
 /** Los encuadres: la ciudad, el corredor y el corredor en el teléfono. */
 const marco = (oeste: number, este: number, sur: number, norte: number) => ({

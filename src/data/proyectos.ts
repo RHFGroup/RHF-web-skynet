@@ -301,6 +301,14 @@ export const PROYECTOS: Proyecto[] = [
     ],
     ubicacion: "Vía Turbaco Km 1, Turbaco, Bolívar",
     ubicacionFuente: "invercolombia.com.co/blue-garden (Vía Turbaco Km 1), consultada el 14-sep-2026 · municipio: ficha de la Feria de Vivienda de El Universal",
+    // El pin del enlace de Google Maps que publica el promotor (`!3d`/`!4d`),
+    // no el centro de la vista (`@`), que queda 280 m al oeste. Research del
+    // vault: research/el-mapa-de-obras-y-entorno-ubicaciones-y-obras-verificadas-al-14-oct-2026.
+    coordenada: {
+      lat: 10.353152,
+      lon: -75.453699,
+      fuente: "Enlace de Google Maps que Invercolombia publica en su página de Blue Garden (lugar «Blue Garden Condominios»), consultado el 14-oct-2026",
+    },
     conflictos: [],
     brochurePaginas: 24,
     brochurePdf: "/proyectos/blue-garden/brochure.pdf",
@@ -448,6 +456,17 @@ export const PROYECTOS: Proyecto[] = [
     ubicacion: null,
     ubicacionFuente:
       "invercolombia.com.co/acacias-campestre publica únicamente la sala de ventas («Troncal Caribe, frente al SENA de Ternera»), no la ubicación del proyecto. Consultada el 14-sep-2026",
+    // El punto sale de OpenStreetMap (14-oct-2026), no del promotor: el
+    // polígono «Acacias Campestre» queda frente al SENA de Ternera, al otro
+    // lado de la Troncal, donde el promotor tiene su sala de ventas. Como no
+    // es la ubicación que publica el promotor, `ubicacion` sigue en null y el
+    // precio sigue en «Consultar» (2.16.1). Research del vault:
+    // research/el-mapa-de-obras-y-entorno-ubicaciones-y-obras-verificadas-al-14-oct-2026.
+    coordenada: {
+      lat: 10.377598,
+      lon: -75.45711,
+      fuente: "OpenStreetMap, vía 1388572042 («Acacias Campestre»), frente al SENA de Ternera; consultada el 14-oct-2026",
+    },
     conflictos: [
       {
         dato: "Área de la tipología pequeña",

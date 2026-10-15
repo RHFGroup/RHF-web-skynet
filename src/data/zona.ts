@@ -313,17 +313,20 @@ export const LUGARES: Lugar[] = [
     etiquetaTrazado: "En obra desde agosto de 2025",
   },
   {
+    // 14-oct-2026: entregada el 15-sep-2026. Pasa de «Lo que viene» a «Hoy»
+    // (research/el-mapa-de-obras-y-entorno-ubicaciones-y-obras-verificadas-al-14-oct-2026).
     id: "doble-calzada-tierra-baja",
     nombre: "Doble calzada de Tierra Baja",
-    frase: "La vía local del corredor, con 95 % de avance.",
-    capa: "viene",
+    frase:
+      "El nuevo acceso vial de Tierra Baja: 1.813 m de doble calzada con andenes, glorieta e iluminación, en servicio desde septiembre de 2026.",
+    capa: "hoy",
     categorias: ["obras", "conectividad"],
     icono: "obra",
-    estado: "En obra",
+    estado: "Entregado",
     // Es la coordenada del corregimiento, no la del trazado de la vía.
     coordenada: { lat: 10.489864, lon: -75.475607, fuente: OSM("nodo", 703211079) + " (corregimiento de Tierra Baja)" },
-    fuente: "Seguimiento de obra",
-    fecha: "agosto de 2026",
+    fuente: "El Universal y El Heraldo, 27-sep-2026: entregada por la Alcaldía el 15 de septiembre de 2026",
+    fecha: "septiembre de 2026",
   },
   {
     id: "kristal-malls",
@@ -405,22 +408,28 @@ export const CARTAGENA = {
   titulo: "De la ciudad amurallada a la costa norte",
   tituloAlterno: "Una ciudad para vivir frente al Caribe",
   texto:
-    "Cartagena reúne historia, mar Caribe y conexión con el mundo. Su Centro Histórico es Patrimonio de la Humanidad, la playa hace parte del día a día y el aeropuerto internacional queda a la entrada de la Zona Norte. Con el Centro, Bocagrande y Manga consolidados, la ciudad crece hacia el norte por la Vía al Mar, y ahí se concentra hoy la vivienda nueva.",
+    "Cartagena reúne historia, mar Caribe y conexión con el mundo. Su Centro Histórico es Patrimonio de la Humanidad, la playa hace parte del día a día y el aeropuerto internacional queda a la entrada de la Zona Norte. Con el Centro, Bocagrande y Manga consolidados, la ciudad crece hacia el norte por la Vía al Mar, y ahí se concentran hoy las ventas de vivienda nueva No VIS.",
 };
 
 /**
  * Las cifras de la sección, con su fuente. Ya estaban publicadas y salen del
  * copy del vault (projects/inmobiliaria/copy-de-la-seccion-zona-norte-que-
  * publicamos-y-que-no).
+ *
+ * 14-oct-2026: el 70 % de Camacol Bolívar es de las ventas de vivienda nueva
+ * No VIS de 2025 (El Universal, 3-mar-2026), no de «la vivienda nueva que se
+ * comercializa en Bolívar», y la fuente no dice si el total es Bolívar o
+ * Cartagena: el resto se rotula «otras zonas». La portada de la home lo
+ * muestra (Hero.tsx). Ver insights/el-70-de-camacol-que-publicamos-era-de-
+ * ventas-no-vis-de-2025-no-de-toda-la-vivienda-nueva-de-bolivar.
  */
 export const CIFRA_OFERTA = {
   valor: 70,
-  titulo: "Aquí está la oferta",
-  rotulo: "de la vivienda nueva que se comercializa en Bolívar está en la Zona Norte",
-  texto:
-    "Donde se concentra la oferta se concentra también la competencia entre constructores, y eso se nota en las condiciones de compra.",
-  resto: "resto de Bolívar",
-  fuente: "Camacol Bolívar",
+  titulo: "Aquí se concentra la compra",
+  rotulo: "de las ventas de vivienda nueva No VIS de 2025 se concentró en la Zona Norte",
+  texto: "Es la zona donde más se vende vivienda nueva por encima del tope de la vivienda de interés social.",
+  resto: "otras zonas",
+  fuente: "Camacol Bolívar, citado por El Universal (3 de marzo de 2026)",
 };
 
 export const HECHOS: {
@@ -450,12 +459,12 @@ export const HECHOS: {
     fecha: "agosto de 2026",
   },
   {
-    titulo: "La vía local, casi lista",
-    texto: "La doble calzada de Tierra Baja entra en su tramo final de obra.",
-    cifra: { valor: 95, sufijo: " %", rotulo: "de avance en la doble calzada de Tierra Baja" },
-    estado: "En obra",
-    fuente: "Seguimiento de obra",
-    fecha: "agosto de 2026",
+    titulo: "La vía local, en servicio",
+    texto: "La Alcaldía entregó el nuevo acceso vial de Tierra Baja el 15 de septiembre de 2026: 1.813 m de doble calzada.",
+    cifra: null,
+    estado: "Entregado",
+    fuente: "El Universal y El Heraldo",
+    fecha: "septiembre de 2026",
   },
   {
     titulo: "El comercio que viene",
@@ -468,7 +477,7 @@ export const HECHOS: {
 ];
 
 export const NOTA_FUENTES =
-  "Cifras contrastadas contra fuentes primarias. Concentración de oferta: Camacol Bolívar. Actualizado a agosto de 2026.";
+  "Cifras contrastadas contra fuentes primarias. Ventas de vivienda nueva No VIS: Camacol Bolívar, citado por El Universal (3 de marzo de 2026). Actualizado a octubre de 2026.";
 
 /** Las fuentes del mapa y del bloque de Cartagena, para el pie de la sección. */
 export const NOTA_MAPA =

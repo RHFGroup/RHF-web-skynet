@@ -152,6 +152,8 @@ const TEXTOS: Diccionario = {
     "Floor plan of the Blue Garden single-story house, with a 250 m² lot and 75 m² of built area",
   "invercolombia.com.co/blue-garden (Vía Turbaco Km 1), consultada el 14-sep-2026 · municipio: ficha de la Feria de Vivienda de El Universal":
     "invercolombia.com.co/blue-garden (Vía Turbaco Km 1), accessed September 14, 2026 · municipality: El Universal's Feria de Vivienda (housing fair) listing",
+  "Enlace de Google Maps que Invercolombia publica en su página de Blue Garden (lugar «Blue Garden Condominios»), consultado el 14-oct-2026":
+    "Google Maps link that Invercolombia publishes on its Blue Garden page (place “Blue Garden Condominios”), accessed October 14, 2026",
   "2 parqueaderos por casa": "2 parking spaces per house",
   "Ver brochure oficial, págs. 13 a 24": "See the official brochure, pp. 13–24",
   "Casas ampliables · 3 habitaciones · jardín": "Expandable houses · 3 bedrooms · garden",
@@ -188,6 +190,8 @@ const TEXTOS: Diccionario = {
   "Plano del apartamento de 3 alcobas de Acacias Campestre": "Floor plan of the 3-bedroom apartment at Acacias Campestre",
   "invercolombia.com.co/acacias-campestre publica únicamente la sala de ventas («Troncal Caribe, frente al SENA de Ternera»), no la ubicación del proyecto. Consultada el 14-sep-2026":
     "invercolombia.com.co/acacias-campestre publishes only the sales office address (Troncal Caribe, across from the SENA campus in Ternera), not the project location. Accessed September 14, 2026",
+  "OpenStreetMap, vía 1388572042 («Acacias Campestre»), frente al SENA de Ternera; consultada el 14-oct-2026":
+    "OpenStreetMap, way 1388572042 (“Acacias Campestre”), across from the SENA campus in Ternera; accessed October 14, 2026",
   "Área de la tipología pequeña": "Area of the smaller unit type",
   "33 a 35 m²": "33 to 35 m²",
   "32 a 35 m²": "32 to 35 m²",

@@ -31,7 +31,6 @@ const TEXTOS: Diccionario = {
   "Conectividad": "Transportation",
 
   // ── Lo que se repite ─────────────────────────────────────────────────────
-  "Seguimiento de obra": "Construction progress tracking",
   // Las notas entre paréntesis de las coordenadas de OpenStreetMap.
   "sector de Serena del Mar": "Serena del Mar area",
   "corregimiento de Tierra Baja": "Tierra Baja township",
@@ -105,7 +104,10 @@ const TEXTOS: Diccionario = {
     "Cartagena Mayor's Office (cartagena.gov.co) · El Universal, July 9, 2026: construction began in August 2025",
   "En obra desde agosto de 2025": "Under construction since August 2025",
   "Doble calzada de Tierra Baja": "Tierra Baja divided highway",
-  "La vía local del corredor, con 95 % de avance.": "The corridor's local road, 95% complete.",
+  "El nuevo acceso vial de Tierra Baja: 1.813 m de doble calzada con andenes, glorieta e iluminación, en servicio desde septiembre de 2026.":
+    "Tierra Baja's new access road: 1,813 m of divided highway with sidewalks, a roundabout and street lighting, open since September 2026.",
+  "El Universal y El Heraldo, 27-sep-2026: entregada por la Alcaldía el 15 de septiembre de 2026":
+    "El Universal and El Heraldo, September 27, 2026: opened by the Mayor's Office on September 15, 2026",
   "Su constructora lo presenta como el primer shopping resort de Latinoamérica: comercio, hotel y una laguna cristalina abierta al público. Obras iniciadas en marzo de 2026.":
     "Its builder presents it as Latin America's first shopping resort: retail, a hotel and a crystal-clear lagoon open to the public. Construction began in March 2026.",
   "Arquitectura y Concreto (arquitecturayconcreto.com/kristal-mall) · Inmobiliare, 12-mar-2026 · La República, 25-may-2024":
@@ -119,24 +121,25 @@ const TEXTOS: Diccionario = {
   // ── El bloque de Cartagena ───────────────────────────────────────────────
   "De la ciudad amurallada a la costa norte": "From the walled city to the northern coast",
   "Una ciudad para vivir frente al Caribe": "A city to live in by the Caribbean",
-  "Cartagena reúne historia, mar Caribe y conexión con el mundo. Su Centro Histórico es Patrimonio de la Humanidad, la playa hace parte del día a día y el aeropuerto internacional queda a la entrada de la Zona Norte. Con el Centro, Bocagrande y Manga consolidados, la ciudad crece hacia el norte por la Vía al Mar, y ahí se concentra hoy la vivienda nueva.":
-    "Cartagena brings together history, the Caribbean Sea and connections to the world. Its historic center is a UNESCO World Heritage Site, the beach is part of everyday life, and the international airport sits at the entrance to the Zona Norte, Cartagena's northern corridor. With the Centro, Bocagrande and Manga already established, the city is growing north along the Vía al Mar, and that is where new housing is concentrated today.",
+  "Cartagena reúne historia, mar Caribe y conexión con el mundo. Su Centro Histórico es Patrimonio de la Humanidad, la playa hace parte del día a día y el aeropuerto internacional queda a la entrada de la Zona Norte. Con el Centro, Bocagrande y Manga consolidados, la ciudad crece hacia el norte por la Vía al Mar, y ahí se concentran hoy las ventas de vivienda nueva No VIS.":
+    "Cartagena brings together history, the Caribbean Sea and connections to the world. Its historic center is a UNESCO World Heritage Site, the beach is part of everyday life, and the international airport sits at the entrance to the Zona Norte, Cartagena's northern corridor. With the Centro, Bocagrande and Manga already established, the city is growing north along the Vía al Mar, and that is where sales of new non-VIS homes are concentrated today.",
 
-  // ── La cifra de la oferta ────────────────────────────────────────────────
-  "Aquí está la oferta": "This is where the supply is",
-  "de la vivienda nueva que se comercializa en Bolívar está en la Zona Norte":
-    "of the new housing on the market in Bolívar is in the Zona Norte",
-  "Donde se concentra la oferta se concentra también la competencia entre constructores, y eso se nota en las condiciones de compra.":
-    "Where supply is concentrated, so is competition among builders, and that shows in the purchase terms.",
-  "resto de Bolívar": "rest of Bolívar",
+  // ── La cifra de las ventas (corregida el 14-oct-2026) ───────────────────
+  "Aquí se concentra la compra": "This is where sales are concentrated",
+  "de las ventas de vivienda nueva No VIS de 2025 se concentró en la Zona Norte":
+    "of 2025 sales of new non-VIS homes (priced above the social-housing cap) were in the Zona Norte",
+  "Es la zona donde más se vende vivienda nueva por encima del tope de la vivienda de interés social.":
+    "It is the area where the most new homes priced above the social-housing cap are sold.",
+  "otras zonas": "other areas",
+  "Camacol Bolívar, citado por El Universal (3 de marzo de 2026)":
+    "Camacol Bolívar, cited by El Universal (March 3, 2026)",
 
   // ── Los hechos ───────────────────────────────────────────────────────────
   "La vía ya está hecha": "The road is already built",
   "El Viaducto del Gran Manglar opera desde 2018 y el corredor completo hacia Barranquilla desde 2021: $778.576 millones que conectan a cerca de 3 millones de personas.":
     "The Viaducto del Gran Manglar has operated since 2018, and the full corridor to Barranquilla since 2021: COP 778,576 million that connect nearly 3 million people.",
-  // El sufijo va pegado a la cifra del contador: «8 years», «95%».
+  // El sufijo va pegado a la cifra del contador: «8 years».
   " años": " years",
-  " %": "%",
   "lleva el viaducto sobre la ciénaga en operación, desde 2018":
     "of operation for the viaduct over the lagoon, open since 2018",
   "Obra entregada": "Completed project",
@@ -145,18 +148,18 @@ const TEXTOS: Diccionario = {
     "The Santa Fe hospital and the Uniandes campus have operated here since 2018, 12 km from the city center.",
   "Research de la Zona Norte, contrastada contra fuentes primarias":
     "Zona Norte research, checked against primary sources",
-  "La vía local, casi lista": "The local road, almost ready",
-  "La doble calzada de Tierra Baja entra en su tramo final de obra.":
-    "The Tierra Baja divided highway is entering its final stretch of construction.",
-  "de avance en la doble calzada de Tierra Baja": "complete on the Tierra Baja divided highway",
+  "La vía local, en servicio": "The local road, now open",
+  "La Alcaldía entregó el nuevo acceso vial de Tierra Baja el 15 de septiembre de 2026: 1.813 m de doble calzada.":
+    "The Mayor's Office opened Tierra Baja's new access road on September 15, 2026: 1,813 m of divided highway.",
+  "El Universal y El Heraldo": "El Universal and El Heraldo",
   "El comercio que viene": "The retail on the way",
   "Kristal Malls está en obra desde marzo de 2026, con apertura prevista para 2027.":
     "Kristal Malls has been under construction since March 2026, with its opening planned for 2027.",
   "Prensa local": "Local press",
 
   // ── Las notas de la sección ──────────────────────────────────────────────
-  "Cifras contrastadas contra fuentes primarias. Concentración de oferta: Camacol Bolívar. Actualizado a agosto de 2026.":
-    "Figures checked against primary sources. Supply concentration: Camacol Bolívar. Updated as of August 2026.",
+  "Cifras contrastadas contra fuentes primarias. Ventas de vivienda nueva No VIS: Camacol Bolívar, citado por El Universal (3 de marzo de 2026). Actualizado a octubre de 2026.":
+    "Figures checked against primary sources. Sales of new non-VIS homes: Camacol Bolívar, cited by El Universal (March 3, 2026). Updated as of October 2026.",
   "Patrimonio de la Humanidad: UNESCO, Lista del Patrimonio Mundial. Lugares del mapa: OpenStreetMap, verificados el 24 y el 25 de septiembre de 2026. Gran Malecón del Mar: Alcaldía de Cartagena y El Universal, julio de 2026.":
     "World Heritage Site: UNESCO World Heritage List. Map locations: OpenStreetMap, verified on September 24 and 25, 2026. Gran Malecón del Mar: Cartagena Mayor's Office and El Universal, July 2026.",
 };

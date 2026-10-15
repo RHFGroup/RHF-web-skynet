@@ -76,6 +76,14 @@ export type Inmueble = {
   compartir: string;
   /** Renta corta aprobada, con su fuente (ver el mismo campo en proyectos.ts). */
   rentaCorta?: { fuente: string };
+  /**
+   * El punto del conjunto en un mapa, solo si se verificó en fuente (un
+   * elemento de OpenStreetMap con su id o el enlace que publica el promotor).
+   * Nunca una posición aproximada ni el centro de un sector: un pin mal puesto
+   * es un dato falso con mejor diseño. Sin coordenada, el inmueble se nombra
+   * con su ubicación y no se marca.
+   */
+  coordenada?: { lat: number; lon: number; fuente: string };
 };
 
 const FOTO_PROPIA_FEB = "Foto del apartamento · 28 de febrero de 2026";
@@ -335,6 +343,15 @@ export const INMUEBLES: Inmueble[] = [
     zona: "Juan de Acosta, Atlántico",
     ubicacion: "Agua Marina Beach Resort, Juan de Acosta, Atlántico",
     ubicacionFuente: "Presentación de venta del apartamento (octubre de 2023)",
+    // El conjunto, no el sector del apartamento: en OpenStreetMap son tres
+    // sectores de Constructora Colpatria (Delfines, Calamares y Arrecifes) a
+    // menos de 400 m. Research del vault: research/el-mapa-de-obras-y-entorno-
+    // ubicaciones-y-obras-verificadas-al-14-oct-2026.
+    coordenada: {
+      lat: 10.832518,
+      lon: -75.148388,
+      fuente: "OpenStreetMap, relación 9592774 («Agua Marina Delfines», del conjunto Agua Marina); consultada el 14-oct-2026",
+    },
     estado: "Terminado",
     piso: "8, con ascensor",
     habitaciones: "3",
