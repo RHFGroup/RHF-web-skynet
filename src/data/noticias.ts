@@ -81,6 +81,42 @@ export const MARCA_TIPO: Partial<Record<Noticia["tipo"], string>> = {
 };
 
 export const NOTICIAS: Noticia[] = [
+  // 15-oct-2026: research del vault
+  // `research/noticias-positivas-de-la-zona-norte-verificadas-el-15-oct-2026`.
+  {
+    id: "gran-malecon-avance-70",
+    titulo: "El Gran Malecón del Mar llega al 70 % de avance",
+    resumen:
+      "En un recorrido con el contralor general, el Distrito reportó un avance general del 70 % en el Gran Malecón del Mar. El sector entre Playa Azul y el túnel de Crespo, en la Zona Norte, supera el 90 % de ejecución.",
+    tipo: "en obra",
+    tema: "infraestructura",
+    fuente: "El Tiempo",
+    fecha: "2026-09-24",
+    url: "https://www.eltiempo.com/colombia/otras-ciudades/el-contralor-general-de-la-republica-jorge-laverde-le-puso-la-lupa-a-las-obras-para-la-proteccion-costera-de-cartagena-y-al-gran-malecon-del-mar-3588678",
+    cuerpo: [
+      "El contralor general de la República, Jorge Laverde, recorrió con el alcalde Dumek Turbay las obras del Gran Malecón del Mar. Según El Tiempo, el Distrito le presentó un avance general del 70 % y, en el sector 1, entre Playa Azul y el acceso al túnel de Crespo, una ejecución por encima del 90 %.",
+      "De acuerdo con la misma nota, la obra suma una inversión de $208.988 millones, genera 489 empleos directos y tiene contrato hasta junio de 2027. El Tiempo recoge que el contralor destacó la calidad de los materiales, la planeación financiera y la participación de la comunidad. Las cifras de avance son las que reportó el Distrito.",
+    ],
+    lectura:
+      "El tramo más adelantado del malecón es justamente el de la Zona Norte, entre La Boquilla y Crespo. Para quien vive o busca en el sector, el frente de playa que hoy se ve en obra es el que está más cerca de abrirse. Seguimos de cerca la entrega y la contaremos aquí.",
+  },
+  {
+    id: "gran-malecon-fase-2-nacion",
+    titulo: "La Nación aporta recursos para extender el Gran Malecón del Mar",
+    resumen:
+      "El Ministerio de Comercio, Industria y Turismo anunció $87.700 millones, a través de Fontur, para los tramos 3 y 4 de la segunda fase del Gran Malecón del Mar.",
+    tipo: "anuncio",
+    tema: "infraestructura",
+    fuente: "Ministerio de Comercio, Industria y Turismo",
+    fecha: "2026-09-18",
+    url: "https://www.mincit.gov.co/prensa/noticias/turismo/aceleran-obras-gran-malecon-del-mar-en-cartagena",
+    cuerpo: [
+      "El Gobierno nacional destinará $87.700 millones al Gran Malecón del Mar, a través del Fondo Nacional de Turismo (Fontur). Así lo informó el Ministerio de Comercio, Industria y Turismo en un comunicado del 18 de septiembre: los recursos financian los tramos 3 y 4 de la segunda fase de la obra.",
+      "Según el ministerio, con esa inversión el malecón consolidará más de siete kilómetros de paseo frente al mar. Es un anuncio de financiación; seguiremos la obra de estos tramos a medida que avance.",
+    ],
+    lectura:
+      "El malecón no se queda en la Zona Norte: el proyecto es un recorrido continuo frente al mar que une el norte con el resto de la ciudad. Que la Nación ponga recursos para los tramos siguientes le da continuidad a la obra que arranca en La Boquilla.",
+  },
   {
     id: "gran-malecon-primer-tramo",
     titulo: "El Gran Malecón del Mar alista la entrega de su primer tramo",
