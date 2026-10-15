@@ -632,7 +632,7 @@ export const PROYECTOS: Proyecto[] = [
       "Gimnasio",
     ],
     datos: [
-      { label: "Casas disponibles", valor: "49", fuente: LISTA_DORAL },
+      { label: "Casas disponibles", valor: "173 de 514", fuente: LISTA_DORAL + ", hoja «DORAL WEST -», cuadro de totales (514 casas, 341 vendidas, 173 disponibles)" },
       { label: "Lotes", valor: "128, 150, 160 y 288 m²", fuente: LISTA_DORAL },
       { label: "Parqueadero", valor: "Privado", fuente: "Brochure oficial Doral Cartagena" },
       { label: "Entregas", valor: "Noviembre 2026 a noviembre 2028", fuente: LISTA_DORAL + ", columna «fecha entrega»" },
@@ -656,9 +656,12 @@ export const PROYECTOS: Proyecto[] = [
       desde: 525_000_000,
       hasta: 835_000_000,
       moneda: "COP",
-      unidadesDisponibles: 49,
+      // 173 = cuadro de totales de la hoja «DORAL WEST -» del mismo archivo
+      // (514 casas, 341 vendidas). Antes decía 49, que eran solo las casas
+      // con precio en la lista. Decidido por Rafael el 15-oct-2026.
+      unidadesDisponibles: 173,
       corte: "25 de junio de 2026",
-      fuente: LISTA_DORAL + ", hoja «Lista de precios West»",
+      fuente: LISTA_DORAL + ", hojas «Lista de precios West» (precios) y «DORAL WEST -» (disponibilidad)",
     },
     precontractual: {
       ...SIN_PRECONTRACTUAL,
