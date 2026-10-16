@@ -17,7 +17,8 @@
  *  · El nuevo aeropuerto no entra mientras no tenga un hito oficial.
  *  · Van de la más nueva a la más vieja; la home muestra las tres primeras.
  *    Las «en obra» se revisan cuando pasa su fecha: la del Gran Malecón,
- *    después del 15-oct-2026.
+ *    después del 31-oct-2026 (el 14-oct se aplazó del 15-oct a la última
+ *    semana de octubre, según El Universal).
  */
 export type TemaNoticia =
   | "infraestructura"
@@ -59,14 +60,14 @@ export const MARCA_TIPO: Partial<Record<Noticia["tipo"], string>> = {
 export const NOTICIAS: Noticia[] = [
   {
     id: "gran-malecon-primer-tramo",
-    titulo: "El Gran Malecón del Mar alista la entrega de su primer tramo",
+    titulo: "El Gran Malecón del Mar abrirá su primera fase a finales de octubre",
     resumen:
-      "El Distrito anunció que en octubre entregará los primeros dos kilómetros del Gran Malecón del Mar, desde La Boquilla. La obra tiene una inversión prevista de $197.000 millones y más de 100.000 m² de espacio público.",
+      "El Distrito programó para la última semana de octubre la apertura de la primera fase del Gran Malecón del Mar, que va de Playa Azul, en La Boquilla, al acceso del túnel de Crespo. La fecha se ajustó para que el presidente de la República acompañe la inauguración.",
     tipo: "en obra",
     tema: "infraestructura",
     fuente: "El Universal",
-    fecha: "2026-09-18",
-    url: "https://www.eluniversal.com.co/cartagena/2026/09/18/gran-malecon-del-mar-solo-falta-un-mes/",
+    fecha: "2026-10-14",
+    url: "https://www.eluniversal.com.co/cartagena/2026/10/14/aplazan-inauguracion-de-la-primera-fase-del-gran-malecon-del-mar-esta-es-la-nueva-fecha/",
   },
   {
     id: "tierra-baja-via-de-acceso",
